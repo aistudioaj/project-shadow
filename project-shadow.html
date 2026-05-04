@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Shadow | Personal AI OS</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --bg2: #111114;
+    --bg3: #18181d;
+    --border: #2a2a35;
+    --border2: #353545;
+    --accent: #f0a500;
+    --accent2: #e05c00;
+    --green: #00d4aa;
+    --red: #ff4466;
+    --blue: #4488ff;
+    --purple: #9966ff;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #555568;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --display: 'Bebas Neue', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 52px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--text3); font-size: 11px; font-family: var(--mono); letter-spacing: 2px; display: block; margin-top: -4px; }
+
+  .ticker-tape {
+    display: flex;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    overflow: hidden;
+    max-width: 600px;
+  }
+
+  .tick { display: flex; gap: 6px; align-items: center; }
+  .tick-sym { color: var(--text2); font-weight: 600; }
+  .tick-price { color: var(--text); }
+  .tick-chg.up { color: var(--green); }
+  .tick-chg.dn { color: var(--red); }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .clock {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* MAIN LAYOUT */
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr 320px;
+    grid-template-rows: 1fr;
+    height: calc(100vh - 52px);
+  }
+
+  /* LEFT NAV */
+  .sidenav {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    gap: 4px;
+  }
+
+  .nav-section {
+    padding: 8px 16px 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--bg3); color: var(--accent); border-left-color: var(--accent); }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 9px;
+    font-family: var(--mono);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  .nav-divider { height: 1px; background: var(--border); margin: 12px 16px; }
+
+  /* MAIN CONTENT */
+  .main {
+    overflow-y: auto;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main::-webkit-scrollbar { width: 4px; }
+  .main::-webkit-scrollbar-track { background: var(--bg); }
+  .main::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  /* BRIEFING HEADER */
+  .briefing-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .briefing-title {
+    font-family: var(--display);
+    font-size: 42px;
+    letter-spacing: 4px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .briefing-title span { color: var(--accent); }
+
+  .briefing-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  .briefing-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { background: #ffc000; }
+
+  /* VOICE BTN */
+  .voice-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .voice-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .voice-btn.listening { border-color: var(--red); color: var(--red); animation: voicePulse 1s infinite; }
+
+  @keyframes voicePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(255,68,102,0); }
+  }
+
+  .voice-icon { font-size: 16px; }
+
+  /* GRID */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    flex: 1;
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 20px 24px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .panel.wide { grid-column: span 2; }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .panel-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  .panel-title .dot.yellow { background: var(--accent); }
+  .panel-title .dot.green { background: var(--green); }
+  .panel-title .dot.blue { background: var(--blue); }
+  .panel-title .dot.purple { background: var(--purple); }
+  .panel-title .dot.red { background: var(--red); }
+
+  .panel-action {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .panel-action:hover { color: var(--accent); }
+
+  /* MARKET PANEL */
+  .market-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .market-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 12px;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+
+  .market-card:hover { border-color: var(--border2); }
+
+  .market-sym {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .market-price {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .market-chg {
+    font-family: var(--mono);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .up { color: var(--green); }
+  .dn { color: var(--red); }
+
+  .mini-bar {
+    height: 2px;
+    background: var(--border);
+    margin-top: 8px;
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .mini-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 1s ease;
+  }
+
+  /* AI CHAT PANEL */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    max-height: 320px;
+    padding-right: 4px;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 3px; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-avatar {
+    width: 28px; height: 28px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+
+  .msg-avatar.shadow { background: var(--accent); color: var(--bg); }
+  .msg-avatar.user { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+
+  .msg-content {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    padding-top: 4px;
+  }
+
+  .msg-content.shadow-msg { color: var(--text); }
+  .msg-time { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+  .chat-input-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--text3); }
+
+  .send-btn {
+    padding: 10px 16px;
+    background: var(--accent);
+    border: none;
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .send-btn:hover { background: #ffc000; }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* THINKING INDICATOR */
+  .thinking {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .thinking span {
+    width: 4px; height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: think 1.2s infinite;
+  }
+
+  .thinking span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes think {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* SPECIALIST CARDS */
+  .specialist-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  .specialist-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .specialist-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    transition: opacity 0.2s;
+    opacity: 0.6;
+  }
+
+  .specialist-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .specialist-card:hover::before { opacity: 1; }
+
+  .specialist-card.invest::before { background: var(--accent); }
+  .specialist-card.productivity::before { background: var(--blue); }
+  .specialist-card.tutor::before { background: var(--purple); }
+  .specialist-card.travel::before { background: var(--green); }
+  .specialist-card.fitness::before { background: var(--red); }
+
+  .specialist-icon { font-size: 22px; margin-bottom: 8px; }
+  .specialist-name {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .specialist-status {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  .specialist-stat {
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    color: var(--text3);
+  }
+
+  /* RIGHT PANEL */
+  .rightpanel {
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .rightpanel::-webkit-scrollbar { width: 3px; }
+  .rightpanel::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .rpanel-section {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rpanel-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* PROACTIVE ALERTS */
+  .alert-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .alert-item:last-child { border-bottom: none; }
+  .alert-item:hover { opacity: 0.8; }
+
+  .alert-bar {
+    width: 2px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  .alert-bar.high { background: var(--red); }
+  .alert-bar.med { background: var(--accent); }
+  .alert-bar.low { background: var(--blue); }
+
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 12px; color: var(--text); margin-bottom: 3px; font-weight: 500; }
+  .alert-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+  /* SCHEDULE */
+  .schedule-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .schedule-item:last-child { border-bottom: none; }
+
+  .schedule-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    min-width: 40px;
+    padding-top: 2px;
+  }
+
+  .schedule-content { flex: 1; }
+  .schedule-title { font-size: 12px; color: var(--text); margin-bottom: 2px; }
+  .schedule-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 1px;
+    letter-spacing: 1px;
+  }
+
+  .tag-invest { background: rgba(240,165,0,0.15); color: var(--accent); }
+  .tag-health { background: rgba(255,68,102,0.15); color: var(--red); }
+  .tag-work { background: rgba(68,136,255,0.15); color: var(--blue); }
+  .tag-learn { background: rgba(153,102,255,0.15); color: var(--purple); }
+
+  /* VOICE TRANSCRIPT */
+  .transcript {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    min-height: 40px;
+    padding: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  .transcript.active { border-color: var(--red); color: var(--text); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .stat-box {
+    flex: 1;
+    background: var(--bg2);
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  /* LOADING */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 2px;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      PROJECT SHADOW
+      <span>PERSONAL AI OPERATING SYSTEM</span>
+    </div>
+    <div class="ticker-tape" id="tickerTape">
+      <div class="tick"><span class="tick-sym">AAPL</span><span class="tick-price">$280.14</span><span class="tick-chg up">+3.24%</span></div>
+      <div class="tick"><span class="tick-sym">MSFT</span><span class="tick-price">$415.82</span><span class="tick-chg up">+1.12%</span></div>
+      <div class="tick"><span class="tick-sym">NVDA</span><span class="tick-price">$892.40</span><span class="tick-chg dn">-0.87%</span></div>
+      <div class="tick"><span class="tick-sym">AMZN</span><span class="tick-price">$198.55</span><span class="tick-chg up">+2.01%</span></div>
+      <div class="tick"><span class="tick-sym">GOOGL</span><span class="tick-price">$385.69</span><span class="tick-chg up">+0.23%</span></div>
+      <div class="tick"><span class="tick-sym">SPY</span><span class="tick-price">$524.10</span><span class="tick-chg up">+0.54%</span></div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-dot"></div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- LEFT NAV -->
+  <nav class="sidenav">
+    <div class="nav-section">Command</div>
+    <div class="nav-item active" onclick="setActive(this)">
+      <span class="icon">⚡</span> Daily Briefing
+      <span class="nav-badge">5</span>
+    </div>
+    <div class="nav-item" onclick="setActive(this); switchSpecialist('investment')">
+      <span class="icon">📈</span> Investment Advisor
+    </div>
+    <div class="nav-item" onclick="setActive(this); switchSpecialist('productivity')">
+      <span class="icon">🎯</span> Productivity Scout
+    </div>
+    <div class="nav-item" onclick="setActive(this); switchSpecialist('tutor')">
+      <span class="icon">🎓</span> Tutor Assistant
+    </div>
+    <div class="nav-item" onclick="setActive(this); switchSpecialist('travel')">
+      <span class="icon">✈️</span> Travel Advisor
+    </div>
+    <div class="nav-item" onclick="setActive(this); switchSpecialist('fitness')">
+      <span class="icon">💪</span> Fitness & Medical
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">System</div>
+    <div class="nav-item" onclick="setActive(this)">
+      <span class="icon">🗄️</span> Knowledge Base
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <span class="icon">🔌</span> Integrations
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <span class="icon">🛡️</span> Backup Status
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Version</div>
+    <div class="nav-item" style="cursor:default; opacity:0.5;">
+      <span class="icon">🔖</span> Shadow v1.0
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-val up">+2.14%</div>
+        <div class="stat-label">Portfolio Today</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--blue)">7</div>
+        <div class="stat-label">Tasks Pending</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--purple)">3</div>
+        <div class="stat-label">Study Sessions</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--green)">82°F</div>
+        <div class="stat-label">Weather Today</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--red)">4</div>
+        <div class="stat-label">Alerts</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD GRID -->
+    <div class="dashboard-grid">
+
+      <!-- MARKET PANEL -->
+      <div class="panel wide">
+        <div class="panel-header">
+          <div class="panel-title"><div class="dot yellow"></div> Market Watchlist</div>
+          <div class="panel-action">REFRESH ↻</div>
+        </div>
+        <div class="market-grid">
+          <div class="market-card">
+            <div class="market-sym">AAPL</div>
+            <div class="market-price up">$280.14</div>
+            <div class="market-chg up">▲ +3.24%</div>
+            <div class="mini-bar"><div class="mini-bar-fill up" style="width:74%;background:var(--green)"></div></div>
+          </div>
+          <div class="market-card">
+            <div class="market-sym">MSFT</div>
+            <div class="market-price up">$415.82</div>
+            <div class="market-chg up">▲ +1.12%</div>
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:58%;background:var(--green)"></div></div>
+          </div>
+          <div class="market-card">
+            <div class="market-sym">NVDA</div>
+            <div class="market-price dn">$892.40</div>
+            <div class="market-chg dn">▼ -0.87%</div>
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:35%;background:var(--red)"></div></div>
+          </div>
+          <div class="market-card">
+            <div class="market-sym">AMZN</div>
+            <div class="market-price up">$198.55</div>
+            <div class="market-chg up">▲ +2.01%</div>
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:66%;background:var(--green)"></div></div>
+          </div>
+          <div class="market-card">
+            <div class="market-sym">GOOGL</div>
+            <div class="market-price up">$385.69</div>
+            <div class="market-chg up">▲ +0.23%</div>
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:51%;background:var(--green)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI CHAT -->
+      <div class="panel" style="grid-row: span 2;">
+        <div class="panel-header">
+          <div class="panel-title"><div class="dot yellow"></div> Shadow AI — <span id="currentSpecialist" style="color:var(--accent)">Master Router</span></div>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+          <div class="msg">
+            <div class="msg-avatar shadow">S</div>
+            <div class="msg-content shadow-msg">
+              Good morning, Abdulrahman. Here's your Project Shadow briefing for today.<br><br>
+              📈 <strong>Markets:</strong> AAPL leading with +3.24%. Your portfolio is up 2.14% today.<br>
+              🎯 <strong>Tasks:</strong> 7 pending items — 2 high priority.<br>
+              💪 <strong>Fitness:</strong> Rest day recommended based on yesterday's session.<br><br>
+              How can I assist you today?
+              <div class="msg-time">09:30 AM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <input class="chat-input" id="chatInput" placeholder="Ask Shadow anything..." onkeydown="handleKey(event)">
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">SEND</button>
+        </div>
+      </div>
+
+      <!-- SPECIALISTS -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><div class="dot blue"></div> Specialist Modules</div>
+        </div>
+        <div class="specialist-grid">
+          <div class="specialist-card invest" onclick="switchSpecialist('investment')">
+            <div class="specialist-icon">📈</div>
+            <div class="specialist-name">Investment</div>
+            <div class="specialist-status">Markets open. 5 alerts.</div>
+            <div class="specialist-stat">Last run: 09:30 AM</div>
+          </div>
+          <div class="specialist-card productivity" onclick="switchSpecialist('productivity')">
+            <div class="specialist-icon">🎯</div>
+            <div class="specialist-name">Productivity</div>
+            <div class="specialist-status">7 tasks pending.</div>
+            <div class="specialist-stat">2 due today</div>
+          </div>
+          <div class="specialist-card tutor" onclick="switchSpecialist('tutor')">
+            <div class="specialist-icon">🎓</div>
+            <div class="specialist-name">Tutor</div>
+            <div class="specialist-status">3 sessions ready.</div>
+            <div class="specialist-stat">Math, Physics</div>
+          </div>
+          <div class="specialist-card travel" onclick="switchSpecialist('travel')">
+            <div class="specialist-icon">✈️</span></div>
+            <div class="specialist-name">Travel</div>
+            <div class="specialist-status">No trips planned.</div>
+            <div class="specialist-stat">Plan a trip →</div>
+          </div>
+          <div class="specialist-card fitness" onclick="switchSpecialist('fitness')">
+            <div class="specialist-icon">💪</div>
+            <div class="specialist-name">Fitness</div>
+            <div class="specialist-status">Rest day today.</div>
+            <div class="specialist-stat">Streak: 12 days</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BRIEFING FOOTER -->
+    <div style="padding: 16px 28px; border-top: 1px solid var(--border); display:flex; align-items:center; gap:16px;">
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">
+        <span class="voice-icon">🎙️</span>
+        <span id="voiceBtnText">VOICE INPUT</span>
+      </button>
+      <div class="transcript" id="transcript" style="flex:1;">Click "Voice Input" and speak your command...</div>
+      <button class="btn primary" onclick="runBriefing()">▶ RUN BRIEFING</button>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="rightpanel">
+
+    <div class="rpanel-section">
+      <div class="rpanel-title">⚡ Proactive Alerts</div>
+      <div class="alert-item">
+        <div class="alert-bar high"></div>
+        <div class="alert-content">
+          <div class="alert-title">NVDA down 0.87% — watch support</div>
+          <div class="alert-sub">Investment · High priority</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-bar med"></div>
+        <div class="alert-content">
+          <div class="alert-title">2 tasks due today by 5 PM</div>
+          <div class="alert-sub">Productivity · Medium</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-bar low"></div>
+        <div class="alert-content">
+          <div class="alert-title">Physics exam in 3 days</div>
+          <div class="alert-sub">Tutor · Preparation needed</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-bar low"></div>
+        <div class="alert-content">
+          <div class="alert-title">Portfolio rebalance suggested</div>
+          <div class="alert-sub">Investment · Weekly review</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rpanel-section">
+      <div class="rpanel-title">📅 Today's Schedule</div>
+      <div class="schedule-item">
+        <div class="schedule-time">9:30</div>
+        <div class="schedule-content">
+          <div class="schedule-title">Market Open Briefing</div>
+          <span class="schedule-tag tag-invest">INVEST</span>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-time">11:00</div>
+        <div class="schedule-content">
+          <div class="schedule-title">Study Session — Physics</div>
+          <span class="schedule-tag tag-learn">LEARN</span>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-time">14:00</div>
+        <div class="schedule-content">
+          <div class="schedule-title">Task Review & Planning</div>
+          <span class="schedule-tag tag-work">WORK</span>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-time">17:00</div>
+        <div class="schedule-content">
+          <div class="schedule-title">Workout Session</div>
+          <span class="schedule-tag tag-health">HEALTH</span>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-time">20:00</div>
+        <div class="schedule-content">
+          <div class="schedule-title">Portfolio End-of-Day Review</div>
+          <span class="schedule-tag tag-invest">INVEST</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rpanel-section">
+      <div class="rpanel-title">🛡️ System Status</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
+          <span style="color:var(--text3)">Mind Studio</span>
+          <span style="color:var(--green)">● ONLINE</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
+          <span style="color:var(--text3)">Alpha Vantage API</span>
+          <span style="color:var(--green)">● ONLINE</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
+          <span style="color:var(--text3)">Google Sheets</span>
+          <span style="color:var(--green)">● SYNCED</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
+          <span style="color:var(--text3)">Gmail</span>
+          <span style="color:var(--green)">● CONNECTED</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
+          <span style="color:var(--text3)">Backup (Zapier)</span>
+          <span style="color:var(--accent)">● STANDBY</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
+          <span style="color:var(--text3)">Voice Engine</span>
+          <span id="voiceStatus" style="color:var(--text3)">● INACTIVE</span>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<script>
+// CLOCK
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', {hour12: false});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// NAV
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// SPECIALIST SYSTEM PROMPTS
+const specialists = {
+  investment: {
+    name: 'Investment Advisor',
+    prompt: `You are Shadow's Investment Advisor specialist. You analyze US market stocks, provide portfolio recommendations, identify buy/sell signals, and give concise professional investment analysis. You track AAPL, MSFT, NVDA, AMZN, GOOGL. Be direct, data-driven, and professional like a Bloomberg terminal analyst. Keep responses concise and actionable.`
+  },
+  productivity: {
+    name: 'Productivity Scout',
+    prompt: `You are Shadow's Productivity Scout specialist. You help manage tasks, optimize workflows, set priorities, create schedules, and boost personal efficiency. You have a direct, no-nonsense coaching style. Help the user get more done with less friction.`
+  },
+  tutor: {
+    name: 'Tutor Assistant',
+    prompt: `You are Shadow's Tutor Assistant specialist. You help with studying, generate practice exercises, explain concepts clearly, assist with lesson planning, and prepare for exams. You adapt to the student's level and make learning engaging and effective.`
+  },
+  travel: {
+    name: 'Travel Advisor',
+    prompt: `You are Shadow's Travel Advisor specialist. You build detailed itineraries, recommend activities and restaurants, provide real-time travel alerts, suggest hidden gems, and optimize travel experiences. Be enthusiastic and knowledgeable.`
+  },
+  fitness: {
+    name: 'Fitness & Medical Assistant',
+    prompt: `You are Shadow's Fitness & Medical Assistant specialist. You create workout plans, track habits, research health topics, and provide wellness guidance. Always remind the user to consult a doctor for medical decisions. Be motivating and science-based.`
+  },
+  master: {
+    name: 'Master Router',
+    prompt: `You are Shadow, a personal AI operating system assistant for Abdulrahman. You have 5 specialist modules: Investment Advisor, Productivity Scout, Tutor Assistant, Travel Advisor, and Fitness & Medical Assistant. Route queries to the right specialist and provide comprehensive, proactive daily briefings. Be professional, direct, and genuinely helpful. You know his portfolio includes AAPL, MSFT, NVDA, AMZN, GOOGL.`
+  }
+};
+
+let currentSpecialist = 'master';
+let conversationHistory = [
+  {
+    role: 'assistant',
+    content: `Good morning, Abdulrahman. Here's your Project Shadow briefing for today.\n\n📈 Markets: AAPL leading with +3.24%. Your portfolio is up 2.14% today.\n🎯 Tasks: 7 pending items — 2 high priority.\n💪 Fitness: Rest day recommended based on yesterday's session.\n\nHow can I assist you today?`
+  }
+];
+
+function switchSpecialist(type) {
+  currentSpecialist = type;
+  const s = specialists[type];
+  document.getElementById('currentSpecialist').textContent = s.name;
+  conversationHistory = [];
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = '';
+  addMessage('shadow', `Switched to ${s.name} mode. How can I help you?`);
+}
+
+// CHAT
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  addMessage('user', text);
+
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  const thinkingId = addThinking();
+
+  conversationHistory.push({ role: 'user', content: text });
+
+  try {
+    const spec = specialists[currentSpecialist] || specialists.master;
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: spec.prompt,
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || 'Shadow encountered an error. Please try again.';
+
+    removeThinking(thinkingId);
+    conversationHistory.push({ role: 'assistant', content: reply });
+    addMessage('shadow', reply);
+
+  } catch (err) {
+    removeThinking(thinkingId);
+    addMessage('shadow', 'Connection error. Please check your API configuration.');
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+function addMessage(from, text) {
+  const chatArea = document.getElementById('chatArea');
+  const now = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+
+  const msg = document.createElement('div');
+  msg.className = 'msg';
+
+  const formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  msg.innerHTML = `
+    <div class="msg-avatar ${from === 'shadow' ? 'shadow' : 'user'}">${from === 'shadow' ? 'S' : 'A'}</div>
+    <div class="msg-content ${from === 'shadow' ? 'shadow-msg' : ''}">
+      ${formatted}
+      <div class="msg-time">${now}</div>
+    </div>
+  `;
+
+  chatArea.appendChild(msg);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return msg;
+}
+
+function addThinking() {
+  const chatArea = document.getElementById('chatArea');
+  const id = 'thinking-' + Date.now();
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'msg';
+  div.innerHTML = `
+    <div class="msg-avatar shadow">S</div>
+    <div class="msg-content">
+      <div class="thinking"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return id;
+}
+
+function removeThinking(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter') sendMessage();
+}
+
+// VOICE
+let recognition = null;
+let isListening = false;
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    document.getElementById('transcript').textContent = 'Voice not supported in this browser. Use Chrome.';
+    return;
+  }
+
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('voiceBtn').classList.add('listening');
+    document.getElementById('voiceBtnText').textContent = 'LISTENING...';
+    document.getElementById('voiceStatus').textContent = '● ACTIVE';
+    document.getElementById('voiceStatus').style.color = 'var(--red)';
+    document.getElementById('transcript').classList.add('active');
+    document.getElementById('transcript').textContent = '🎙️ Listening...';
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('transcript').textContent = transcript;
+    if (e.results[0].isFinal) {
+      document.getElementById('chatInput').value = transcript;
+    }
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById('voiceBtn').classList.remove('listening');
+    document.getElementById('voiceBtnText').textContent = 'VOICE INPUT';
+    document.getElementById('voiceStatus').textContent = '● INACTIVE';
+    document.getElementById('voiceStatus').style.color = 'var(--text3)';
+    document.getElementById('transcript').classList.remove('active');
+    const val = document.getElementById('chatInput').value.trim();
+    if (val) sendMessage();
+  };
+
+  recognition.onerror = (e) => {
+    document.getElementById('transcript').textContent = 'Voice error: ' + e.error;
+  };
+
+  recognition.start();
+}
+
+// RUN BRIEFING
+function runBriefing() {
+  document.getElementById('chatInput').value = 'Give me a full daily briefing covering my portfolio performance, top tasks for today, and any important alerts across all my specialists.';
+  sendMessage();
+}
+</script>
+
+</body>
+</html>
