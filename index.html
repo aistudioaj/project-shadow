@@ -9,20 +9,24 @@
 <meta name="theme-color" content="#0a0a0b">
 <title>Shadow</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #0a0a0b;
-    --bg2: #111114;
-    --bg3: #18181d;
-    --border: #2a2a35;
-    --accent: #f0a500;
+    --bg2: #0d0f14;
+    --bg3: #131720;
+    --border: #1e2433;
+    --border2: #2a3348;
+    --accent: #3b82f6;
+    --accent2: #2563eb;
+    --accent-glow: rgba(59,130,246,0.25);
     --green: #00d4aa;
     --red: #ff4466;
-    --blue: #4488ff;
+    --yellow: #f0a500;
     --purple: #9966ff;
-    --text: #e8e8f0;
-    --text2: #9090a8;
-    --text3: #555568;
+    --text: #e8eaf2;
+    --text2: #8892a8;
+    --text3: #454d60;
     --mono: 'IBM Plex Mono', monospace;
     --sans: 'IBM Plex Sans', sans-serif;
     --display: 'Bebas Neue', sans-serif;
@@ -31,958 +35,458 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
 
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    -webkit-font-smoothing: antialiased;
+  .app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
+  .status-bar { height: var(--safe-top); background: var(--bg); flex-shrink: 0; }
+
+  /* LOADING */
+  .loading-screen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 24px; z-index: 999; transition: opacity 0.5s;
   }
-
-  /* APP SHELL */
-  .app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: -webkit-fill-available;
+  .loading-screen.hidden { opacity: 0; pointer-events: none; }
+  .loading-logo {
+    font-family: var(--display); font-size: 52px; letter-spacing: 10px;
+    color: var(--accent); text-shadow: 0 0 40px var(--accent-glow);
   }
+  .loading-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--text3); text-transform: uppercase; }
+  .loading-bar { width: 200px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+  .loading-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 1px; animation: loadFill 2s ease forwards; }
+  @keyframes loadFill { from { width: 0%; } to { width: 100%; } }
+  .loading-status { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; }
 
-  /* STATUS BAR SAFE AREA */
-  .status-bar {
-    height: var(--safe-top);
-    background: var(--bg);
-    flex-shrink: 0;
-  }
-
-  /* TOP HEADER */
+  /* HEADER */
   .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg2);
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); flex-shrink: 0;
   }
-
   .header-logo {
-    font-family: var(--display);
-    font-size: 20px;
-    letter-spacing: 3px;
-    color: var(--accent);
+    font-family: var(--display); font-size: 20px; letter-spacing: 3px;
+    color: var(--accent); text-shadow: 0 0 20px var(--accent-glow);
   }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .header-clock {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-  }
-
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-clock { font-family: var(--mono); font-size: 11px; color: var(--text3); }
   .online-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 6px var(--green);
     animation: pulse 2s infinite;
   }
-
-  @keyframes pulse {
-    0%,100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .memory-indicator { font-family: var(--mono); font-size: 9px; color: var(--accent); letter-spacing: 1px; }
 
   /* SCREENS */
-  .screen {
-    display: none;
-    flex: 1;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
+  .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
   .screen.active { display: flex; }
 
-  /* ==================== HOME SCREEN ==================== */
-  .home-screen {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+  /* HOME */
+  .home-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .home-scroll::-webkit-scrollbar { display: none; }
 
-  /* GREETING */
-  .greeting {
-    padding: 20px 20px 12px;
-    flex-shrink: 0;
-  }
-
-  .greeting-sub {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--text3);
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  .greeting-name {
-    font-family: var(--display);
-    font-size: 32px;
-    letter-spacing: 2px;
-    color: var(--text);
-    line-height: 1;
-  }
-
+  .greeting { padding: 22px 20px 14px; }
+  .greeting-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; }
+  .greeting-name { font-family: var(--display); font-size: 34px; letter-spacing: 2px; color: var(--text); line-height: 1; }
   .greeting-name span { color: var(--accent); }
+  .greeting-memory { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 6px; }
 
   /* QUICK STATS */
-  .quick-stats {
-    display: flex;
-    gap: 8px;
-    padding: 0 20px 16px;
-    flex-shrink: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
+  .quick-stats { display: flex; gap: 8px; padding: 0 20px 16px; overflow-x: auto; scrollbar-width: none; }
   .quick-stats::-webkit-scrollbar { display: none; }
-
   .qstat {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    min-width: 90px;
-    flex-shrink: 0;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; min-width: 82px;
+    flex-shrink: 0; cursor: pointer; transition: border-color 0.15s;
   }
-
-  .qstat-val {
-    font-family: var(--mono);
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 3px;
-  }
-
-  .qstat-label {
-    font-family: var(--mono);
-    font-size: 9px;
-    color: var(--text3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  /* SPECIALIST CARDS CAROUSEL */
-  .cards-label {
-    padding: 0 20px 10px;
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--text3);
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
-
-  .cards-carousel {
-    padding: 0 20px;
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    flex-shrink: 0;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .cards-carousel::-webkit-scrollbar { display: none; }
-
-  .spec-card {
-    min-width: calc(100vw - 56px);
-    scroll-snap-align: start;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    cursor: pointer;
-    transition: transform 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .spec-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 12px 12px 0 0;
-  }
-
-  .spec-card.invest::before { background: var(--accent); }
-  .spec-card.productivity::before { background: var(--blue); }
-  .spec-card.tutor::before { background: var(--purple); }
-  .spec-card.travel::before { background: var(--green); }
-  .spec-card.fitness::before { background: var(--red); }
-
-  .spec-card:active { transform: scale(0.98); }
-
-  .spec-card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .spec-card-icon { font-size: 32px; }
-
-  .spec-card-badge {
-    font-family: var(--mono);
-    font-size: 9px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    letter-spacing: 1px;
-    font-weight: 600;
-  }
-
-  .badge-invest { background: rgba(240,165,0,0.15); color: var(--accent); }
-  .badge-productivity { background: rgba(68,136,255,0.15); color: var(--blue); }
-  .badge-tutor { background: rgba(153,102,255,0.15); color: var(--purple); }
-  .badge-travel { background: rgba(0,212,170,0.15); color: var(--green); }
-  .badge-fitness { background: rgba(255,68,102,0.15); color: var(--red); }
-
-  .spec-card-name {
-    font-family: var(--display);
-    font-size: 24px;
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-
-  .spec-card-desc {
-    font-size: 13px;
-    color: var(--text2);
-    line-height: 1.5;
-    margin-bottom: 16px;
-  }
-
-  .spec-card-stats {
-    display: flex;
-    gap: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-  }
-
-  .spec-stat { flex: 1; }
-  .spec-stat-val {
-    font-family: var(--mono);
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
-
-  .spec-stat-label {
-    font-family: var(--mono);
-    font-size: 9px;
-    color: var(--text3);
-    letter-spacing: 1px;
-  }
-
-  .spec-card-cta {
-    margin-top: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text2);
-    letter-spacing: 1px;
-  }
-
-  /* CARD DOTS */
-  .card-dots {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px 0 8px;
-    flex-shrink: 0;
-  }
-
-  .card-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--border);
-    transition: all 0.2s;
-  }
-
-  .card-dot.active { background: var(--accent); width: 16px; border-radius: 3px; }
-
-  /* ALERTS */
-  .alerts-section {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 20px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .alerts-section::-webkit-scrollbar { display: none; }
-
-  .alerts-title {
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--text3);
-    text-transform: uppercase;
-    padding: 12px 0 8px;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-  }
-
-  .alert-row {
-    display: flex;
-    gap: 10px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-  }
-
-  .alert-row:last-child { border-bottom: none; }
-
-  .alert-indicator {
-    width: 3px;
-    border-radius: 2px;
-    flex-shrink: 0;
-    align-self: stretch;
-  }
-
-  .ind-high { background: var(--red); }
-  .ind-med { background: var(--accent); }
-  .ind-low { background: var(--blue); }
-
-  .alert-body { flex: 1; }
-  .alert-title-text { font-size: 13px; color: var(--text); margin-bottom: 3px; font-weight: 500; }
-  .alert-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); }
-
-  .alert-arrow { color: var(--text3); font-size: 12px; align-self: center; }
-
-  /* ==================== CHAT SCREEN ==================== */
-  .chat-screen {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .chat-header {
-    padding: 14px 20px;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-
-  .chat-back {
-    font-size: 20px;
-    cursor: pointer;
-    color: var(--accent);
-    padding: 4px;
-  }
-
-  .chat-specialist-info { flex: 1; }
-
-  .chat-specialist-name {
-    font-family: var(--display);
-    font-size: 18px;
-    letter-spacing: 2px;
-    color: var(--text);
-  }
-
-  .chat-specialist-mode {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text3);
-    letter-spacing: 1px;
-  }
-
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .chat-messages::-webkit-scrollbar { display: none; }
-
-  .cmsg {
-    display: flex;
-    gap: 10px;
-    animation: fadeUp 0.25s ease;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .cmsg.user { flex-direction: row-reverse; }
-
-  .cmsg-avatar {
-    width: 30px; height: 30px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .cmsg-avatar.s { background: var(--accent); color: var(--bg); }
-  .cmsg-avatar.u { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-
-  .cmsg-bubble {
-    max-width: 78%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.55;
-  }
-
-  .cmsg.shadow .cmsg-bubble {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-top-left-radius: 4px;
-  }
-
-  .cmsg.user .cmsg-bubble {
-    background: var(--accent);
-    color: var(--bg);
-    font-weight: 500;
-    border-top-right-radius: 4px;
-  }
-
-  .cmsg-time {
-    font-family: var(--mono);
-    font-size: 9px;
-    color: var(--text3);
-    margin-top: 5px;
-    text-align: right;
-  }
-
-  .cmsg.user .cmsg-time { text-align: right; }
-
-  /* THINKING */
-  .thinking-dots {
-    display: flex;
-    gap: 4px;
-    padding: 4px 2px;
-    align-items: center;
-  }
-
-  .thinking-dots span {
-    width: 5px; height: 5px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: think 1.2s infinite;
-    opacity: 0.5;
-  }
-
-  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes think {
-    0%,60%,100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-5px); opacity: 1; }
-  }
-
-  /* CHAT INPUT BAR */
-  .chat-input-bar {
-    padding: 12px 16px;
-    padding-bottom: max(12px, var(--safe-bottom));
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  .chat-text-input {
-    flex: 1;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 10px 16px;
-    font-family: var(--sans);
-    font-size: 14px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.15s;
-    -webkit-appearance: none;
-  }
-
-  .chat-text-input:focus { border-color: var(--accent); }
-  .chat-text-input::placeholder { color: var(--text3); }
-
-  .mic-btn {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-
-  .mic-btn:active { transform: scale(0.92); }
-  .mic-btn.listening {
-    background: var(--red);
-    border-color: var(--red);
-    box-shadow: 0 0 20px rgba(255,68,102,0.4);
-    animation: micPulse 1s infinite;
-  }
-
-  @keyframes micPulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); }
-    50% { box-shadow: 0 0 0 12px rgba(255,68,102,0); }
-  }
-
-  .send-circle {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.15s;
-  }
-
-  .send-circle:active { transform: scale(0.92); background: #ffc000; }
-  .send-circle:disabled { opacity: 0.4; }
-
-  /* VOICE OVERLAY */
-  .voice-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 200;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    backdrop-filter: blur(8px);
-  }
-
-  .voice-overlay.active { display: flex; }
-
-  .voice-ring {
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    background: var(--red);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    animation: voiceRing 1s infinite;
-    box-shadow: 0 0 0 0 rgba(255,68,102,0.4);
-  }
-
-  @keyframes voiceRing {
-    0% { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); }
-    70% { box-shadow: 0 0 0 30px rgba(255,68,102,0); }
-    100% { box-shadow: 0 0 0 0 rgba(255,68,102,0); }
-  }
-
-  .voice-label {
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: var(--text2);
-    text-transform: uppercase;
-  }
-
-  .voice-transcript-display {
-    font-size: 16px;
-    color: var(--text);
-    text-align: center;
-    max-width: 280px;
-    line-height: 1.5;
-    min-height: 48px;
-  }
-
-  .voice-cancel {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text3);
-    letter-spacing: 1px;
-    cursor: pointer;
-    padding: 12px 24px;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    background: transparent;
-  }
-
-  /* BOTTOM NAV */
-  .bottom-nav {
-    display: flex;
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    padding-bottom: var(--safe-bottom);
-    flex-shrink: 0;
-  }
-
-  .nav-tab {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px 0;
-    cursor: pointer;
-    transition: color 0.15s;
-    color: var(--text3);
-    gap: 3px;
-  }
-
-  .nav-tab.active { color: var(--accent); }
-  .nav-tab-icon { font-size: 20px; }
-  .nav-tab-label { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
-
-  /* BIG VOICE BUTTON on home */
+  .qstat:hover { border-color: var(--accent); }
+  .qstat-val { font-family: var(--mono); font-size: 17px; font-weight: 600; margin-bottom: 3px; }
+  .qstat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* VOICE BTN */
   .big-voice-btn {
-    margin: 0 20px 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 20px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-    flex-shrink: 0;
+    margin: 0 20px 16px; display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px; background: var(--bg2);
+    border: 1px solid var(--accent); border-radius: 14px;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 0 20px var(--accent-glow);
   }
-
-  .big-voice-btn:active { transform: scale(0.98); border-color: var(--red); }
-
+  .big-voice-btn:active { transform: scale(0.98); }
   .big-voice-icon {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--red);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    box-shadow: 0 0 16px rgba(255,68,102,0.3);
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 20px;
+    box-shadow: 0 0 20px var(--accent-glow);
   }
-
   .big-voice-text { flex: 1; }
   .big-voice-label { font-size: 15px; color: var(--text); font-weight: 600; margin-bottom: 2px; }
   .big-voice-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; }
 
-  .big-voice-arrow { color: var(--text3); font-size: 16px; }
+  /* CARDS */
+  .cards-label { padding: 0 20px 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
+  .cards-carousel { padding: 0 20px; display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .cards-carousel::-webkit-scrollbar { display: none; }
+
+  .spec-card {
+    min-width: calc(100vw - 56px); scroll-snap-align: start;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; cursor: pointer;
+    transition: transform 0.15s; position: relative; overflow: hidden;
+  }
+  .spec-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+  .spec-card:active { transform: scale(0.98); }
+  .spec-card.invest::before { background: var(--accent); }
+  .spec-card.productivity::before { background: var(--green); }
+  .spec-card.tutor::before { background: var(--purple); }
+  .spec-card.travel::before { background: var(--yellow); }
+  .spec-card.fitness::before { background: var(--red); }
+
+  .spec-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .spec-card-icon { font-size: 32px; }
+  .spec-card-badge { font-family: var(--mono); font-size: 9px; padding: 3px 8px; border-radius: 4px; letter-spacing: 1px; font-weight: 600; }
+  .badge-invest { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .badge-productivity { background: rgba(0,212,170,0.15); color: var(--green); }
+  .badge-tutor { background: rgba(153,102,255,0.15); color: var(--purple); }
+  .badge-travel { background: rgba(240,165,0,0.15); color: var(--yellow); }
+  .badge-fitness { background: rgba(255,68,102,0.15); color: var(--red); }
+
+  .spec-card-name { font-family: var(--display); font-size: 24px; letter-spacing: 2px; margin-bottom: 6px; }
+  .spec-card-desc { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
+  .spec-card-stats { display: flex; gap: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .spec-stat { flex: 1; }
+  .spec-stat-val { font-family: var(--mono); font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+  .spec-stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; }
+  .spec-card-cta { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 1px; }
+
+  /* DOTS */
+  .card-dots { display: flex; justify-content: center; gap: 6px; padding: 12px 0 8px; }
+  .card-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
+  .card-dot.active { background: var(--accent); width: 16px; border-radius: 3px; }
+
+  /* SECTIONS */
+  .section { padding: 0 20px 16px; }
+  .section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; padding: 12px 0 10px; display: flex; align-items: center; justify-content: space-between; }
+  .section-action { color: var(--accent); cursor: pointer; }
+
+  /* TASKS */
+  .task-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .task-row:last-child { border-bottom: none; }
+  .task-check { width: 18px; height: 18px; border: 1px solid var(--border2); border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-top: 2px; font-size: 10px; transition: all 0.15s; }
+  .task-check.done { background: var(--green); border-color: var(--green); }
+  .task-content { flex: 1; }
+  .task-title { font-size: 13px; color: var(--text); margin-bottom: 3px; }
+  .task-title.done { text-decoration: line-through; color: var(--text3); }
+  .task-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); display: flex; gap: 8px; align-items: center; }
+  .task-priority { padding: 1px 6px; border-radius: 2px; font-size: 9px; }
+  .priority-high { background: rgba(255,68,102,0.15); color: var(--red); }
+  .priority-medium { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .priority-low { background: rgba(0,212,170,0.15); color: var(--green); }
+
+  /* MEMORY */
+  .memory-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .memory-row:last-child { border-bottom: none; }
+  .memory-key { font-family: var(--mono); font-size: 10px; color: var(--accent); min-width: 100px; }
+  .memory-val { font-size: 12px; color: var(--text2); flex: 1; }
+
+  /* ALERTS */
+  .alert-row { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-indicator { width: 3px; border-radius: 2px; flex-shrink: 0; align-self: stretch; }
+  .ind-high { background: var(--red); }
+  .ind-med { background: var(--accent); }
+  .ind-low { background: var(--green); }
+  .alert-body { flex: 1; }
+  .alert-title-text { font-size: 13px; color: var(--text); margin-bottom: 3px; font-weight: 500; }
+  .alert-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+  /* CHAT */
+  .chat-header { padding: 14px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .chat-back { font-size: 22px; cursor: pointer; color: var(--accent); padding: 4px; }
+  .chat-specialist-info { flex: 1; }
+  .chat-specialist-name { font-family: var(--display); font-size: 18px; letter-spacing: 2px; color: var(--text); }
+  .chat-specialist-mode { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .memory-badge { background: rgba(59,130,246,0.15); color: var(--accent); padding: 1px 6px; border-radius: 2px; font-size: 9px; }
+
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; -webkit-overflow-scrolling: touch; }
+  .chat-messages::-webkit-scrollbar { display: none; }
+
+  .cmsg { display: flex; gap: 10px; animation: fadeUp 0.25s ease; }
+  .cmsg.user { flex-direction: row-reverse; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .cmsg-avatar { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .cmsg-avatar.s { background: var(--accent); color: #fff; box-shadow: 0 0 12px var(--accent-glow); }
+  .cmsg-avatar.u { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+
+  .cmsg-bubble { max-width: 78%; padding: 12px 14px; border-radius: 14px; font-size: 14px; line-height: 1.55; }
+  .cmsg.shadow .cmsg-bubble { background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 4px; }
+  .cmsg.user .cmsg-bubble { background: var(--accent); color: #fff; font-weight: 500; border-top-right-radius: 4px; box-shadow: 0 0 16px var(--accent-glow); }
+  .cmsg-time { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 5px; }
+
+  /* MEMORY SAVED TOAST */
+  .memory-toast {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 8px; padding: 8px 12px; margin: 4px 0;
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    animation: fadeUp 0.3s ease;
+  }
+
+  .thinking-dots { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
+  .thinking-dots span { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: think 1.2s infinite; opacity: 0.5; }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes think { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+  .chat-input-bar { padding: 12px 16px; padding-bottom: max(12px, var(--safe-bottom)); background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .chat-text-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 22px; padding: 10px 16px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+  .chat-text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .chat-text-input::placeholder { color: var(--text3); }
+
+  .mic-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+  .mic-btn.listening { background: var(--red); border-color: var(--red); box-shadow: 0 0 20px rgba(255,68,102,0.4); animation: micPulse 1s infinite; }
+  @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); } 50% { box-shadow: 0 0 0 12px rgba(255,68,102,0); } }
+
+  .send-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: all 0.15s; color: #fff; font-weight: 700; box-shadow: 0 0 16px var(--accent-glow); }
+  .send-circle:active { transform: scale(0.92); }
+  .send-circle:disabled { opacity: 0.4; box-shadow: none; }
+
+  /* TASKS SCREEN */
+  .screen-header { padding: 16px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .screen-title { font-family: var(--display); font-size: 22px; letter-spacing: 2px; }
+  .screen-body { flex: 1; overflow-y: auto; padding: 0 20px; -webkit-overflow-scrolling: touch; }
+  .screen-body::-webkit-scrollbar { display: none; }
+
+  /* MEMORY SCREEN */
+  .mem-section { margin-bottom: 24px; }
+  .mem-section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .mem-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .mem-item:last-child { border-bottom: none; }
+  .mem-item-key { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 110px; padding-top: 1px; }
+  .mem-item-val { font-size: 13px; color: var(--text2); flex: 1; line-height: 1.4; }
+  .mem-item-cat { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 3px; }
+
+  /* VOICE OVERLAY */
+  .voice-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 24px; backdrop-filter: blur(10px); }
+  .voice-overlay.active { display: flex; }
+  .voice-ring { width: 130px; height: 130px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 52px; box-shadow: 0 0 60px var(--accent-glow); animation: voiceRing 1.2s infinite; }
+  @keyframes voiceRing { 0% { box-shadow: 0 0 0 0 var(--accent-glow); } 70% { box-shadow: 0 0 0 30px rgba(59,130,246,0); } 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); } }
+  .voice-label { font-family: var(--mono); font-size: 12px; letter-spacing: 3px; color: var(--text2); text-transform: uppercase; }
+  .voice-transcript-display { font-size: 16px; color: var(--text); text-align: center; max-width: 280px; line-height: 1.6; min-height: 48px; }
+  .voice-cancel { font-family: var(--mono); font-size: 12px; color: var(--text3); letter-spacing: 1px; cursor: pointer; padding: 12px 28px; border: 1px solid var(--border); border-radius: 22px; background: transparent; }
+
+  /* MODAL */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300; align-items: flex-end; backdrop-filter: blur(6px); }
+  .modal.active { display: flex; }
+  .modal-content { width: 100%; background: var(--bg2); border-radius: 20px 20px 0 0; padding: 24px 20px; padding-bottom: max(24px, var(--safe-bottom)); border-top: 1px solid var(--border); }
+  .modal-title { font-family: var(--display); font-size: 24px; letter-spacing: 2px; margin-bottom: 20px; color: var(--text); }
+  .modal-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; margin-bottom: 12px; -webkit-appearance: none; transition: border-color 0.15s; }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-input::placeholder { color: var(--text3); }
+  .modal-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .modal-select { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; -webkit-appearance: none; }
+  .modal-btn { flex: 1; padding: 14px; border-radius: 10px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 1px; cursor: pointer; border: none; }
+  .modal-btn.cancel { background: var(--bg3); color: var(--text2); }
+  .modal-btn.confirm { background: var(--accent); color: #fff; box-shadow: 0 0 20px var(--accent-glow); }
+
+  /* BOTTOM NAV */
+  .bottom-nav { display: flex; background: var(--bg2); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; }
+  .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0; cursor: pointer; transition: color 0.15s; color: var(--text3); gap: 3px; }
+  .nav-tab.active { color: var(--accent); }
+  .nav-tab-icon { font-size: 20px; }
+  .nav-tab-label { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ADD BTN */
+  .add-btn { background: var(--accent); border: none; color: #fff; font-family: var(--mono); font-size: 11px; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 0 14px var(--accent-glow); }
 </style>
 </head>
 <body>
 
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">SHADOW</div>
+  <div class="loading-sub">Personal AI Operating System</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-status" id="loadingStatus">Initializing...</div>
+</div>
+
 <div class="app">
   <div class="status-bar"></div>
 
-  <!-- HEADER -->
   <div class="header">
     <div class="header-logo">SHADOW</div>
     <div class="header-right">
+      <div class="memory-indicator">🧠 MEMORY ON</div>
       <div class="header-clock" id="clock">--:--</div>
       <div class="online-dot"></div>
     </div>
   </div>
 
-  <!-- HOME SCREEN -->
+  <!-- HOME -->
   <div class="screen active" id="homeScreen">
-    <div class="home-screen">
-
-      <!-- GREETING -->
+    <div class="home-scroll">
       <div class="greeting">
-        <div class="greeting-sub">Good Morning</div>
-        <div class="greeting-name">ABDUL<span>RAHMAN</span></div>
+        <div class="greeting-sub" id="greetingSub">Good Morning</div>
+        <div class="greeting-name" id="greetingName">SHADOW<span> AI</span></div>
+        <div class="greeting-memory" id="greetingMemory">🧠 Loading memory...</div>
       </div>
 
-      <!-- QUICK STATS -->
       <div class="quick-stats">
-        <div class="qstat">
-          <div class="qstat-val" style="color:var(--green)">+2.14%</div>
-          <div class="qstat-label">Portfolio</div>
+        <div class="qstat" onclick="openChat('investment')">
+          <div class="qstat-val" style="color:var(--accent)" id="statPortfolio">5</div>
+          <div class="qstat-label">Tickers</div>
         </div>
-        <div class="qstat">
-          <div class="qstat-val" style="color:var(--blue)">7</div>
+        <div class="qstat" onclick="switchTab('tasks', document.querySelector('[data-tab=tasks]'))">
+          <div class="qstat-val" style="color:var(--green)" id="statTasks">—</div>
           <div class="qstat-label">Tasks</div>
         </div>
-        <div class="qstat">
-          <div class="qstat-val" style="color:var(--accent)">4</div>
-          <div class="qstat-label">Alerts</div>
+        <div class="qstat" onclick="switchTab('memory', document.querySelector('[data-tab=memory]'))">
+          <div class="qstat-val" style="color:var(--accent)" id="statMemories">—</div>
+          <div class="qstat-label">Memories</div>
         </div>
-        <div class="qstat">
-          <div class="qstat-val" style="color:var(--purple)">3</div>
-          <div class="qstat-label">Sessions</div>
-        </div>
-        <div class="qstat">
-          <div class="qstat-val" style="color:var(--text2)">82°F</div>
-          <div class="qstat-label">Weather</div>
+        <div class="qstat" onclick="openChat('fitness')">
+          <div class="qstat-val" style="color:var(--red)" id="statStreak">—</div>
+          <div class="qstat-label">Streak</div>
         </div>
       </div>
 
-      <!-- BIG VOICE BUTTON -->
       <div class="big-voice-btn" onclick="openVoiceOverlay()">
         <div class="big-voice-icon">🎙️</div>
         <div class="big-voice-text">
           <div class="big-voice-label">Ask Shadow</div>
           <div class="big-voice-sub">TAP TO SPEAK</div>
         </div>
-        <div class="big-voice-arrow">›</div>
+        <div style="color:var(--accent);font-size:18px;">›</div>
       </div>
 
-      <!-- SPECIALIST CARDS -->
       <div class="cards-label">Specialists — Swipe to explore</div>
       <div class="cards-carousel" id="cardsCarousel">
-
         <div class="spec-card invest" onclick="openChat('investment')">
-          <div class="spec-card-top">
-            <div class="spec-card-icon">📈</div>
-            <div class="spec-card-badge badge-invest">LIVE</div>
-          </div>
+          <div class="spec-card-top"><div class="spec-card-icon">📈</div><div class="spec-card-badge badge-invest">LIVE</div></div>
           <div class="spec-card-name">INVESTMENT</div>
           <div class="spec-card-desc">Market analysis, portfolio tracking, buy/sell signals for your watchlist.</div>
           <div class="spec-card-stats">
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--green)">+2.14%</div>
-              <div class="spec-stat-label">Today</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--accent)">5</div>
-              <div class="spec-stat-label">Tickers</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--red)">1</div>
-              <div class="spec-stat-label">Alerts</div>
-            </div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">5</div><div class="spec-stat-label">Tickers</div></div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="investMemCount">—</div><div class="spec-stat-label">Memories</div></div>
           </div>
           <div class="spec-card-cta">💬 Chat with Advisor →</div>
         </div>
-
         <div class="spec-card productivity" onclick="openChat('productivity')">
-          <div class="spec-card-top">
-            <div class="spec-card-icon">🎯</div>
-            <div class="spec-card-badge badge-productivity">7 TASKS</div>
-          </div>
+          <div class="spec-card-top"><div class="spec-card-icon">🎯</div><div class="spec-card-badge badge-productivity" id="taskBadge">TASKS</div></div>
           <div class="spec-card-name">PRODUCTIVITY</div>
           <div class="spec-card-desc">Task management, workflow optimization, reminders and daily planning.</div>
           <div class="spec-card-stats">
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--red)">2</div>
-              <div class="spec-stat-label">Due Today</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--blue)">7</div>
-              <div class="spec-stat-label">Pending</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--green)">85%</div>
-              <div class="spec-stat-label">This Week</div>
-            </div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--red)" id="tasksDueToday">—</div><div class="spec-stat-label">Due Today</div></div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="tasksPending">—</div><div class="spec-stat-label">Pending</div></div>
           </div>
           <div class="spec-card-cta">💬 Chat with Scout →</div>
         </div>
-
         <div class="spec-card tutor" onclick="openChat('tutor')">
-          <div class="spec-card-top">
-            <div class="spec-card-icon">🎓</div>
-            <div class="spec-card-badge badge-tutor">3 SESSIONS</div>
-          </div>
+          <div class="spec-card-top"><div class="spec-card-icon">🎓</div><div class="spec-card-badge badge-tutor">LEARN</div></div>
           <div class="spec-card-name">TUTOR</div>
           <div class="spec-card-desc">Study sessions, practice exercises, exam prep and lesson planning.</div>
           <div class="spec-card-stats">
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--purple)">3</div>
-              <div class="spec-stat-label">Sessions</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--accent)">3d</div>
-              <div class="spec-stat-label">Next Exam</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--green)">12h</div>
-              <div class="spec-stat-label">This Week</div>
-            </div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--purple)" id="tutorMemCount">—</div><div class="spec-stat-label">Notes</div></div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
           </div>
           <div class="spec-card-cta">💬 Chat with Tutor →</div>
         </div>
-
         <div class="spec-card travel" onclick="openChat('travel')">
-          <div class="spec-card-top">
-            <div class="spec-card-icon">✈️</div>
-            <div class="spec-card-badge badge-travel">READY</div>
-          </div>
+          <div class="spec-card-top"><div class="spec-card-icon">✈️</div><div class="spec-card-badge badge-travel">READY</div></div>
           <div class="spec-card-name">TRAVEL</div>
           <div class="spec-card-desc">Itinerary building, activity recommendations and real-time travel alerts.</div>
           <div class="spec-card-stats">
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--text2)">0</div>
-              <div class="spec-stat-label">Trips</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--green)">—</div>
-              <div class="spec-stat-label">Next Trip</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--blue)">Plan</div>
-              <div class="spec-stat-label">A Trip</div>
-            </div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--text2)">0</div><div class="spec-stat-label">Trips</div></div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--yellow)">Plan</div><div class="spec-stat-label">A Trip</div></div>
           </div>
           <div class="spec-card-cta">💬 Chat with Advisor →</div>
         </div>
-
         <div class="spec-card fitness" onclick="openChat('fitness')">
-          <div class="spec-card-top">
-            <div class="spec-card-icon">💪</div>
-            <div class="spec-card-badge badge-fitness">REST DAY</div>
-          </div>
+          <div class="spec-card-top"><div class="spec-card-icon">💪</div><div class="spec-card-badge badge-fitness">HEALTH</div></div>
           <div class="spec-card-name">FITNESS</div>
           <div class="spec-card-desc">Workout planning, habit tracking, wellness guidance and medical research.</div>
           <div class="spec-card-stats">
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--green)">12</div>
-              <div class="spec-stat-label">Day Streak</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--blue)">Rest</div>
-              <div class="spec-stat-label">Today</div>
-            </div>
-            <div class="spec-stat">
-              <div class="spec-stat-val" style="color:var(--accent)">4</div>
-              <div class="spec-stat-label">This Week</div>
-            </div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="fitnessStreak">—</div><div class="spec-stat-label">Streak</div></div>
+            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="fitnessToday">—</div><div class="spec-stat-label">Today</div></div>
           </div>
           <div class="spec-card-cta">💬 Chat with Assistant →</div>
         </div>
-
       </div>
 
-      <!-- CARD DOTS -->
       <div class="card-dots" id="cardDots">
-        <div class="card-dot active"></div>
-        <div class="card-dot"></div>
-        <div class="card-dot"></div>
-        <div class="card-dot"></div>
-        <div class="card-dot"></div>
+        <div class="card-dot active"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
       </div>
 
-      <!-- ALERTS -->
-      <div class="alerts-section">
-        <div class="alerts-title">⚡ Proactive Alerts</div>
-        <div class="alert-row" onclick="openChat('investment')">
-          <div class="alert-indicator ind-high"></div>
-          <div class="alert-body">
-            <div class="alert-title-text">NVDA down 0.87% — watch support level</div>
-            <div class="alert-meta">Investment · Just now</div>
-          </div>
-          <div class="alert-arrow">›</div>
-        </div>
-        <div class="alert-row" onclick="openChat('productivity')">
-          <div class="alert-indicator ind-med"></div>
-          <div class="alert-body">
-            <div class="alert-title-text">2 tasks due today by 5 PM</div>
-            <div class="alert-meta">Productivity · Today</div>
-          </div>
-          <div class="alert-arrow">›</div>
-        </div>
-        <div class="alert-row" onclick="openChat('tutor')">
-          <div class="alert-indicator ind-low"></div>
-          <div class="alert-body">
-            <div class="alert-title-text">Physics exam in 3 days — start prep</div>
-            <div class="alert-meta">Tutor · Upcoming</div>
-          </div>
-          <div class="alert-arrow">›</div>
-        </div>
-        <div class="alert-row" onclick="openChat('investment')">
-          <div class="alert-indicator ind-low"></div>
-          <div class="alert-body">
-            <div class="alert-title-text">Weekly portfolio rebalance suggested</div>
-            <div class="alert-meta">Investment · This week</div>
-          </div>
-          <div class="alert-arrow">›</div>
-        </div>
+      <div class="section">
+        <div class="section-title">✅ Tasks <span class="section-action" onclick="openAddTask()">+ ADD</span></div>
+        <div id="tasksPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
       </div>
 
+      <div class="section">
+        <div class="section-title">🧠 Shadow Knows <span class="section-action" onclick="switchTab('memory', document.querySelector('[data-tab=memory]'))">VIEW ALL</span></div>
+        <div id="memoriesPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
+      </div>
     </div>
   </div>
 
-  <!-- CHAT SCREEN -->
+  <!-- CHAT -->
   <div class="screen" id="chatScreen">
-    <div class="chat-screen">
-      <div class="chat-header">
-        <div class="chat-back" onclick="closeChat()">‹</div>
-        <div class="chat-specialist-info">
-          <div class="chat-specialist-name" id="chatSpecialistName">SHADOW</div>
-          <div class="chat-specialist-mode" id="chatSpecialistMode">MASTER ROUTER</div>
-        </div>
-        <div style="font-size:20px;" id="chatSpecialistIcon">⚡</div>
+    <div class="chat-header">
+      <div class="chat-back" onclick="closeChat()">‹</div>
+      <div class="chat-specialist-info">
+        <div class="chat-specialist-name" id="chatSpecialistName">SHADOW</div>
+        <div class="chat-specialist-mode"><span id="chatSpecialistMode">MASTER</span><span class="memory-badge">🧠 MEMORY</span></div>
       </div>
+      <div style="font-size:22px;" id="chatSpecialistIcon">⚡</div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-bar">
+      <div class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</div>
+      <input class="chat-text-input" id="chatTextInput" placeholder="Message Shadow..." onkeydown="handleChatKey(event)">
+      <button class="send-circle" id="chatSendBtn" onclick="sendChatMessage()">↑</button>
+    </div>
+  </div>
 
-      <div class="chat-messages" id="chatMessages"></div>
+  <!-- TASKS -->
+  <div class="screen" id="tasksScreen">
+    <div class="screen-header">
+      <div class="screen-title">TASKS</div>
+      <button class="add-btn" onclick="openAddTask()">+ ADD</button>
+    </div>
+    <div class="screen-body" id="tasksFullList">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div>
+    </div>
+  </div>
 
-      <div class="chat-input-bar">
-        <div class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</div>
-        <input class="chat-text-input" id="chatTextInput" placeholder="Message Shadow..." onkeydown="handleChatKey(event)">
-        <button class="send-circle" id="chatSendBtn" onclick="sendChatMessage()">↑</button>
+  <!-- MEMORY -->
+  <div class="screen" id="memoryScreen">
+    <div class="screen-header">
+      <div>
+        <div class="screen-title">MEMORY</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">Everything Shadow knows about you</div>
       </div>
+    </div>
+    <div class="screen-body" id="memoryScreenContent">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div>
     </div>
   </div>
 
   <!-- BOTTOM NAV -->
-  <div class="bottom-nav" id="bottomNav">
-    <div class="nav-tab active" onclick="switchTab('home', this)">
-      <div class="nav-tab-icon">⚡</div>
-      <div class="nav-tab-label">Home</div>
+  <div class="bottom-nav">
+    <div class="nav-tab active" data-tab="home" onclick="switchTab('home', this)">
+      <div class="nav-tab-icon">⚡</div><div class="nav-tab-label">Home</div>
     </div>
-    <div class="nav-tab" onclick="switchTab('chat-master', this)">
-      <div class="nav-tab-icon">💬</div>
-      <div class="nav-tab-label">Shadow</div>
+    <div class="nav-tab" data-tab="chat-master" onclick="switchTab('chat-master', this)">
+      <div class="nav-tab-icon">💬</div><div class="nav-tab-label">Shadow</div>
     </div>
-    <div class="nav-tab" onclick="switchTab('invest', this)">
-      <div class="nav-tab-icon">📈</div>
-      <div class="nav-tab-label">Markets</div>
+    <div class="nav-tab" data-tab="tasks" onclick="switchTab('tasks', this)">
+      <div class="nav-tab-icon">✅</div><div class="nav-tab-label">Tasks</div>
     </div>
-    <div class="nav-tab" onclick="switchTab('productivity', this)">
-      <div class="nav-tab-icon">🎯</div>
-      <div class="nav-tab-label">Tasks</div>
+    <div class="nav-tab" data-tab="memory" onclick="switchTab('memory', this)">
+      <div class="nav-tab-icon">🧠</div><div class="nav-tab-label">Memory</div>
     </div>
-    <div class="nav-tab" onclick="switchTab('fitness', this)">
-      <div class="nav-tab-icon">💪</div>
-      <div class="nav-tab-label">Fitness</div>
+    <div class="nav-tab" data-tab="invest" onclick="switchTab('invest', this)">
+      <div class="nav-tab-icon">📈</div><div class="nav-tab-label">Markets</div>
     </div>
   </div>
 </div>
@@ -990,293 +494,403 @@
 <!-- VOICE OVERLAY -->
 <div class="voice-overlay" id="voiceOverlay">
   <div class="voice-ring">🎙️</div>
-  <div class="voice-label">Listening to you...</div>
+  <div class="voice-label">Listening...</div>
   <div class="voice-transcript-display" id="voiceTranscriptDisplay">Speak your command</div>
   <button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
 </div>
 
+<!-- ADD TASK MODAL -->
+<div class="modal" id="addTaskModal">
+  <div class="modal-content">
+    <div class="modal-title">NEW TASK</div>
+    <input class="modal-input" id="taskTitleInput" placeholder="Task title...">
+    <input class="modal-input" id="taskDescInput" placeholder="Description (optional)...">
+    <div class="modal-row">
+      <select class="modal-select" id="taskPriority">
+        <option value="high">🔴 High</option>
+        <option value="medium" selected>🔵 Medium</option>
+        <option value="low">🟢 Low</option>
+      </select>
+      <select class="modal-select" id="taskSpecialist">
+        <option value="productivity">🎯 Productivity</option>
+        <option value="investment">📈 Investment</option>
+        <option value="tutor">🎓 Tutor</option>
+        <option value="travel">✈️ Travel</option>
+        <option value="fitness">💪 Fitness</option>
+      </select>
+    </div>
+    <div class="modal-row">
+      <button class="modal-btn cancel" onclick="closeAddTask()">CANCEL</button>
+      <button class="modal-btn confirm" onclick="addTask()">ADD TASK</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// CLOCK
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
-}
-setInterval(updateClock, 1000);
-updateClock();
+const SUPABASE_URL = 'https://xqdnohqbimfrtalvdmyp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
+const USER_ID = 'abdulrahman';
 
-// GREETING
-function updateGreeting() {
+let profile = null, memories = [], tasks = [], conversations = {};
+let currentSpecialist = 'master', recognition = null, isListening = false;
+
+// ── INIT ──
+async function initApp() {
+  setLoadingStatus('Loading your profile...');
+  await loadProfile();
+  setLoadingStatus('Loading memories...');
+  await loadMemories();
+  setLoadingStatus('Loading tasks...');
+  await loadTasks();
+  setLoadingStatus('Shadow is ready ✓');
+  await sleep(500);
+  document.getElementById('loadingScreen').classList.add('hidden');
+  updateUI();
+  updateClock();
+  setInterval(updateClock, 1000);
+  setupCarouselDots();
+}
+
+function setLoadingStatus(msg) { document.getElementById('loadingStatus').textContent = msg; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── DATA ──
+async function loadProfile() {
+  try { const { data } = await db.from('shadow_profile').select('*').eq('user_id', USER_ID).single(); if (data) profile = data; } catch(e) {}
+}
+async function loadMemories() {
+  try { const { data } = await db.from('shadow_memory').select('*').eq('user_id', USER_ID).order('importance', { ascending: false }); if (data) memories = data; } catch(e) {}
+}
+async function loadTasks() {
+  try { const { data } = await db.from('shadow_tasks').select('*').eq('user_id', USER_ID).order('created_at', { ascending: false }); if (data) tasks = data; } catch(e) {}
+}
+async function loadConversationHistory(specialist) {
+  try {
+    const { data } = await db.from('shadow_conversations').select('*').eq('user_id', USER_ID).eq('specialist', specialist).order('created_at', { ascending: true }).limit(20);
+    if (data) conversations[specialist] = data.map(r => ({ role: r.role, content: r.content }));
+  } catch(e) {}
+}
+async function saveMessage(specialist, role, content) {
+  try { await db.from('shadow_conversations').insert({ user_id: USER_ID, specialist, role, content }); } catch(e) {}
+}
+async function saveMemoryFact(category, key, value, specialist = 'master', importance = 2) {
+  try {
+    const { data: existing } = await db.from('shadow_memory').select('id').eq('user_id', USER_ID).eq('key', key).maybeSingle();
+    if (existing) {
+      await db.from('shadow_memory').update({ value, updated_at: new Date().toISOString() }).eq('id', existing.id);
+    } else {
+      await db.from('shadow_memory').insert({ user_id: USER_ID, category, key, value, specialist, importance });
+    }
+    await loadMemories();
+    updateUI();
+  } catch(e) {}
+}
+
+// ── AI MEMORY EXTRACTION (the smart part) ──
+async function extractMemoriesWithAI(userMsg, assistantReply, specialist) {
+  try {
+    const res = await fetch(CLAUDE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: `You are a memory extraction system for a personal AI assistant called Shadow. 
+Extract important facts, preferences, goals, and habits from conversations.
+Respond ONLY with a JSON array. If nothing important, respond with [].
+Format: [{"category":"fact|goal|preference|habit","key":"short_key","value":"what to remember","importance":1|2|3}]
+Only extract genuinely useful long-term information. Skip small talk.`,
+        messages: [{
+          role: 'user',
+          content: `Specialist: ${specialist}\nUser said: "${userMsg}"\nAssistant replied: "${assistantReply.substring(0, 200)}"\n\nWhat should Shadow remember from this exchange?`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '[]';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(clean);
+    if (Array.isArray(extracted) && extracted.length > 0) {
+      for (const mem of extracted) {
+        await saveMemoryFact(mem.category, mem.key, mem.value, specialist, mem.importance || 2);
+      }
+      return extracted;
+    }
+  } catch(e) {}
+  return [];
+}
+
+// ── UI ──
+function updateUI() {
   const h = new Date().getHours();
-  const greetings = ['Good Night', 'Good Morning', 'Good Afternoon', 'Good Evening'];
-  const idx = h < 5 ? 0 : h < 12 ? 1 : h < 17 ? 2 : 3;
-  document.querySelector('.greeting-sub').textContent = greetings[idx];
+  const greets = ['Good Night', 'Good Morning', 'Good Afternoon', 'Good Evening'];
+  document.getElementById('greetingSub').textContent = greets[h < 5 ? 0 : h < 12 ? 1 : h < 17 ? 2 : 3];
+
+  const name = profile?.name || 'Abdulrahman';
+  const parts = name.split(' ');
+  document.getElementById('greetingName').innerHTML = `${parts[0]}<span>${parts.slice(1).join(' ') ? ' ' + parts.slice(1).join(' ') : ''}</span>`;
+
+  const memCount = memories.length;
+  document.getElementById('greetingMemory').textContent = `🧠 ${memCount} memories · ${new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}`;
+
+  const pending = tasks.filter(t => t.status !== 'done').length;
+  const dueToday = tasks.filter(t => { if (!t.due_date) return false; return new Date(t.due_date).toDateString() === new Date().toDateString(); }).length;
+
+  document.getElementById('statTasks').textContent = pending;
+  document.getElementById('statMemories').textContent = memCount;
+  document.getElementById('tasksPending').textContent = pending;
+  document.getElementById('tasksDueToday').textContent = dueToday;
+  document.getElementById('taskBadge').textContent = `${pending} TASKS`;
+  document.getElementById('investMemCount').textContent = memories.filter(m => m.specialist === 'investment').length || '—';
+  document.getElementById('tutorMemCount').textContent = memories.filter(m => m.specialist === 'tutor').length || '—';
+
+  renderTasksPreview();
+  renderMemoriesPreview();
+  renderTasksFull();
+  renderMemoryScreen();
 }
-updateGreeting();
 
-// CARD DOTS
-const carousel = document.getElementById('cardsCarousel');
-const dots = document.querySelectorAll('.card-dot');
+function renderTasksPreview() {
+  const c = document.getElementById('tasksPreview');
+  const items = tasks.filter(t => t.status !== 'done').slice(0, 4);
+  if (!items.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">No pending tasks. <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one →</span></div>`; return; }
+  c.innerHTML = items.map(t => `<div class="task-row"><div class="task-check" onclick="toggleTask('${t.id}','${t.status}')"></div><div class="task-content"><div class="task-title">${t.title}</div><div class="task-meta"><span class="task-priority priority-${t.priority}">${t.priority}</span><span>${t.specialist||'general'}</span></div></div></div>`).join('');
+}
 
-carousel.addEventListener('scroll', () => {
-  const idx = Math.round(carousel.scrollLeft / (carousel.offsetWidth - 40));
-  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-});
-
-// SPECIALISTS CONFIG
-const specialists = {
-  investment: {
-    name: 'INVESTMENT',
-    mode: 'ADVISOR',
-    icon: '📈',
-    greeting: "Hello! I'm your Investment Advisor. I track AAPL, MSFT, NVDA, AMZN, and GOOGL for you. Ask me about your portfolio, market conditions, or any ticker analysis.",
-    prompt: "You are Shadow's Investment Advisor. You analyze US stocks, provide portfolio recommendations, buy/sell signals, and concise market analysis. The user tracks AAPL, MSFT, NVDA, AMZN, GOOGL. Be direct and professional like a Bloomberg analyst. Keep responses short and mobile-friendly."
-  },
-  productivity: {
-    name: 'PRODUCTIVITY',
-    mode: 'SCOUT',
-    icon: '🎯',
-    greeting: "I'm your Productivity Scout. I help you manage tasks, optimize your workflow, and make sure you hit your goals. What are you working on today?",
-    prompt: "You are Shadow's Productivity Scout. Help manage tasks, set priorities, optimize workflows, and boost personal efficiency. Be direct and actionable. Keep responses short and mobile-friendly."
-  },
-  tutor: {
-    name: 'TUTOR',
-    mode: 'ASSISTANT',
-    icon: '🎓',
-    greeting: "I'm your Tutor Assistant. I can help you study, generate practice exercises, or prep for exams. What subject are we working on?",
-    prompt: "You are Shadow's Tutor Assistant. Help with studying, generate exercises, explain concepts clearly, and prepare for exams. Adapt to the student's level. Keep responses concise and mobile-friendly."
-  },
-  travel: {
-    name: 'TRAVEL',
-    mode: 'ADVISOR',
-    icon: '✈️',
-    greeting: "I'm your Travel Advisor. Tell me where you want to go and I'll build you the perfect itinerary with hidden gems and smart recommendations.",
-    prompt: "You are Shadow's Travel Advisor. Build itineraries, recommend activities and restaurants, provide travel tips and alerts. Be enthusiastic and knowledgeable. Keep responses short and mobile-friendly."
-  },
-  fitness: {
-    name: 'FITNESS',
-    mode: 'ASSISTANT',
-    icon: '💪',
-    greeting: "I'm your Fitness & Medical Assistant. I can create workout plans, track habits, and research health topics. Remember to always consult a doctor for medical decisions. What's your goal today?",
-    prompt: "You are Shadow's Fitness & Medical Assistant. Create workout plans, track habits, provide wellness guidance. Always remind user to consult a doctor for medical decisions. Be motivating and science-based. Keep responses short and mobile-friendly."
-  },
-  master: {
-    name: 'SHADOW',
-    mode: 'MASTER ROUTER',
-    icon: '⚡',
-    greeting: "I'm Shadow, your personal AI operating system. I can help with investments, productivity, learning, travel, or fitness. What do you need?",
-    prompt: "You are Shadow, a personal AI OS for Abdulrahman. You have 5 specialists: Investment Advisor, Productivity Scout, Tutor, Travel Advisor, Fitness Assistant. Be professional, direct, and genuinely helpful. Keep responses short and mobile-friendly. The user's portfolio includes AAPL, MSFT, NVDA, AMZN, GOOGL."
+function renderTasksFull() {
+  const c = document.getElementById('tasksFullList');
+  if (!tasks.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No tasks yet!</div>`; return; }
+  const pending = tasks.filter(t => t.status !== 'done');
+  const done = tasks.filter(t => t.status === 'done');
+  let html = '';
+  if (pending.length) {
+    html += `<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Pending (${pending.length})</div>`;
+    html += pending.map(t => `<div class="task-row"><div class="task-check" onclick="toggleTask('${t.id}','${t.status}')"></div><div class="task-content"><div class="task-title">${t.title}</div>${t.description?`<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">${t.description}</div>`:''}<div class="task-meta"><span class="task-priority priority-${t.priority}">${t.priority}</span><span>${t.specialist||'general'}</span></div></div></div>`).join('');
   }
+  if (done.length) {
+    html += `<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Done (${done.length})</div>`;
+    html += done.slice(0, 5).map(t => `<div class="task-row" style="opacity:0.4;"><div class="task-check done">✓</div><div class="task-content"><div class="task-title done">${t.title}</div></div></div>`).join('');
+  }
+  c.innerHTML = html;
+}
+
+function renderMemoriesPreview() {
+  const c = document.getElementById('memoriesPreview');
+  const top = memories.slice(0, 4);
+  if (!top.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Chat with Shadow to build memory!</div>`; return; }
+  c.innerHTML = top.map(m => `<div class="memory-row"><div class="memory-key">${m.key}</div><div class="memory-val">${m.value}</div></div>`).join('');
+}
+
+function renderMemoryScreen() {
+  const c = document.getElementById('memoryScreenContent');
+  if (!memories.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No memories yet. Start chatting!</div>`; return; }
+  const cats = [...new Set(memories.map(m => m.category))];
+  c.innerHTML = cats.map(cat => {
+    const items = memories.filter(m => m.category === cat);
+    return `<div class="mem-section"><div class="mem-section-title">${cat} (${items.length})</div>${items.map(m => `<div class="mem-item"><div class="mem-item-key">${m.key}</div><div><div class="mem-item-val">${m.value}</div><div class="mem-item-cat">${m.specialist||'general'} · ${'★'.repeat(m.importance||1)}</div></div></div>`).join('')}</div>`;
+  }).join('');
+}
+
+// ── TASKS CRUD ──
+async function toggleTask(id, status) {
+  const newStatus = status === 'done' ? 'pending' : 'done';
+  try { await db.from('shadow_tasks').update({ status: newStatus }).eq('id', id); tasks = tasks.map(t => t.id === id ? {...t, status: newStatus} : t); updateUI(); } catch(e) {}
+}
+function openAddTask() { document.getElementById('addTaskModal').classList.add('active'); setTimeout(() => document.getElementById('taskTitleInput').focus(), 100); }
+function closeAddTask() { document.getElementById('addTaskModal').classList.remove('active'); document.getElementById('taskTitleInput').value = ''; document.getElementById('taskDescInput').value = ''; }
+async function addTask() {
+  const title = document.getElementById('taskTitleInput').value.trim();
+  if (!title) return;
+  try {
+    const { data } = await db.from('shadow_tasks').insert({ user_id: USER_ID, title, description: document.getElementById('taskDescInput').value.trim(), priority: document.getElementById('taskPriority').value, specialist: document.getElementById('taskSpecialist').value, status: 'pending' }).select().single();
+    if (data) tasks.unshift(data);
+    closeAddTask(); updateUI();
+  } catch(e) {}
+}
+
+// ── SPECIALISTS ──
+const specialists = {
+  investment: { name: 'INVESTMENT', mode: 'ADVISOR', icon: '📈', greeting: "I'm your Investment Advisor with memory of our past analysis. What would you like to know about your portfolio?",
+    prompt: m => `You are Shadow's Investment Advisor for Abdulrahman (Abu Dhabi, UAE). You have persistent memory.\n\nMEMORY:\n${m}\n\nTrack AAPL, MSFT, NVDA, AMZN, GOOGL. Be direct and professional. Keep responses concise and mobile-friendly.` },
+  productivity: { name: 'PRODUCTIVITY', mode: 'SCOUT', icon: '🎯', greeting: "I'm your Productivity Scout. I remember your goals and tasks. What do you need to tackle today?",
+    prompt: m => `You are Shadow's Productivity Scout for Abdulrahman. You have persistent memory.\n\nMEMORY:\n${m}\n\nHelp manage tasks, set priorities, optimize workflows. Be direct and actionable. Keep responses short.` },
+  tutor: { name: 'TUTOR', mode: 'ASSISTANT', icon: '🎓', greeting: "I'm your Tutor. I remember what we've studied. What are we working on today?",
+    prompt: m => `You are Shadow's Tutor for Abdulrahman. You have persistent memory of study sessions.\n\nMEMORY:\n${m}\n\nHelp with studying, exercises, exam prep. Keep responses concise.` },
+  travel: { name: 'TRAVEL', mode: 'ADVISOR', icon: '✈️', greeting: "I'm your Travel Advisor. I remember your travel style. Where are we going?",
+    prompt: m => `You are Shadow's Travel Advisor for Abdulrahman (based in Abu Dhabi). You have persistent memory.\n\nMEMORY:\n${m}\n\nBuild itineraries, recommend activities. Keep responses short and mobile-friendly.` },
+  fitness: { name: 'FITNESS', mode: 'ASSISTANT', icon: '💪', greeting: "I'm your Fitness Assistant. I track your wellness journey. What's your goal today?",
+    prompt: m => `You are Shadow's Fitness Assistant for Abdulrahman. You have persistent memory of workouts.\n\nMEMORY:\n${m}\n\nCreate plans, track habits, provide wellness guidance. Always note to consult a doctor for medical decisions. Keep responses short.` },
+  master: { name: 'SHADOW', mode: 'MASTER ROUTER', icon: '⚡', greeting: "I'm Shadow, your personal AI OS. I remember everything about you. What do you need?",
+    prompt: m => `You are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE). You have persistent memory.\n\nMEMORY:\n${m}\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional and direct. Keep responses short. Portfolio: AAPL, MSFT, NVDA, AMZN, GOOGL.` }
 };
 
-let currentSpecialist = 'master';
-let chatHistory = [];
-let recognition = null;
-let isListening = false;
-let voiceTarget = 'overlay'; // 'overlay' or 'chat'
+function buildMemoryContext(specialist) {
+  const rel = memories.filter(m => !m.specialist || m.specialist === specialist || m.specialist === 'master');
+  return rel.length ? rel.map(m => `- ${m.key}: ${m.value}`).join('\n') : 'No memories yet.';
+}
 
-function openChat(type) {
+// ── CHAT ──
+async function openChat(type) {
   currentSpecialist = type;
-  chatHistory = [];
   const spec = specialists[type];
-
   document.getElementById('chatSpecialistName').textContent = spec.name;
   document.getElementById('chatSpecialistMode').textContent = spec.mode;
   document.getElementById('chatSpecialistIcon').textContent = spec.icon;
-
-  const messages = document.getElementById('chatMessages');
-  messages.innerHTML = '';
-  addChatMessage('shadow', spec.greeting);
-
+  await loadConversationHistory(type);
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML = '';
+  if (conversations[type]?.length > 0) {
+    conversations[type].slice(-8).forEach(m => addChatMessage(m.role === 'user' ? 'user' : 'shadow', m.content, false));
+    addChatMessage('shadow', `Welcome back! I remember our previous conversations. How can I help?`, false);
+  } else {
+    addChatMessage('shadow', spec.greeting, false);
+  }
   document.getElementById('homeScreen').classList.remove('active');
+  document.getElementById('tasksScreen').classList.remove('active');
+  document.getElementById('memoryScreen').classList.remove('active');
   document.getElementById('chatScreen').classList.add('active');
-  document.getElementById('chatTextInput').focus();
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  setTimeout(() => document.getElementById('chatTextInput').focus(), 300);
 }
 
 function closeChat() {
   document.getElementById('chatScreen').classList.remove('active');
   document.getElementById('homeScreen').classList.add('active');
-}
-
-function switchTab(tab, el) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-
-  if (tab === 'home') {
-    closeChat();
-  } else if (tab === 'chat-master') {
-    openChat('master');
-  } else {
-    openChat(tab);
-  }
+  document.querySelector('[data-tab=home]').classList.add('active');
 }
 
 async function sendChatMessage() {
   const input = document.getElementById('chatTextInput');
   const text = input.value.trim();
   if (!text) return;
-
   input.value = '';
   addChatMessage('user', text);
-
-  const sendBtn = document.getElementById('chatSendBtn');
-  sendBtn.disabled = true;
-
+  await saveMessage(currentSpecialist, 'user', text);
+  document.getElementById('chatSendBtn').disabled = true;
   const thinkId = addThinkingBubble();
-  chatHistory.push({ role: 'user', content: text });
+  if (!conversations[currentSpecialist]) conversations[currentSpecialist] = [];
+  conversations[currentSpecialist].push({ role: 'user', content: text });
 
   try {
     const spec = specialists[currentSpecialist];
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(CLAUDE_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        system: spec.prompt,
-        messages: chatHistory
+        system: spec.prompt(buildMemoryContext(currentSpecialist)),
+        messages: conversations[currentSpecialist].slice(-10)
       })
     });
-
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Shadow encountered an error. Please try again.';
-
+    const reply = data.content?.[0]?.text || 'Shadow encountered an error.';
     removeThinkingBubble(thinkId);
-    chatHistory.push({ role: 'assistant', content: reply });
+    conversations[currentSpecialist].push({ role: 'assistant', content: reply });
     addChatMessage('shadow', reply);
+    await saveMessage(currentSpecialist, 'assistant', reply);
 
-  } catch (err) {
+    // AI MEMORY EXTRACTION — runs in background
+    const extracted = await extractMemoriesWithAI(text, reply, currentSpecialist);
+    if (extracted.length > 0) {
+      showMemoryToast(extracted);
+    }
+
+  } catch(e) {
     removeThinkingBubble(thinkId);
-    addChatMessage('shadow', 'Connection error. Please check your setup.');
+    addChatMessage('shadow', 'Connection error. Please try again.');
   }
-
-  sendBtn.disabled = false;
+  document.getElementById('chatSendBtn').disabled = false;
 }
 
-function addChatMessage(from, text) {
-  const messages = document.getElementById('chatMessages');
-  const now = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
-  const formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+function showMemoryToast(extracted) {
+  const msgs = document.getElementById('chatMessages');
+  const toast = document.createElement('div');
+  toast.className = 'memory-toast';
+  toast.innerHTML = `🧠 Remembered: ${extracted.map(m => m.key).join(', ')}`;
+  msgs.appendChild(toast);
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
+}
 
+function addChatMessage(from, text, animate = true) {
+  const msgs = document.getElementById('chatMessages');
+  const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const fmt = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   const div = document.createElement('div');
   div.className = `cmsg ${from === 'shadow' ? 'shadow' : 'user'}`;
-  div.innerHTML = `
-    <div class="cmsg-avatar ${from === 'shadow' ? 's' : 'u'}">${from === 'shadow' ? 'S' : 'A'}</div>
-    <div>
-      <div class="cmsg-bubble">${formatted}</div>
-      <div class="cmsg-time">${now}</div>
-    </div>
-  `;
-
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  if (!animate) div.style.animation = 'none';
+  div.innerHTML = `<div class="cmsg-avatar ${from === 'shadow' ? 's' : 'u'}">${from === 'shadow' ? 'S' : 'A'}</div><div><div class="cmsg-bubble">${fmt}</div><div class="cmsg-time">${now}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 function addThinkingBubble() {
-  const messages = document.getElementById('chatMessages');
+  const msgs = document.getElementById('chatMessages');
   const id = 'think-' + Date.now();
   const div = document.createElement('div');
-  div.id = id;
-  div.className = 'cmsg shadow';
-  div.innerHTML = `
-    <div class="cmsg-avatar s">S</div>
-    <div><div class="cmsg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>
-  `;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  div.id = id; div.className = 'cmsg shadow';
+  div.innerHTML = `<div class="cmsg-avatar s">S</div><div><div class="cmsg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
   return id;
 }
+function removeThinkingBubble(id) { const el = document.getElementById(id); if (el) el.remove(); }
+function handleChatKey(e) { if (e.key === 'Enter') sendChatMessage(); }
 
-function removeThinkingBubble(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
+// ── NAVIGATION ──
+function switchTab(tab, el) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  ['homeScreen','chatScreen','tasksScreen','memoryScreen'].forEach(id => document.getElementById(id).classList.remove('active'));
+  if (tab === 'home') document.getElementById('homeScreen').classList.add('active');
+  else if (tab === 'tasks') { document.getElementById('tasksScreen').classList.add('active'); renderTasksFull(); }
+  else if (tab === 'memory') { document.getElementById('memoryScreen').classList.add('active'); renderMemoryScreen(); }
+  else if (tab === 'chat-master') openChat('master');
+  else openChat(tab);
 }
 
-function handleChatKey(e) {
-  if (e.key === 'Enter') sendChatMessage();
-}
-
-// VOICE
+// ── VOICE ──
 function setupRecognition(onResult, onEnd) {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    alert('Voice recognition requires Chrome or Safari on iOS 15+.');
-    return null;
-  }
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { alert('Voice requires Chrome or Safari iOS 15+'); return null; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const r = new SR();
-  r.continuous = false;
-  r.interimResults = true;
-  r.lang = 'en-US';
-  r.onresult = onResult;
-  r.onend = onEnd;
-  r.onerror = () => { isListening = false; };
+  const r = new SR(); r.continuous = false; r.interimResults = true; r.lang = 'en-US';
+  r.onresult = onResult; r.onend = onEnd; r.onerror = () => { isListening = false; };
   return r;
 }
 
-// VOICE FROM HOME (overlay)
 function openVoiceOverlay() {
-  voiceTarget = 'overlay';
   document.getElementById('voiceTranscriptDisplay').textContent = 'Speak your command';
   document.getElementById('voiceOverlay').classList.add('active');
-
   recognition = setupRecognition(
-    (e) => {
-      const t = Array.from(e.results).map(r => r[0].transcript).join('');
-      document.getElementById('voiceTranscriptDisplay').textContent = t;
-      if (e.results[0].isFinal) {
-        setTimeout(() => {
-          document.getElementById('voiceOverlay').classList.remove('active');
-          openChat('master');
-          setTimeout(() => {
-            document.getElementById('chatTextInput').value = t;
-            sendChatMessage();
-          }, 300);
-        }, 500);
-      }
-    },
+    (e) => { const t = Array.from(e.results).map(r => r[0].transcript).join(''); document.getElementById('voiceTranscriptDisplay').textContent = t; if (e.results[0].isFinal) { setTimeout(() => { document.getElementById('voiceOverlay').classList.remove('active'); openChat('master'); setTimeout(() => { document.getElementById('chatTextInput').value = t; sendChatMessage(); }, 400); }, 500); } },
     () => { isListening = false; }
   );
-
   if (recognition) { recognition.start(); isListening = true; }
 }
 
-function cancelVoice() {
-  if (recognition) recognition.stop();
-  isListening = false;
-  document.getElementById('voiceOverlay').classList.remove('active');
-}
+function cancelVoice() { if (recognition) recognition.stop(); isListening = false; document.getElementById('voiceOverlay').classList.remove('active'); }
 
-// VOICE FROM CHAT
 function toggleMic() {
-  if (isListening) {
-    recognition.stop();
-    document.getElementById('micBtn').classList.remove('listening');
-    isListening = false;
-    return;
-  }
-
-  voiceTarget = 'chat';
+  if (isListening) { recognition.stop(); document.getElementById('micBtn').classList.remove('listening'); isListening = false; return; }
   recognition = setupRecognition(
-    (e) => {
-      const t = Array.from(e.results).map(r => r[0].transcript).join('');
-      document.getElementById('chatTextInput').value = t;
-      if (e.results[0].isFinal) {
-        document.getElementById('micBtn').classList.remove('listening');
-        isListening = false;
-        setTimeout(() => sendChatMessage(), 300);
-      }
-    },
-    () => {
-      isListening = false;
-      document.getElementById('micBtn').classList.remove('listening');
-    }
+    (e) => { const t = Array.from(e.results).map(r => r[0].transcript).join(''); document.getElementById('chatTextInput').value = t; if (e.results[0].isFinal) { document.getElementById('micBtn').classList.remove('listening'); isListening = false; setTimeout(() => sendChatMessage(), 300); } },
+    () => { isListening = false; document.getElementById('micBtn').classList.remove('listening'); }
   );
-
-  if (recognition) {
-    recognition.start();
-    isListening = true;
-    document.getElementById('micBtn').classList.add('listening');
-  }
+  if (recognition) { recognition.start(); isListening = true; document.getElementById('micBtn').classList.add('listening'); }
 }
+
+function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }); }
+
+function setupCarouselDots() {
+  const carousel = document.getElementById('cardsCarousel');
+  const dots = document.querySelectorAll('.card-dot');
+  carousel.addEventListener('scroll', () => { const idx = Math.round(carousel.scrollLeft / (carousel.offsetWidth - 40)); dots.forEach((d, i) => d.classList.toggle('active', i === idx)); });
+}
+
+initApp();
 </script>
 </body>
 </html>
