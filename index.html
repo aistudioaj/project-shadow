@@ -527,7 +527,7 @@ async function extractMemoriesWithAI(userMsg, assistantReply, specialist) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 400,
         system: `You extract important long-term facts from conversations for a personal AI assistant.
 Respond ONLY with a JSON array. If nothing important, respond with [].
@@ -694,7 +694,7 @@ async function sendChatMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         system: spec.prompt(buildMemoryContext(currentSpecialist)),
         messages: conversations[currentSpecialist].slice(-10)
