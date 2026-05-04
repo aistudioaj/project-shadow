@@ -531,7 +531,7 @@ const SUPABASE_URL = 'https://xqdnohqbimfrtalvdmyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
-const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
+const CLAUDE_API = 'https://shadow-proxy.aistudio-aj.workers.dev/';
 const USER_ID = 'abdulrahman';
 
 let profile = null, memories = [], tasks = [], conversations = {};
