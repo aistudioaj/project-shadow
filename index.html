@@ -11,797 +11,667 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root {
-    --bg: #0a0a0b;
-    --bg2: #0d0f14;
-    --bg3: #131720;
-    --border: #1e2433;
-    --border2: #2a3348;
-    --accent: #3b82f6;
-    --accent2: #2563eb;
-    --accent-glow: rgba(59,130,246,0.2);
-    --green: #00d4aa;
-    --red: #ff4466;
-    --yellow: #f0a500;
-    --purple: #9966ff;
-    --text: #e8eaf2;
-    --text2: #8892a8;
-    --text3: #454d60;
-    --mono: 'IBM Plex Mono', monospace;
-    --sans: 'IBM Plex Sans', sans-serif;
-    --display: 'Bebas Neue', sans-serif;
-    --safe-top: env(safe-area-inset-top, 44px);
-    --safe-bottom: env(safe-area-inset-bottom, 34px);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-  .app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
-  .status-bar { height: var(--safe-top); background: var(--bg); flex-shrink: 0; }
-
-  /* LOADING */
-  .loading-screen { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; z-index: 999; transition: opacity 0.5s; }
-  .loading-screen.hidden { opacity: 0; pointer-events: none; }
-  .loading-logo { font-family: var(--display); font-size: 52px; letter-spacing: 10px; color: var(--accent); text-shadow: 0 0 40px var(--accent-glow); }
-  .loading-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--text3); text-transform: uppercase; }
-  .loading-bar { width: 200px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
-  .loading-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); animation: loadFill 2s ease forwards; }
-  @keyframes loadFill { from { width: 0; } to { width: 100%; } }
-  .loading-status { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; }
-
-  /* HEADER */
-  .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
-  .header-logo { font-family: var(--display); font-size: 20px; letter-spacing: 3px; color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .header-clock { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-  .online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .memory-indicator { font-family: var(--mono); font-size: 9px; color: var(--accent); letter-spacing: 1px; }
-
-  /* SCREENS */
-  .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-  .screen.active { display: flex; }
-
-  /* HOME */
-  .home-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .home-scroll::-webkit-scrollbar { display: none; }
-
-  .greeting { padding: 22px 20px 14px; }
-  .greeting-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; }
-  .greeting-name { font-family: var(--display); font-size: 34px; letter-spacing: 2px; color: var(--text); line-height: 1; }
-  .greeting-name span { color: var(--accent); }
-  .greeting-memory { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 6px; }
-
-  /* STATS */
-  .quick-stats { display: flex; gap: 8px; padding: 0 20px 16px; overflow-x: auto; scrollbar-width: none; }
-  .quick-stats::-webkit-scrollbar { display: none; }
-  .qstat { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; min-width: 82px; flex-shrink: 0; cursor: pointer; transition: border-color 0.15s; }
-  .qstat:hover { border-color: var(--accent); }
-  .qstat-val { font-family: var(--mono); font-size: 17px; font-weight: 600; margin-bottom: 3px; }
-  .qstat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
-
-  /* VOICE BTN */
-  .big-voice-btn { margin: 0 20px 16px; display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--bg2); border: 1px solid var(--accent); border-radius: 14px; cursor: pointer; transition: all 0.15s; box-shadow: 0 0 20px var(--accent-glow); }
-  .big-voice-btn:active { transform: scale(0.98); }
-  .big-voice-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px var(--accent-glow); }
-  .big-voice-text { flex: 1; }
-  .big-voice-label { font-size: 15px; color: var(--text); font-weight: 600; margin-bottom: 2px; }
-  .big-voice-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; }
-
-  /* CARDS */
-  .cards-label { padding: 0 20px 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
-  .cards-carousel { padding: 0 20px; display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-  .cards-carousel::-webkit-scrollbar { display: none; }
-  .spec-card { min-width: calc(100vw - 56px); scroll-snap-align: start; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; cursor: pointer; transition: transform 0.15s; position: relative; overflow: hidden; }
-  .spec-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
-  .spec-card:active { transform: scale(0.98); }
-  .spec-card.invest::before { background: var(--accent); }
-  .spec-card.productivity::before { background: var(--green); }
-  .spec-card.tutor::before { background: var(--purple); }
-  .spec-card.travel::before { background: var(--yellow); }
-  .spec-card.fitness::before { background: var(--red); }
-
-  .spec-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-  .spec-card-icon { font-size: 32px; }
-  .spec-card-badge { font-family: var(--mono); font-size: 9px; padding: 3px 8px; border-radius: 4px; letter-spacing: 1px; font-weight: 600; }
-  .badge-invest { background: rgba(59,130,246,0.15); color: var(--accent); }
-  .badge-productivity { background: rgba(0,212,170,0.15); color: var(--green); }
-  .badge-tutor { background: rgba(153,102,255,0.15); color: var(--purple); }
-  .badge-travel { background: rgba(240,165,0,0.15); color: var(--yellow); }
-  .badge-fitness { background: rgba(255,68,102,0.15); color: var(--red); }
-
-  .spec-card-name { font-family: var(--display); font-size: 24px; letter-spacing: 2px; margin-bottom: 6px; }
-  .spec-card-desc { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
-  .spec-card-stats { display: flex; gap: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
-  .spec-stat { flex: 1; }
-  .spec-stat-val { font-family: var(--mono); font-size: 16px; font-weight: 600; margin-bottom: 2px; }
-  .spec-stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; }
-  .spec-card-cta { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 1px; }
-
-  /* DOTS */
-  .card-dots { display: flex; justify-content: center; gap: 6px; padding: 12px 0 8px; }
-  .card-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
-  .card-dot.active { background: var(--accent); width: 16px; border-radius: 3px; }
-
-  /* SECTIONS */
-  .section { padding: 0 20px 16px; }
-  .section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; padding: 12px 0 10px; display: flex; align-items: center; justify-content: space-between; }
-  .section-action { color: var(--accent); cursor: pointer; }
-
-  /* TASKS */
-  .task-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .task-row:last-child { border-bottom: none; }
-  .task-check { width: 18px; height: 18px; border: 1px solid var(--border2); border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-top: 2px; font-size: 10px; transition: all 0.15s; }
-  .task-check.done { background: var(--green); border-color: var(--green); }
-  .task-content { flex: 1; }
-  .task-title-text { font-size: 13px; color: var(--text); margin-bottom: 3px; }
-  .task-title-text.done { text-decoration: line-through; color: var(--text3); }
-  .task-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); display: flex; gap: 8px; align-items: center; }
-  .task-priority { padding: 1px 6px; border-radius: 2px; font-size: 9px; }
-  .priority-high { background: rgba(255,68,102,0.15); color: var(--red); }
-  .priority-medium { background: rgba(59,130,246,0.15); color: var(--accent); }
-  .priority-low { background: rgba(0,212,170,0.15); color: var(--green); }
-
-  /* MEMORY */
-  .memory-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .memory-row:last-child { border-bottom: none; }
-  .memory-key { font-family: var(--mono); font-size: 10px; color: var(--accent); min-width: 100px; }
-  .memory-val { font-size: 12px; color: var(--text2); flex: 1; }
-
-  /* CHAT */
-  .chat-header { padding: 14px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .chat-back { font-size: 22px; cursor: pointer; color: var(--accent); padding: 4px; }
-  .chat-specialist-info { flex: 1; }
-  .chat-specialist-name { font-family: var(--display); font-size: 18px; letter-spacing: 2px; color: var(--text); }
-  .chat-specialist-mode { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-  .memory-badge { background: rgba(59,130,246,0.15); color: var(--accent); padding: 1px 6px; border-radius: 2px; font-size: 9px; }
-
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; -webkit-overflow-scrolling: touch; }
-  .chat-messages::-webkit-scrollbar { display: none; }
-
-  .cmsg { display: flex; gap: 10px; animation: fadeUp 0.25s ease; }
-  .cmsg.user { flex-direction: row-reverse; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-  .cmsg-avatar { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; font-weight: 700; flex-shrink: 0; }
-  .cmsg-avatar.s { background: var(--accent); color: #fff; box-shadow: 0 0 12px var(--accent-glow); }
-  .cmsg-avatar.u { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
-
-  .cmsg-bubble { max-width: 78%; padding: 12px 14px; border-radius: 14px; font-size: 14px; line-height: 1.55; }
-  .cmsg.shadow .cmsg-bubble { background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 4px; }
-  .cmsg.user .cmsg-bubble { background: var(--accent); color: #fff; font-weight: 500; border-top-right-radius: 4px; box-shadow: 0 0 16px var(--accent-glow); }
-  .cmsg-time { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 5px; }
-
-  .memory-toast { display: flex; align-items: center; gap: 8px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; padding: 8px 12px; margin: 4px 0; font-family: var(--mono); font-size: 11px; color: var(--accent); animation: fadeUp 0.3s ease; }
-
-  .thinking-dots { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
-  .thinking-dots span { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: think 1.2s infinite; opacity: 0.5; }
-  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes think { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
-
-  .chat-input-bar { padding: 12px 16px; padding-bottom: max(12px, var(--safe-bottom)); background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  .chat-text-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 22px; padding: 10px 16px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
-  .chat-text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-  .chat-text-input::placeholder { color: var(--text3); }
-
-  .mic-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
-  .mic-btn.listening { background: var(--red); border-color: var(--red); animation: micPulse 1s infinite; }
-  @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); } 50% { box-shadow: 0 0 0 12px rgba(255,68,102,0); } }
-
-  .send-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; flex-shrink: 0; transition: all 0.15s; color: #fff; font-weight: 700; box-shadow: 0 0 16px var(--accent-glow); }
-  .send-circle:active { transform: scale(0.92); }
-  .send-circle:disabled { opacity: 0.4; box-shadow: none; }
-
-  /* SCREEN HEADERS */
-  .screen-header { padding: 16px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-  .screen-title { font-family: var(--display); font-size: 22px; letter-spacing: 2px; }
-  .screen-body { flex: 1; overflow-y: auto; padding: 0 20px; -webkit-overflow-scrolling: touch; }
-  .screen-body::-webkit-scrollbar { display: none; }
-
-  /* MEMORY SCREEN */
-  .mem-section { margin-bottom: 24px; }
-  .mem-section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .mem-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .mem-item:last-child { border-bottom: none; }
-  .mem-item-key { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 110px; padding-top: 1px; }
-  .mem-item-val { font-size: 13px; color: var(--text2); flex: 1; line-height: 1.4; }
-  .mem-item-cat { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 3px; }
-
-  /* VOICE OVERLAY */
-  .voice-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 24px; backdrop-filter: blur(10px); }
-  .voice-overlay.active { display: flex; }
-  .voice-ring { width: 130px; height: 130px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 52px; animation: voiceRing 1.2s infinite; }
-  @keyframes voiceRing { 0% { box-shadow: 0 0 0 0 var(--accent-glow); } 70% { box-shadow: 0 0 0 30px rgba(59,130,246,0); } 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); } }
-  .voice-label { font-family: var(--mono); font-size: 12px; letter-spacing: 3px; color: var(--text2); text-transform: uppercase; }
-  .voice-transcript-display { font-size: 16px; color: var(--text); text-align: center; max-width: 280px; line-height: 1.6; min-height: 48px; }
-  .voice-cancel { font-family: var(--mono); font-size: 12px; color: var(--text3); cursor: pointer; padding: 12px 28px; border: 1px solid var(--border); border-radius: 22px; background: transparent; }
-
-  /* MODAL */
-  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300; align-items: flex-end; backdrop-filter: blur(6px); }
-  .modal.active { display: flex; }
-  .modal-content { width: 100%; background: var(--bg2); border-radius: 20px 20px 0 0; padding: 24px 20px; padding-bottom: max(24px, var(--safe-bottom)); border-top: 1px solid var(--border); }
-  .modal-title { font-family: var(--display); font-size: 24px; letter-spacing: 2px; margin-bottom: 20px; }
-  .modal-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; margin-bottom: 12px; -webkit-appearance: none; transition: border-color 0.15s; }
-  .modal-input:focus { border-color: var(--accent); }
-  .modal-input::placeholder { color: var(--text3); }
-  .modal-row { display: flex; gap: 10px; margin-bottom: 16px; }
-  .modal-select { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; -webkit-appearance: none; }
-  .modal-btn { flex: 1; padding: 14px; border-radius: 10px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 1px; cursor: pointer; border: none; }
-  .modal-btn.cancel { background: var(--bg3); color: var(--text2); }
-  .modal-btn.confirm { background: var(--accent); color: #fff; box-shadow: 0 0 20px var(--accent-glow); }
-  .add-btn { background: var(--accent); border: none; color: #fff; font-family: var(--mono); font-size: 11px; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-
-  /* BOTTOM NAV */
-  .bottom-nav { display: flex; background: var(--bg2); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; }
-  .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0; cursor: pointer; transition: color 0.15s; color: var(--text3); gap: 3px; }
-  .nav-tab.active { color: var(--accent); }
-  .nav-tab-icon { font-size: 20px; }
-  .nav-tab-label { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+:root{--bg:#0a0a0b;--bg2:#0d0f14;--bg3:#131720;--border:#1e2433;--border2:#2a3348;--accent:#3b82f6;--accent2:#2563eb;--accent-glow:rgba(59,130,246,0.2);--green:#00d4aa;--red:#ff4466;--yellow:#f0a500;--purple:#9966ff;--text:#e8eaf2;--text2:#8892a8;--text3:#454d60;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;--safe-top:env(safe-area-inset-top,44px);--safe-bottom:env(safe-area-inset-bottom,34px)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.app{display:flex;flex-direction:column;height:100vh;height:-webkit-fill-available}
+.status-bar{height:var(--safe-top);background:var(--bg);flex-shrink:0}
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:999;transition:opacity 0.5s}
+.loading-screen.hidden{opacity:0;pointer-events:none}
+.loading-logo{font-family:var(--display);font-size:52px;letter-spacing:10px;color:var(--accent)}
+.loading-sub{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase}
+.loading-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.loading-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));animation:loadFill 2s ease forwards}
+@keyframes loadFill{from{width:0}to{width:100%}}
+.loading-status{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.header-logo{font-family:var(--display);font-size:20px;letter-spacing:3px;color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-clock{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.market-badge{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.home-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.home-scroll::-webkit-scrollbar{display:none}
+.greeting{padding:22px 20px 14px}
+.greeting-sub{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
+.greeting-name{font-family:var(--display);font-size:34px;letter-spacing:2px;color:var(--text);line-height:1}
+.greeting-name span{color:var(--accent)}
+.greeting-memory{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px}
+.quick-stats{display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;scrollbar-width:none}
+.quick-stats::-webkit-scrollbar{display:none}
+.qstat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:78px;flex-shrink:0;cursor:pointer;transition:border-color 0.15s}
+.qstat:hover{border-color:var(--accent)}
+.qstat-val{font-family:var(--mono);font-size:16px;font-weight:600;margin-bottom:3px}
+.qstat-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.market-section{padding:0 20px 16px}
+.market-header{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:12px 0 10px;display:flex;align-items:center;justify-content:space-between}
+.market-refresh{color:var(--accent);cursor:pointer;font-size:11px}
+.market-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.market-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color 0.15s}
+.market-card:hover{border-color:var(--accent)}
+.market-sym{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.market-name{font-size:11px;color:var(--text3);margin-bottom:6px}
+.market-price{font-family:var(--mono);font-size:17px;font-weight:600;margin-bottom:3px}
+.market-chg{font-family:var(--mono);font-size:11px}
+.up{color:var(--green)}.dn{color:var(--red)}
+.big-voice-btn{margin:0 20px 16px;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--bg2);border:1px solid var(--accent);border-radius:14px;cursor:pointer;transition:all 0.15s;box-shadow:0 0 20px var(--accent-glow)}
+.big-voice-btn:active{transform:scale(0.98)}
+.big-voice-icon{width:46px;height:46px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px}
+.big-voice-text{flex:1}
+.big-voice-label{font-size:15px;color:var(--text);font-weight:600;margin-bottom:2px}
+.big-voice-sub{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px}
+.cards-label{padding:0 20px 10px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
+.cards-carousel{padding:0 20px;display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.cards-carousel::-webkit-scrollbar{display:none}
+.spec-card{min-width:calc(100vw - 56px);scroll-snap-align:start;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:transform 0.15s;position:relative;overflow:hidden}
+.spec-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.spec-card:active{transform:scale(0.98)}
+.spec-card.invest::before{background:var(--accent)}
+.spec-card.productivity::before{background:var(--green)}
+.spec-card.tutor::before{background:var(--purple)}
+.spec-card.travel::before{background:var(--yellow)}
+.spec-card.fitness::before{background:var(--red)}
+.spec-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.spec-card-icon{font-size:32px}
+.spec-card-badge{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:1px;font-weight:600}
+.badge-invest{background:rgba(59,130,246,0.15);color:var(--accent)}
+.badge-productivity{background:rgba(0,212,170,0.15);color:var(--green)}
+.badge-tutor{background:rgba(153,102,255,0.15);color:var(--purple)}
+.badge-travel{background:rgba(240,165,0,0.15);color:var(--yellow)}
+.badge-fitness{background:rgba(255,68,102,0.15);color:var(--red)}
+.spec-card-name{font-family:var(--display);font-size:24px;letter-spacing:2px;margin-bottom:6px}
+.spec-card-desc{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px}
+.spec-card-stats{display:flex;gap:16px;padding-top:14px;border-top:1px solid var(--border)}
+.spec-stat{flex:1}
+.spec-stat-val{font-family:var(--mono);font-size:16px;font-weight:600;margin-bottom:2px}
+.spec-stat-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px}
+.spec-card-cta{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:1px}
+.card-dots{display:flex;justify-content:center;gap:6px;padding:12px 0 8px}
+.card-dot{width:5px;height:5px;border-radius:50%;background:var(--border);transition:all 0.2s}
+.card-dot.active{background:var(--accent);width:16px;border-radius:3px}
+.section{padding:0 20px 16px}
+.section-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:12px 0 10px;display:flex;align-items:center;justify-content:space-between}
+.section-action{color:var(--accent);cursor:pointer}
+.task-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+.task-row:last-child{border-bottom:none}
+.task-check{width:18px;height:18px;border:1px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px;font-size:10px;transition:all 0.15s}
+.task-check.done{background:var(--green);border-color:var(--green)}
+.task-content{flex:1}
+.task-title-text{font-size:13px;color:var(--text);margin-bottom:3px}
+.task-title-text.done{text-decoration:line-through;color:var(--text3)}
+.task-meta{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;gap:8px;align-items:center}
+.task-priority{padding:1px 6px;border-radius:2px;font-size:9px}
+.priority-high{background:rgba(255,68,102,0.15);color:var(--red)}
+.priority-medium{background:rgba(59,130,246,0.15);color:var(--accent)}
+.priority-low{background:rgba(0,212,170,0.15);color:var(--green)}
+.memory-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.memory-row:last-child{border-bottom:none}
+.memory-key{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:100px}
+.memory-val{font-size:12px;color:var(--text2);flex:1}
+.chat-header{padding:14px 20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.chat-back{font-size:22px;cursor:pointer;color:var(--accent);padding:4px}
+.chat-specialist-info{flex:1}
+.chat-specialist-name{font-family:var(--display);font-size:18px;letter-spacing:2px;color:var(--text)}
+.chat-specialist-mode{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;display:flex;align-items:center;gap:6px;margin-top:2px}
+.memory-badge{background:rgba(59,130,246,0.15);color:var(--accent);padding:1px 6px;border-radius:2px;font-size:9px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.chat-messages::-webkit-scrollbar{display:none}
+.cmsg{display:flex;gap:10px;animation:fadeUp 0.25s ease}
+.cmsg.user{flex-direction:row-reverse}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cmsg-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0}
+.cmsg-avatar.s{background:var(--accent);color:#fff}
+.cmsg-avatar.u{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.cmsg-bubble{max-width:78%;padding:12px 14px;border-radius:14px;font-size:14px;line-height:1.55}
+.cmsg.shadow .cmsg-bubble{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px}
+.cmsg.user .cmsg-bubble{background:var(--accent);color:#fff;font-weight:500;border-top-right-radius:4px}
+.cmsg-time{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:5px}
+.memory-toast{display:flex;align-items:center;gap:8px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 12px;margin:4px 0;font-family:var(--mono);font-size:11px;color:var(--accent);animation:fadeUp 0.3s ease}
+.thinking-dots{display:flex;gap:4px;padding:4px 2px;align-items:center}
+.thinking-dots span{width:5px;height:5px;background:var(--accent);border-radius:50%;animation:think 1.2s infinite;opacity:0.5}
+.thinking-dots span:nth-child(2){animation-delay:0.2s}
+.thinking-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes think{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-5px);opacity:1}}
+.chat-input-bar{padding:12px 16px;padding-bottom:max(12px,var(--safe-bottom));background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-text-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:10px 16px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color 0.15s;-webkit-appearance:none}
+.chat-text-input:focus{border-color:var(--accent)}
+.chat-text-input::placeholder{color:var(--text3)}
+.mic-btn{width:44px;height:44px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all 0.2s;flex-shrink:0}
+.mic-btn.listening{background:var(--red);border-color:var(--red);animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,68,102,0.4)}50%{box-shadow:0 0 0 12px rgba(255,68,102,0)}}
+.send-circle{width:44px;height:44px;border-radius:50%;background:var(--accent);border:none;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:all 0.15s;color:#fff;font-weight:700}
+.send-circle:active{transform:scale(0.92)}
+.send-circle:disabled{opacity:0.4}
+.screen-header{padding:16px 20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.screen-title{font-family:var(--display);font-size:22px;letter-spacing:2px}
+.screen-body{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch}
+.screen-body::-webkit-scrollbar{display:none}
+.markets-full{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch}
+.markets-full::-webkit-scrollbar{display:none}
+.market-group-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 10px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.market-list-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.market-list-item:last-child{border-bottom:none}
+.market-list-sym{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:70px}
+.market-list-name{font-size:12px;color:var(--text3);flex:1}
+.market-list-right{text-align:right}
+.market-list-price{font-family:var(--mono);font-size:14px;font-weight:600}
+.market-list-chg{font-family:var(--mono);font-size:11px}
+.mem-section{margin-bottom:24px}
+.mem-section-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.mem-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mem-item:last-child{border-bottom:none}
+.mem-item-key{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:110px;padding-top:1px}
+.mem-item-val{font-size:13px;color:var(--text2);flex:1;line-height:1.4}
+.mem-item-cat{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
+.voice-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:24px;backdrop-filter:blur(10px)}
+.voice-overlay.active{display:flex}
+.voice-ring{width:130px;height:130px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:52px;animation:voiceRing 1.2s infinite}
+@keyframes voiceRing{0%{box-shadow:0 0 0 0 var(--accent-glow)}70%{box-shadow:0 0 0 30px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}
+.voice-label{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--text2);text-transform:uppercase}
+.voice-transcript-display{font-size:16px;color:var(--text);text-align:center;max-width:280px;line-height:1.6;min-height:48px}
+.voice-cancel{font-family:var(--mono);font-size:12px;color:var(--text3);cursor:pointer;padding:12px 28px;border:1px solid var(--border);border-radius:22px;background:transparent}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:flex-end;backdrop-filter:blur(6px)}
+.modal.active{display:flex}
+.modal-content{width:100%;background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px;padding-bottom:max(24px,var(--safe-bottom));border-top:1px solid var(--border)}
+.modal-title{font-family:var(--display);font-size:24px;letter-spacing:2px;margin-bottom:20px}
+.modal-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;margin-bottom:12px;-webkit-appearance:none;transition:border-color 0.15s}
+.modal-input:focus{border-color:var(--accent)}
+.modal-input::placeholder{color:var(--text3)}
+.modal-row{display:flex;gap:10px;margin-bottom:16px}
+.modal-select{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;-webkit-appearance:none}
+.modal-btn{flex:1;padding:14px;border-radius:10px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;border:none}
+.modal-btn.cancel{background:var(--bg3);color:var(--text2)}
+.modal-btn.confirm{background:var(--accent);color:#fff}
+.add-btn{background:var(--accent);border:none;color:#fff;font-family:var(--mono);font-size:11px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+.bottom-nav{display:flex;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:var(--safe-bottom);flex-shrink:0}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;transition:color 0.15s;color:var(--text3);gap:3px}
+.nav-tab.active{color:var(--accent)}
+.nav-tab-icon{font-size:20px}
+.nav-tab-label{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase}
 </style>
 </head>
 <body>
-
 <div class="loading-screen" id="loadingScreen">
-  <div class="loading-logo">SHADOW</div>
-  <div class="loading-sub">Personal AI Operating System</div>
-  <div class="loading-bar"><div class="loading-fill"></div></div>
-  <div class="loading-status" id="loadingStatus">Initializing...</div>
+<div class="loading-logo">SHADOW</div>
+<div class="loading-sub">Personal AI Operating System v2</div>
+<div class="loading-bar"><div class="loading-fill"></div></div>
+<div class="loading-status" id="loadingStatus">Initializing...</div>
 </div>
-
 <div class="app">
-  <div class="status-bar"></div>
-
-  <div class="header">
-    <div class="header-logo">SHADOW</div>
-    <div class="header-right">
-      <div class="memory-indicator">🧠 MEMORY ON</div>
-      <div class="header-clock" id="clock">--:--</div>
-      <div class="online-dot"></div>
-    </div>
-  </div>
-
-  <!-- HOME -->
-  <div class="screen active" id="homeScreen">
-    <div class="home-scroll">
-      <div class="greeting">
-        <div class="greeting-sub" id="greetingSub">Good Morning</div>
-        <div class="greeting-name" id="greetingName">SHADOW<span> AI</span></div>
-        <div class="greeting-memory" id="greetingMemory">🧠 Loading memory...</div>
-      </div>
-
-      <div class="quick-stats">
-        <div class="qstat" onclick="openChat('investment')">
-          <div class="qstat-val" style="color:var(--accent)" id="statPortfolio">5</div>
-          <div class="qstat-label">Tickers</div>
-        </div>
-        <div class="qstat" onclick="switchTab('tasks',document.querySelector('[data-tab=tasks]'))">
-          <div class="qstat-val" style="color:var(--green)" id="statTasks">—</div>
-          <div class="qstat-label">Tasks</div>
-        </div>
-        <div class="qstat" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">
-          <div class="qstat-val" style="color:var(--accent)" id="statMemories">—</div>
-          <div class="qstat-label">Memories</div>
-        </div>
-        <div class="qstat">
-          <div class="qstat-val" style="color:var(--red)" id="statStreak">—</div>
-          <div class="qstat-label">Streak</div>
-        </div>
-      </div>
-
-      <div class="big-voice-btn" onclick="openVoiceOverlay()">
-        <div class="big-voice-icon">🎙️</div>
-        <div class="big-voice-text">
-          <div class="big-voice-label">Ask Shadow</div>
-          <div class="big-voice-sub">TAP TO SPEAK</div>
-        </div>
-        <div style="color:var(--accent);font-size:18px;">›</div>
-      </div>
-
-      <div class="cards-label">Specialists — Swipe to explore</div>
-      <div class="cards-carousel" id="cardsCarousel">
-        <div class="spec-card invest" onclick="openChat('investment')">
-          <div class="spec-card-top"><div class="spec-card-icon">📈</div><div class="spec-card-badge badge-invest">LIVE</div></div>
-          <div class="spec-card-name">INVESTMENT</div>
-          <div class="spec-card-desc">Market analysis, portfolio tracking, buy/sell signals for your watchlist.</div>
-          <div class="spec-card-stats">
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">5</div><div class="spec-stat-label">Tickers</div></div>
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="investMemCount">—</div><div class="spec-stat-label">Memories</div></div>
-          </div>
-          <div class="spec-card-cta">💬 Chat with Advisor →</div>
-        </div>
-        <div class="spec-card productivity" onclick="openChat('productivity')">
-          <div class="spec-card-top"><div class="spec-card-icon">🎯</div><div class="spec-card-badge badge-productivity" id="taskBadge">TASKS</div></div>
-          <div class="spec-card-name">PRODUCTIVITY</div>
-          <div class="spec-card-desc">Task management, workflow optimization, reminders and daily planning.</div>
-          <div class="spec-card-stats">
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--red)" id="tasksDueToday">—</div><div class="spec-stat-label">Due Today</div></div>
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="tasksPending">—</div><div class="spec-stat-label">Pending</div></div>
-          </div>
-          <div class="spec-card-cta">💬 Chat with Scout →</div>
-        </div>
-        <div class="spec-card tutor" onclick="openChat('tutor')">
-          <div class="spec-card-top"><div class="spec-card-icon">🎓</div><div class="spec-card-badge badge-tutor">LEARN</div></div>
-          <div class="spec-card-name">TUTOR</div>
-          <div class="spec-card-desc">Study sessions, practice exercises, exam prep and lesson planning.</div>
-          <div class="spec-card-stats">
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--purple)" id="tutorMemCount">—</div><div class="spec-stat-label">Notes</div></div>
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
-          </div>
-          <div class="spec-card-cta">💬 Chat with Tutor →</div>
-        </div>
-        <div class="spec-card travel" onclick="openChat('travel')">
-          <div class="spec-card-top"><div class="spec-card-icon">✈️</div><div class="spec-card-badge badge-travel">READY</div></div>
-          <div class="spec-card-name">TRAVEL</div>
-          <div class="spec-card-desc">Itinerary building, activity recommendations and real-time travel alerts.</div>
-          <div class="spec-card-stats">
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--text2)">0</div><div class="spec-stat-label">Trips</div></div>
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--yellow)">Plan</div><div class="spec-stat-label">A Trip</div></div>
-          </div>
-          <div class="spec-card-cta">💬 Chat with Advisor →</div>
-        </div>
-        <div class="spec-card fitness" onclick="openChat('fitness')">
-          <div class="spec-card-top"><div class="spec-card-icon">💪</div><div class="spec-card-badge badge-fitness">HEALTH</div></div>
-          <div class="spec-card-name">FITNESS</div>
-          <div class="spec-card-desc">Workout planning, habit tracking, wellness guidance and medical research.</div>
-          <div class="spec-card-stats">
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="fitnessStreak">—</div><div class="spec-stat-label">Streak</div></div>
-            <div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
-          </div>
-          <div class="spec-card-cta">💬 Chat with Assistant →</div>
-        </div>
-      </div>
-
-      <div class="card-dots" id="cardDots">
-        <div class="card-dot active"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">✅ Tasks <span class="section-action" onclick="openAddTask()">+ ADD</span></div>
-        <div id="tasksPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">🧠 Shadow Knows <span class="section-action" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">VIEW ALL</span></div>
-        <div id="memoriesPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CHAT -->
-  <div class="screen" id="chatScreen">
-    <div class="chat-header">
-      <div class="chat-back" onclick="closeChat()">‹</div>
-      <div class="chat-specialist-info">
-        <div class="chat-specialist-name" id="chatSpecialistName">SHADOW</div>
-        <div class="chat-specialist-mode"><span id="chatSpecialistMode">MASTER</span><span class="memory-badge">🧠 MEMORY</span></div>
-      </div>
-      <div style="font-size:22px;" id="chatSpecialistIcon">⚡</div>
-    </div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-bar">
-      <div class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</div>
-      <input class="chat-text-input" id="chatTextInput" placeholder="Message Shadow..." onkeydown="handleChatKey(event)">
-      <button class="send-circle" id="chatSendBtn" onclick="sendChatMessage()">↑</button>
-    </div>
-  </div>
-
-  <!-- TASKS -->
-  <div class="screen" id="tasksScreen">
-    <div class="screen-header">
-      <div class="screen-title">TASKS</div>
-      <button class="add-btn" onclick="openAddTask()">+ ADD</button>
-    </div>
-    <div class="screen-body" id="tasksFullList">
-      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div>
-    </div>
-  </div>
-
-  <!-- MEMORY -->
-  <div class="screen" id="memoryScreen">
-    <div class="screen-header">
-      <div>
-        <div class="screen-title">MEMORY</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">Everything Shadow knows about you</div>
-      </div>
-    </div>
-    <div class="screen-body" id="memoryScreenContent">
-      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div>
-    </div>
-  </div>
-
-  <!-- BOTTOM NAV -->
-  <div class="bottom-nav">
-    <div class="nav-tab active" data-tab="home" onclick="switchTab('home',this)"><div class="nav-tab-icon">⚡</div><div class="nav-tab-label">Home</div></div>
-    <div class="nav-tab" data-tab="chat-master" onclick="switchTab('chat-master',this)"><div class="nav-tab-icon">💬</div><div class="nav-tab-label">Shadow</div></div>
-    <div class="nav-tab" data-tab="tasks" onclick="switchTab('tasks',this)"><div class="nav-tab-icon">✅</div><div class="nav-tab-label">Tasks</div></div>
-    <div class="nav-tab" data-tab="memory" onclick="switchTab('memory',this)"><div class="nav-tab-icon">🧠</div><div class="nav-tab-label">Memory</div></div>
-    <div class="nav-tab" data-tab="invest" onclick="switchTab('invest',this)"><div class="nav-tab-icon">📈</div><div class="nav-tab-label">Markets</div></div>
-  </div>
+<div class="status-bar"></div>
+<div class="header">
+<div class="header-logo">SHADOW</div>
+<div class="header-right">
+<div class="market-badge" id="marketBadge">📈 LIVE</div>
+<div class="header-clock" id="clock">--:--</div>
+<div class="online-dot"></div>
 </div>
-
-<!-- VOICE OVERLAY -->
+</div>
+<!-- HOME -->
+<div class="screen active" id="homeScreen">
+<div class="home-scroll">
+<div class="greeting">
+<div class="greeting-sub" id="greetingSub">Good Morning</div>
+<div class="greeting-name" id="greetingName">SHADOW<span> AI</span></div>
+<div class="greeting-memory" id="greetingMemory">Loading...</div>
+</div>
+<div class="quick-stats">
+<div class="qstat" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
+<div class="qstat-val" style="color:var(--accent)" id="statAAPL">—</div>
+<div class="qstat-label">AAPL</div>
+</div>
+<div class="qstat" onclick="switchTab('tasks',document.querySelector('[data-tab=tasks]'))">
+<div class="qstat-val" style="color:var(--green)" id="statTasks">—</div>
+<div class="qstat-label">Tasks</div>
+</div>
+<div class="qstat" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">
+<div class="qstat-val" style="color:var(--accent)" id="statMemories">—</div>
+<div class="qstat-label">Memories</div>
+</div>
+<div class="qstat" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
+<div class="qstat-val" style="color:var(--yellow)" id="statGold">—</div>
+<div class="qstat-label">Gold</div>
+</div>
+<div class="qstat" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
+<div class="qstat-val" style="color:var(--text2)" id="statOil">—</div>
+<div class="qstat-label">Oil WTI</div>
+</div>
+</div>
+<div class="market-section">
+<div class="market-header">📊 Live Markets <span class="market-refresh" onclick="fetchAllMarketData()">↻ Refresh</span></div>
+<div class="market-grid" id="homeMarketGrid"><div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:16px;grid-column:span 2;text-align:center;">Fetching live prices...</div></div>
+</div>
+<div class="big-voice-btn" onclick="openVoiceOverlay()">
+<div class="big-voice-icon">🎙️</div>
+<div class="big-voice-text"><div class="big-voice-label">Ask Shadow</div><div class="big-voice-sub">TAP TO SPEAK</div></div>
+<div style="color:var(--accent);font-size:18px;">›</div>
+</div>
+<div class="cards-label">Specialists — Swipe to explore</div>
+<div class="cards-carousel" id="cardsCarousel">
+<div class="spec-card invest" onclick="openChat('investment')">
+<div class="spec-card-top"><div class="spec-card-icon">📈</div><div class="spec-card-badge badge-invest">LIVE DATA</div></div>
+<div class="spec-card-name">INVESTMENT</div>
+<div class="spec-card-desc">Real-time market analysis, portfolio tracking, buy/sell signals for US stocks, Gold and Oil.</div>
+<div class="spec-card-stats">
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="cardAAPL">—</div><div class="spec-stat-label">AAPL</div></div>
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="cardNVDA">—</div><div class="spec-stat-label">NVDA</div></div>
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--yellow)" id="cardGold">—</div><div class="spec-stat-label">Gold</div></div>
+</div>
+<div class="spec-card-cta">💬 Chat with Advisor →</div>
+</div>
+<div class="spec-card productivity" onclick="openChat('productivity')">
+<div class="spec-card-top"><div class="spec-card-icon">🎯</div><div class="spec-card-badge badge-productivity" id="taskBadge">TASKS</div></div>
+<div class="spec-card-name">PRODUCTIVITY</div>
+<div class="spec-card-desc">Task management, workflow optimization, reminders and daily planning.</div>
+<div class="spec-card-stats">
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--red)" id="tasksDueToday">—</div><div class="spec-stat-label">Due Today</div></div>
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="tasksPending">—</div><div class="spec-stat-label">Pending</div></div>
+</div>
+<div class="spec-card-cta">💬 Chat with Scout →</div>
+</div>
+<div class="spec-card tutor" onclick="openChat('tutor')">
+<div class="spec-card-top"><div class="spec-card-icon">🎓</div><div class="spec-card-badge badge-tutor">LEARN</div></div>
+<div class="spec-card-name">TUTOR</div>
+<div class="spec-card-desc">Study sessions, practice exercises, exam prep and lesson planning.</div>
+<div class="spec-card-stats">
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--purple)" id="tutorMemCount">—</div><div class="spec-stat-label">Notes</div></div>
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
+</div>
+<div class="spec-card-cta">💬 Chat with Tutor →</div>
+</div>
+<div class="spec-card travel" onclick="openChat('travel')">
+<div class="spec-card-top"><div class="spec-card-icon">✈️</div><div class="spec-card-badge badge-travel">SMART</div></div>
+<div class="spec-card-name">TRAVEL</div>
+<div class="spec-card-desc">Itinerary planning, weather briefings, hotels, daily budgets and transfer options.</div>
+<div class="spec-card-stats">
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--text2)">0</div><div class="spec-stat-label">Trips</div></div>
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--yellow)">Plan</div><div class="spec-stat-label">A Trip</div></div>
+</div>
+<div class="spec-card-cta">💬 Chat with Advisor →</div>
+</div>
+<div class="spec-card fitness" onclick="openChat('fitness')">
+<div class="spec-card-top"><div class="spec-card-icon">💪</div><div class="spec-card-badge badge-fitness">HEALTH</div></div>
+<div class="spec-card-name">FITNESS</div>
+<div class="spec-card-desc">Workout planning, habit tracking, wellness guidance and medical research.</div>
+<div class="spec-card-stats">
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="fitnessStreak">—</div><div class="spec-stat-label">Streak</div></div>
+<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
+</div>
+<div class="spec-card-cta">💬 Chat with Assistant →</div>
+</div>
+</div>
+<div class="card-dots" id="cardDots">
+<div class="card-dot active"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
+</div>
+<div class="section">
+<div class="section-title">✅ Tasks <span class="section-action" onclick="openAddTask()">+ ADD</span></div>
+<div id="tasksPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
+</div>
+<div class="section">
+<div class="section-title">🧠 Shadow Knows <span class="section-action" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">VIEW ALL</span></div>
+<div id="memoriesPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
+</div>
+</div>
+</div>
+<!-- CHAT -->
+<div class="screen" id="chatScreen">
+<div class="chat-header">
+<div class="chat-back" onclick="closeChat()">‹</div>
+<div class="chat-specialist-info">
+<div class="chat-specialist-name" id="chatSpecialistName">SHADOW</div>
+<div class="chat-specialist-mode"><span id="chatSpecialistMode">MASTER</span><span class="memory-badge">🧠 MEMORY</span></div>
+</div>
+<div style="font-size:22px;" id="chatSpecialistIcon">⚡</div>
+</div>
+<div class="chat-messages" id="chatMessages"></div>
+<div class="chat-input-bar">
+<div class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</div>
+<input class="chat-text-input" id="chatTextInput" placeholder="Message Shadow..." onkeydown="handleChatKey(event)">
+<button class="send-circle" id="chatSendBtn" onclick="sendChatMessage()">↑</button>
+</div>
+</div>
+<!-- MARKETS -->
+<div class="screen" id="marketsScreen">
+<div class="screen-header">
+<div><div class="screen-title">MARKETS</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;" id="marketLastUpdate">Loading...</div></div>
+<button class="add-btn" onclick="fetchAllMarketData()">↻ LIVE</button>
+</div>
+<div class="markets-full" id="marketsFullList"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div></div>
+</div>
+<!-- TASKS -->
+<div class="screen" id="tasksScreen">
+<div class="screen-header"><div class="screen-title">TASKS</div><button class="add-btn" onclick="openAddTask()">+ ADD</button></div>
+<div class="screen-body" id="tasksFullList"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div></div>
+</div>
+<!-- MEMORY -->
+<div class="screen" id="memoryScreen">
+<div class="screen-header"><div><div class="screen-title">MEMORY</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">Everything Shadow knows about you</div></div></div>
+<div class="screen-body" id="memoryScreenContent"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div></div>
+</div>
+<div class="bottom-nav">
+<div class="nav-tab active" data-tab="home" onclick="switchTab('home',this)"><div class="nav-tab-icon">⚡</div><div class="nav-tab-label">Home</div></div>
+<div class="nav-tab" data-tab="chat-master" onclick="switchTab('chat-master',this)"><div class="nav-tab-icon">💬</div><div class="nav-tab-label">Shadow</div></div>
+<div class="nav-tab" data-tab="markets" onclick="switchTab('markets',this)"><div class="nav-tab-icon">📈</div><div class="nav-tab-label">Markets</div></div>
+<div class="nav-tab" data-tab="tasks" onclick="switchTab('tasks',this)"><div class="nav-tab-icon">✅</div><div class="nav-tab-label">Tasks</div></div>
+<div class="nav-tab" data-tab="memory" onclick="switchTab('memory',this)"><div class="nav-tab-icon">🧠</div><div class="nav-tab-label">Memory</div></div>
+</div>
+</div>
 <div class="voice-overlay" id="voiceOverlay">
-  <div class="voice-ring">🎙️</div>
-  <div class="voice-label">Listening...</div>
-  <div class="voice-transcript-display" id="voiceTranscriptDisplay">Speak your command</div>
-  <button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
+<div class="voice-ring">🎙️</div>
+<div class="voice-label">Listening...</div>
+<div class="voice-transcript-display" id="voiceTranscriptDisplay">Speak your command</div>
+<button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
 </div>
-
-<!-- ADD TASK MODAL -->
 <div class="modal" id="addTaskModal">
-  <div class="modal-content">
-    <div class="modal-title">NEW TASK</div>
-    <input class="modal-input" id="taskTitleInput" placeholder="Task title...">
-    <input class="modal-input" id="taskDescInput" placeholder="Description (optional)...">
-    <div class="modal-row">
-      <select class="modal-select" id="taskPriority">
-        <option value="high">🔴 High</option>
-        <option value="medium" selected>🔵 Medium</option>
-        <option value="low">🟢 Low</option>
-      </select>
-      <select class="modal-select" id="taskSpecialist">
-        <option value="productivity">🎯 Productivity</option>
-        <option value="investment">📈 Investment</option>
-        <option value="tutor">🎓 Tutor</option>
-        <option value="travel">✈️ Travel</option>
-        <option value="fitness">💪 Fitness</option>
-      </select>
-    </div>
-    <div class="modal-row">
-      <button class="modal-btn cancel" onclick="closeAddTask()">CANCEL</button>
-      <button class="modal-btn confirm" onclick="addTask()">ADD TASK</button>
-    </div>
-  </div>
+<div class="modal-content">
+<div class="modal-title">NEW TASK</div>
+<input class="modal-input" id="taskTitleInput" placeholder="Task title...">
+<input class="modal-input" id="taskDescInput" placeholder="Description (optional)...">
+<div class="modal-row">
+<select class="modal-select" id="taskPriority"><option value="high">🔴 High</option><option value="medium" selected>🔵 Medium</option><option value="low">🟢 Low</option></select>
+<select class="modal-select" id="taskSpecialist"><option value="productivity">🎯 Productivity</option><option value="investment">📈 Investment</option><option value="tutor">🎓 Tutor</option><option value="travel">✈️ Travel</option><option value="fitness">💪 Fitness</option></select>
 </div>
-
+<div class="modal-row"><button class="modal-btn cancel" onclick="closeAddTask()">CANCEL</button><button class="modal-btn confirm" onclick="addTask()">ADD TASK</button></div>
+</div>
+</div>
 <script>
-// ── CONFIG ──
-const PROXY_URL = 'https://shadow-proxy.aistudio-aj.workers.dev/';
-const SUPABASE_URL = 'https://xqdnohqbimfrtalvdmyp.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
-const USER_ID = 'abdulrahman';
+const PROXY_URL='https://shadow-proxy.aistudio-aj.workers.dev/';
+const FINNHUB_KEY='d803371r01qj3ct8s9ugd803371r01qj3ct8s9v0';
+const FINNHUB_BASE='https://finnhub.io/api/v1';
+const SUPABASE_URL='https://xqdnohqbimfrtalvdmyp.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
+const USER_ID='abdulrahman';
+const MODEL='claude-sonnet-4-5';
+const MAX_RETRIES=3;
+const {createClient}=supabase;
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+let profile=null,memories=[],tasks=[],conversations={};
+let currentSpecialist='master',recognition=null,isListening=false;
+let marketData={};
 
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const US_STOCKS=[{sym:'AAPL',name:'Apple'},{sym:'MSFT',name:'Microsoft'},{sym:'NVDA',name:'Nvidia'},{sym:'AMZN',name:'Amazon'},{sym:'GOOGL',name:'Alphabet'},{sym:'META',name:'Meta'},{sym:'TSLA',name:'Tesla'},{sym:'JPM',name:'JPMorgan'}];
+const COMMODITIES=[{sym:'OANDA:XAU_USD',name:'Gold (XAU/USD)',display:'GOLD'},{sym:'OANDA:USOIL',name:'Oil WTI (USD)',display:'OIL'}];
 
-let profile = null, memories = [], tasks = [], conversations = {};
-let currentSpecialist = 'master', recognition = null, isListening = false;
-
-// ── INIT ──
-async function initApp() {
-  setLoadingStatus('Loading your profile...');
-  await loadProfile();
-  setLoadingStatus('Loading memories...');
-  await loadMemories();
-  setLoadingStatus('Loading tasks...');
-  await loadTasks();
-  setLoadingStatus('Shadow is ready ✓');
-  await sleep(500);
-  document.getElementById('loadingScreen').classList.add('hidden');
-  updateUI();
-  updateClock();
-  setInterval(updateClock, 1000);
-  setupCarouselDots();
+async function fetchQuote(symbol){
+  try{
+    const res=await fetch(FINNHUB_BASE+'/quote?symbol='+symbol+'&token='+FINNHUB_KEY);
+    const data=await res.json();
+    if(data.c&&data.c>0)return data;
+    return null;
+  }catch(e){return null;}
 }
 
-function setLoadingStatus(msg) { document.getElementById('loadingStatus').textContent = msg; }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ── DATA ──
-async function loadProfile() {
-  try { const { data } = await db.from('shadow_profile').select('*').eq('user_id', USER_ID).single(); if (data) profile = data; } catch(e) {}
-}
-async function loadMemories() {
-  try { const { data } = await db.from('shadow_memory').select('*').eq('user_id', USER_ID).order('importance', { ascending: false }); if (data) memories = data; } catch(e) {}
-}
-async function loadTasks() {
-  try { const { data } = await db.from('shadow_tasks').select('*').eq('user_id', USER_ID).order('created_at', { ascending: false }); if (data) tasks = data; } catch(e) {}
-}
-async function loadConversationHistory(specialist) {
-  try {
-    const { data } = await db.from('shadow_conversations').select('*').eq('user_id', USER_ID).eq('specialist', specialist).order('created_at', { ascending: true }).limit(20);
-    if (data) conversations[specialist] = data.map(r => ({ role: r.role, content: r.content }));
-  } catch(e) {}
-}
-async function saveMessage(specialist, role, content) {
-  try { await db.from('shadow_conversations').insert({ user_id: USER_ID, specialist, role, content }); } catch(e) {}
-}
-async function saveMemoryFact(category, key, value, specialist = 'master', importance = 2) {
-  try {
-    const { data: existing } = await db.from('shadow_memory').select('id').eq('user_id', USER_ID).eq('key', key).maybeSingle();
-    if (existing) {
-      await db.from('shadow_memory').update({ value, updated_at: new Date().toISOString() }).eq('id', existing.id);
-    } else {
-      await db.from('shadow_memory').insert({ user_id: USER_ID, category, key, value, specialist, importance });
-    }
-    await loadMemories();
-    updateUI();
-  } catch(e) {}
+async function fetchAllMarketData(){
+  const el=document.getElementById('marketLastUpdate');
+  if(el)el.textContent='Fetching live data...';
+  const all=[...US_STOCKS.map(async s=>{
+    const data=await fetchQuote(s.sym);
+    if(data)marketData[s.sym]={...s,price:data.c,change:data.d,changePct:data.dp,high:data.h,low:data.l};
+  }),...COMMODITIES.map(async c=>{
+    const data=await fetchQuote(c.sym);
+    if(data)marketData[c.display]={...c,price:data.c,change:data.d,changePct:data.dp};
+  })];
+  await Promise.all(all);
+  const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  if(el)el.textContent='Updated: '+now;
+  renderHomeMarkets();renderMarketsScreen();updateMarketStats();
 }
 
-// ── AI MEMORY EXTRACTION ──
-async function extractMemoriesWithAI(userMsg, assistantReply, specialist) {
-  try {
-    const res = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 400,
-        system: `You extract important long-term facts from conversations for a personal AI assistant.
-Respond ONLY with a JSON array. If nothing important, respond with [].
-Format: [{"category":"fact|goal|preference|habit","key":"short_key","value":"what to remember","importance":1|2|3}]
-Only extract genuinely useful long-term info. Skip small talk.`,
-        messages: [{ role: 'user', content: `Specialist: ${specialist}\nUser: "${userMsg}"\nAssistant: "${assistantReply.substring(0,200)}"\n\nWhat should be remembered?` }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '[]';
-    const extracted = JSON.parse(text.replace(/```json|```/g, '').trim());
-    if (Array.isArray(extracted) && extracted.length > 0) {
-      for (const mem of extracted) {
-        await saveMemoryFact(mem.category, mem.key, mem.value, specialist, mem.importance || 2);
-      }
-      return extracted;
-    }
-  } catch(e) {}
-  return [];
-}
+function fmtPrice(p){if(!p)return '—';if(p>1000)return '$'+p.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');return '$'+p.toFixed(2);}
+function fmtPct(p){if(p==null)return '';const s=p>=0?'+':'';return s+p.toFixed(2)+'%';}
 
-// ── UI ──
-function updateUI() {
-  const h = new Date().getHours();
-  const greets = ['Good Night','Good Morning','Good Afternoon','Good Evening'];
-  document.getElementById('greetingSub').textContent = greets[h<5?0:h<12?1:h<17?2:3];
-  const name = profile?.name || 'Abdulrahman';
-  const parts = name.split(' ');
-  document.getElementById('greetingName').innerHTML = `${parts[0]}<span>${parts.slice(1).join(' ') ? ' '+parts.slice(1).join(' ') : ''}</span>`;
-  document.getElementById('greetingMemory').textContent = `🧠 ${memories.length} memories · ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}`;
-  const pending = tasks.filter(t => t.status !== 'done').length;
-  const dueToday = tasks.filter(t => t.due_date && new Date(t.due_date).toDateString() === new Date().toDateString()).length;
-  document.getElementById('statTasks').textContent = pending;
-  document.getElementById('statMemories').textContent = memories.length;
-  document.getElementById('tasksPending').textContent = pending;
-  document.getElementById('tasksDueToday').textContent = dueToday;
-  document.getElementById('taskBadge').textContent = `${pending} TASKS`;
-  document.getElementById('investMemCount').textContent = memories.filter(m=>m.specialist==='investment').length || '—';
-  document.getElementById('tutorMemCount').textContent = memories.filter(m=>m.specialist==='tutor').length || '—';
-  renderTasksPreview(); renderMemoriesPreview(); renderTasksFull(); renderMemoryScreen();
-}
-
-function renderTasksPreview() {
-  const c = document.getElementById('tasksPreview');
-  const items = tasks.filter(t => t.status !== 'done').slice(0,4);
-  if (!items.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">No pending tasks. <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one →</span></div>`; return; }
-  c.innerHTML = items.map(t => `<div class="task-row"><div class="task-check" onclick="toggleTask('${t.id}','${t.status}')"></div><div class="task-content"><div class="task-title-text">${t.title}</div><div class="task-meta"><span class="task-priority priority-${t.priority}">${t.priority}</span><span>${t.specialist||'general'}</span></div></div></div>`).join('');
-}
-
-function renderTasksFull() {
-  const c = document.getElementById('tasksFullList');
-  if (!tasks.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No tasks yet!</div>`; return; }
-  const pending = tasks.filter(t => t.status !== 'done');
-  const done = tasks.filter(t => t.status === 'done');
-  let html = '';
-  if (pending.length) {
-    html += `<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Pending (${pending.length})</div>`;
-    html += pending.map(t => `<div class="task-row"><div class="task-check" onclick="toggleTask('${t.id}','${t.status}')"></div><div class="task-content"><div class="task-title-text">${t.title}</div>${t.description?`<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">${t.description}</div>`:''}<div class="task-meta"><span class="task-priority priority-${t.priority}">${t.priority}</span><span>${t.specialist||'general'}</span></div></div></div>`).join('');
-  }
-  if (done.length) {
-    html += `<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Done (${done.length})</div>`;
-    html += done.slice(0,5).map(t => `<div class="task-row" style="opacity:0.4;"><div class="task-check done">✓</div><div class="task-content"><div class="task-title-text done">${t.title}</div></div></div>`).join('');
-  }
-  c.innerHTML = html;
-}
-
-function renderMemoriesPreview() {
-  const c = document.getElementById('memoriesPreview');
-  if (!memories.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Chat with Shadow to build memory!</div>`; return; }
-  c.innerHTML = memories.slice(0,4).map(m => `<div class="memory-row"><div class="memory-key">${m.key}</div><div class="memory-val">${m.value}</div></div>`).join('');
-}
-
-function renderMemoryScreen() {
-  const c = document.getElementById('memoryScreenContent');
-  if (!memories.length) { c.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No memories yet. Start chatting!</div>`; return; }
-  const cats = [...new Set(memories.map(m => m.category))];
-  c.innerHTML = cats.map(cat => {
-    const items = memories.filter(m => m.category === cat);
-    return `<div class="mem-section"><div class="mem-section-title">${cat} (${items.length})</div>${items.map(m=>`<div class="mem-item"><div class="mem-item-key">${m.key}</div><div><div class="mem-item-val">${m.value}</div><div class="mem-item-cat">${m.specialist||'general'} · ${'★'.repeat(m.importance||1)}</div></div></div>`).join('')}</div>`;
+function renderHomeMarkets(){
+  const grid=document.getElementById('homeMarketGrid');
+  if(!grid)return;
+  const items=['AAPL','NVDA','MSFT','AMZN','GOLD','OIL'];
+  const icons={GOLD:'🥇',OIL:'🛢️'};
+  grid.innerHTML=items.map(sym=>{
+    const d=marketData[sym];
+    if(!d)return '<div class="market-card"><div class="market-sym">'+sym+'</div><div class="market-price" style="color:var(--text3)">—</div></div>';
+    const up=d.changePct>=0;
+    return '<div class="market-card" onclick="openChat(this.dataset.s)" data-s="investment">'+'<div class="market-sym">'+(icons[sym]||'')+' '+sym+'</div>'+'<div class="market-name">'+(d.name||'')+'</div>'+'<div class="market-price '+(up?'up':'dn')+'">'+fmtPrice(d.price)+'</div>'+'<div class="market-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.changePct||0).toFixed(2)+'%</div></div>';
   }).join('');
 }
 
-// ── TASKS ──
-async function toggleTask(id, status) {
-  const newStatus = status === 'done' ? 'pending' : 'done';
-  try { await db.from('shadow_tasks').update({ status: newStatus }).eq('id', id); tasks = tasks.map(t => t.id===id?{...t,status:newStatus}:t); updateUI(); } catch(e) {}
-}
-function openAddTask() { document.getElementById('addTaskModal').classList.add('active'); setTimeout(()=>document.getElementById('taskTitleInput').focus(),100); }
-function closeAddTask() { document.getElementById('addTaskModal').classList.remove('active'); document.getElementById('taskTitleInput').value=''; document.getElementById('taskDescInput').value=''; }
-async function addTask() {
-  const title = document.getElementById('taskTitleInput').value.trim();
-  if (!title) return;
-  try {
-    const { data } = await db.from('shadow_tasks').insert({ user_id: USER_ID, title, description: document.getElementById('taskDescInput').value.trim(), priority: document.getElementById('taskPriority').value, specialist: document.getElementById('taskSpecialist').value, status: 'pending' }).select().single();
-    if (data) tasks.unshift(data);
-    closeAddTask(); updateUI();
-  } catch(e) {}
+function renderMarketsScreen(){
+  const c=document.getElementById('marketsFullList');
+  if(!c)return;
+  const usHtml=US_STOCKS.map(s=>{
+    const d=marketData[s.sym];
+    if(!d)return '<div class="market-list-item"><div class="market-list-sym">'+s.sym+'</div><div class="market-list-name">'+s.name+'</div><div class="market-list-right"><div class="market-list-price" style="color:var(--text3)">—</div></div></div>';
+    const up=d.changePct>=0;
+    return '<div class="market-list-item" onclick="openChat(this.dataset.s)" data-s="investment">'+'<div class="market-list-sym">'+s.sym+'</div><div class="market-list-name">'+s.name+'</div>'+'<div class="market-list-right"><div class="market-list-price '+(up?'up':'dn')+'">'+fmtPrice(d.price)+'</div><div class="market-list-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.changePct||0).toFixed(2)+'%</div></div></div>';
+  }).join('');
+  const commHtml=COMMODITIES.map(c2=>{
+    const d=marketData[c2.display];
+    if(!d)return '<div class="market-list-item"><div class="market-list-sym">'+c2.display+'</div><div class="market-list-name">'+c2.name+'</div><div class="market-list-right"><div class="market-list-price" style="color:var(--text3)">—</div></div></div>';
+    const up=d.changePct>=0;
+    return '<div class="market-list-item"><div class="market-list-sym">'+c2.display+'</div><div class="market-list-name">'+c2.name+'</div><div class="market-list-right"><div class="market-list-price '+(up?'up':'dn')+'">'+fmtPrice(d.price)+'</div><div class="market-list-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.changePct||0).toFixed(2)+'%</div></div></div>';
+  }).join('');
+  c.innerHTML='<div class="market-group-title">🇺🇸 US Stocks</div>'+usHtml+'<div class="market-group-title">🏅 Commodities</div>'+commHtml;
 }
 
-// ── SPECIALISTS ──
-const specialists = {
-  investment: { name:'INVESTMENT', mode:'ADVISOR', icon:'📈', greeting:"I'm your Investment Advisor with memory of our past analysis. What would you like to know about your portfolio?",
-    prompt: m => `You are Shadow's Investment Advisor for Abdulrahman (Abu Dhabi, UAE).\n\nMEMORY:\n${m}\n\nTrack AAPL, MSFT, NVDA, AMZN, GOOGL. Be direct and professional. Keep responses concise and mobile-friendly.` },
-  productivity: { name:'PRODUCTIVITY', mode:'SCOUT', icon:'🎯', greeting:"I'm your Productivity Scout. I remember your goals. What do you need to tackle today?",
-    prompt: m => `You are Shadow's Productivity Scout for Abdulrahman.\n\nMEMORY:\n${m}\n\nHelp manage tasks, optimize workflows. Be direct. Keep responses short.` },
-  tutor: { name:'TUTOR', mode:'ASSISTANT', icon:'🎓', greeting:"I'm your Tutor. I remember what we've studied. What are we working on today?",
-    prompt: m => `You are Shadow's Tutor for Abdulrahman.\n\nMEMORY:\n${m}\n\nHelp with studying, exercises, exam prep. Keep responses concise.` },
-  travel: { name:'TRAVEL', mode:'ADVISOR', icon:'✈️', greeting:"I'm your Travel Advisor. I remember your travel preferences. Where are we going?",
-    prompt: m => `You are Shadow's Travel Advisor for Abdulrahman (based in Abu Dhabi).\n\nMEMORY:\n${m}\n\nBuild itineraries, recommend activities. Keep responses short.` },
-  fitness: { name:'FITNESS', mode:'ASSISTANT', icon:'💪', greeting:"I'm your Fitness Assistant. I track your wellness journey. What's your goal today?",
-    prompt: m => `You are Shadow's Fitness Assistant for Abdulrahman.\n\nMEMORY:\n${m}\n\nCreate plans, track habits. Always note to consult a doctor for medical decisions. Keep responses short.` },
-  master: { name:'SHADOW', mode:'MASTER ROUTER', icon:'⚡', greeting:"I'm Shadow, your personal AI OS. I remember everything about you. What do you need?",
-    prompt: m => `You are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE).\n\nMEMORY:\n${m}\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional and direct. Portfolio: AAPL, MSFT, NVDA, AMZN, GOOGL. Keep responses short and mobile-friendly.` }
+function updateMarketStats(){
+  const aapl=marketData['AAPL'],nvda=marketData['NVDA'],gold=marketData['GOLD'],oil=marketData['OIL'];
+  if(aapl){document.getElementById('statAAPL').textContent=fmtPrice(aapl.price);document.getElementById('cardAAPL').textContent=fmtPrice(aapl.price);}
+  if(nvda)document.getElementById('cardNVDA').textContent=fmtPrice(nvda.price);
+  if(gold){document.getElementById('statGold').textContent=fmtPrice(gold.price);document.getElementById('cardGold').textContent=fmtPrice(gold.price);}
+  if(oil)document.getElementById('statOil').textContent=fmtPrice(oil.price);
+}
+
+async function initApp(){
+  setLoadingStatus('Loading profile...');await loadProfile();
+  setLoadingStatus('Loading memories...');await loadMemories();
+  setLoadingStatus('Loading tasks...');await loadTasks();
+  setLoadingStatus('Fetching live markets...');await fetchAllMarketData();
+  setLoadingStatus('Shadow ready ✓');await sleep(400);
+  document.getElementById('loadingScreen').classList.add('hidden');
+  updateUI();updateClock();
+  setInterval(updateClock,1000);
+  setInterval(fetchAllMarketData,60000);
+  setupCarouselDots();
+}
+
+function setLoadingStatus(msg){document.getElementById('loadingStatus').textContent=msg;}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function loadProfile(){try{const{data}=await db.from('shadow_profile').select('*').eq('user_id',USER_ID).single();if(data)profile=data;}catch(e){}}
+async function loadMemories(){try{const{data}=await db.from('shadow_memory').select('*').eq('user_id',USER_ID).order('importance',{ascending:false});if(data)memories=data;}catch(e){}}
+async function loadTasks(){try{const{data}=await db.from('shadow_tasks').select('*').eq('user_id',USER_ID).order('created_at',{ascending:false});if(data)tasks=data;}catch(e){}}
+async function loadConversationHistory(specialist){try{const{data}=await db.from('shadow_conversations').select('*').eq('user_id',USER_ID).eq('specialist',specialist).order('created_at',{ascending:true}).limit(20);if(data)conversations[specialist]=data.map(r=>({role:r.role,content:r.content}));}catch(e){}}
+async function saveMessage(specialist,role,content){try{await db.from('shadow_conversations').insert({user_id:USER_ID,specialist,role,content});}catch(e){}}
+async function saveMemoryFact(category,key,value,specialist='master',importance=2){
+  try{
+    const{data:existing}=await db.from('shadow_memory').select('id').eq('user_id',USER_ID).eq('key',key).maybeSingle();
+    if(existing){await db.from('shadow_memory').update({value,updated_at:new Date().toISOString()}).eq('id',existing.id);}
+    else{await db.from('shadow_memory').insert({user_id:USER_ID,category,key,value,specialist,importance});}
+    await loadMemories();updateUI();
+  }catch(e){}
+}
+
+async function callClaude(payload,retries=MAX_RETRIES){
+  for(let attempt=1;attempt<=retries;attempt++){
+    try{
+      const res=await fetch(PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,model:MODEL,max_tokens:1000})});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      if(data.content?.[0]?.text)return data.content[0].text;
+      throw new Error('Empty');
+    }catch(e){
+      if(attempt===retries)throw e;
+      await sleep(1000*attempt);
+    }
+  }
+}
+
+async function extractMemoriesWithAI(userMsg,assistantReply,specialist){
+  try{
+    const reply=await callClaude({system:'Extract important long-term facts from conversations. Respond ONLY with JSON array or []. Format: [{"category":"fact|goal|preference|habit","key":"short_key","value":"what to remember","importance":1|2|3}]',messages:[{role:'user',content:'Specialist: '+specialist+'\nUser: "'+userMsg+'"\nAssistant: "'+assistantReply.substring(0,200)+'"\n\nWhat should be remembered?'}]});
+    const extracted=JSON.parse(reply.replace(/```json|```/g,'').trim());
+    if(Array.isArray(extracted)&&extracted.length>0){for(const mem of extracted)await saveMemoryFact(mem.category,mem.key,mem.value,specialist,mem.importance||2);return extracted;}
+  }catch(e){}
+  return[];
+}
+
+function buildMarketContext(){
+  const lines=[];
+  US_STOCKS.forEach(s=>{const d=marketData[s.sym];if(d)lines.push(s.sym+': '+fmtPrice(d.price)+' ('+fmtPct(d.changePct)+')');});
+  COMMODITIES.forEach(c=>{const d=marketData[c.display];if(d)lines.push(c.display+': '+fmtPrice(d.price)+' ('+fmtPct(d.changePct)+')');});
+  return lines.length?lines.join(', '):'Market data loading...';
+}
+
+function buildMemoryContext(specialist){
+  const rel=memories.filter(m=>!m.specialist||m.specialist===specialist||m.specialist==='master');
+  return rel.length?rel.map(m=>'- '+m.key+': '+m.value).join('\n'):'No memories yet.';
+}
+
+const specialists={
+  investment:{name:'INVESTMENT',mode:'ADVISOR',icon:'📈',greeting:"I'm your Investment Advisor. I have live market data. What would you like to know?",
+    prompt:m=>'You are Shadow\'s Investment Advisor for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\nBe direct and professional. Keep responses concise.'},
+  productivity:{name:'PRODUCTIVITY',mode:'SCOUT',icon:'🎯',greeting:"I'm your Productivity Scout. What do you need to tackle today?",
+    prompt:m=>'You are Shadow\'s Productivity Scout for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp manage tasks, optimize workflows. Be direct. Keep responses short.'},
+  tutor:{name:'TUTOR',mode:'ASSISTANT',icon:'🎓',greeting:"I'm your Tutor. What are we working on today?",
+    prompt:m=>'You are Shadow\'s Tutor for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp with studying, exercises, exam prep. Keep responses concise.'},
+  travel:{name:'TRAVEL',mode:'ADVISOR',icon:'✈️',greeting:"I'm your Travel Advisor. Tell me where you're headed and I'll plan everything — itinerary, weather, hotels, budget and transfers. Who are you traveling with?",
+    prompt:m=>'You are Shadow\'s Travel Advisor for Abdulrahman (based in Abu Dhabi, UAE).\n\nMEMORY:\n'+m+'\n\nWhen planning trips always cover: 1) Ask who they travel with 2) Day-by-day itinerary 3) Weather forecast for travel dates 4) Hotel recommendations with price ranges in USD 5) Daily budget estimate (accommodation + food + activities) 6) Flight/transfer options from Abu Dhabi 7) Car rental or local transport options. Be thorough and enthusiastic. Use clear formatting.'},
+  fitness:{name:'FITNESS',mode:'ASSISTANT',icon:'💪',greeting:"I'm your Fitness Assistant. What's your goal today?",
+    prompt:m=>'You are Shadow\'s Fitness Assistant for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nCreate plans, track habits. Always note to consult a doctor for medical decisions. Keep responses short.'},
+  master:{name:'SHADOW',mode:'MASTER ROUTER',icon:'⚡',greeting:"I'm Shadow, your personal AI OS. I have live market data and remember everything. What do you need?",
+    prompt:m=>'You are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional and direct. Keep responses short.'}
 };
 
-function buildMemoryContext(specialist) {
-  const rel = memories.filter(m => !m.specialist || m.specialist===specialist || m.specialist==='master');
-  return rel.length ? rel.map(m=>`- ${m.key}: ${m.value}`).join('\n') : 'No memories yet.';
+function updateUI(){
+  const h=new Date().getHours();
+  const greets=['Good Night','Good Morning','Good Afternoon','Good Evening'];
+  document.getElementById('greetingSub').textContent=greets[h<5?0:h<12?1:h<17?2:3];
+  const name=profile?.name||'Abdulrahman';
+  const parts=name.split(' ');
+  document.getElementById('greetingName').innerHTML=parts[0]+'<span>'+(parts.slice(1).join(' ')?' '+parts.slice(1).join(' '):'')+'</span>';
+  document.getElementById('greetingMemory').textContent='🧠 '+memories.length+' memories · '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const pending=tasks.filter(t=>t.status!=='done').length;
+  const dueToday=tasks.filter(t=>t.due_date&&new Date(t.due_date).toDateString()===new Date().toDateString()).length;
+  document.getElementById('statTasks').textContent=pending;
+  document.getElementById('statMemories').textContent=memories.length;
+  const tp=document.getElementById('tasksPending');if(tp)tp.textContent=pending;
+  const td=document.getElementById('tasksDueToday');if(td)td.textContent=dueToday;
+  const tb=document.getElementById('taskBadge');if(tb)tb.textContent=pending+' TASKS';
+  const tm=document.getElementById('tutorMemCount');if(tm)tm.textContent=memories.filter(m=>m.specialist==='tutor').length||'—';
+  renderTasksPreview();renderMemoriesPreview();renderTasksFull();renderMemoryScreen();
 }
 
-// ── CHAT ──
-async function openChat(type) {
-  currentSpecialist = type;
-  const spec = specialists[type];
-  document.getElementById('chatSpecialistName').textContent = spec.name;
-  document.getElementById('chatSpecialistMode').textContent = spec.mode;
-  document.getElementById('chatSpecialistIcon').textContent = spec.icon;
+function renderTasksPreview(){
+  const c=document.getElementById('tasksPreview');
+  const items=tasks.filter(t=>t.status!=='done').slice(0,4);
+  if(!items.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">No pending tasks. <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one →</span></div>';return;}
+  c.innerHTML=items.map(t=>'<div class="task-row"><div class="task-check" onclick="toggleTask(''+t.id+'',''+t.status+'')"></div><div class="task-content"><div class="task-title-text">'+t.title+'</div><div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div></div></div>').join('');
+}
+
+function renderTasksFull(){
+  const c=document.getElementById('tasksFullList');
+  if(!tasks.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No tasks yet!</div>';return;}
+  const pending=tasks.filter(t=>t.status!=='done');
+  const done=tasks.filter(t=>t.status==='done');
+  let html='';
+  if(pending.length){html+='<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Pending ('+pending.length+')</div>';html+=pending.map(t=>'<div class="task-row"><div class="task-check" onclick="toggleTask(''+t.id+'',''+t.status+'')"></div><div class="task-content"><div class="task-title-text">'+t.title+'</div>'+(t.description?'<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">'+t.description+'</div>':'')+'<div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div></div></div>').join('');}
+  if(done.length){html+='<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Done ('+done.length+')</div>';html+=done.slice(0,5).map(t=>'<div class="task-row" style="opacity:0.4;"><div class="task-check done">✓</div><div class="task-content"><div class="task-title-text done">'+t.title+'</div></div></div>').join('');}
+  c.innerHTML=html;
+}
+
+function renderMemoriesPreview(){
+  const c=document.getElementById('memoriesPreview');
+  if(!memories.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Chat with Shadow to build memory!</div>';return;}
+  c.innerHTML=memories.slice(0,4).map(m=>'<div class="memory-row"><div class="memory-key">'+m.key+'</div><div class="memory-val">'+m.value+'</div></div>').join('');
+}
+
+function renderMemoryScreen(){
+  const c=document.getElementById('memoryScreenContent');
+  if(!memories.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No memories yet. Start chatting!</div>';return;}
+  const cats=[...new Set(memories.map(m=>m.category))];
+  c.innerHTML=cats.map(cat=>{const items=memories.filter(m=>m.category===cat);return '<div class="mem-section"><div class="mem-section-title">'+cat+' ('+items.length+')</div>'+items.map(m=>'<div class="mem-item"><div class="mem-item-key">'+m.key+'</div><div><div class="mem-item-val">'+m.value+'</div><div class="mem-item-cat">'+(m.specialist||'general')+' · '+'★'.repeat(m.importance||1)+'</div></div></div>').join('')+'</div>';}).join('');
+}
+
+async function toggleTask(id,status){const newStatus=status==='done'?'pending':'done';try{await db.from('shadow_tasks').update({status:newStatus}).eq('id',id);tasks=tasks.map(t=>t.id===id?{...t,status:newStatus}:t);updateUI();}catch(e){}}
+function openAddTask(){document.getElementById('addTaskModal').classList.add('active');setTimeout(()=>document.getElementById('taskTitleInput').focus(),100);}
+function closeAddTask(){document.getElementById('addTaskModal').classList.remove('active');document.getElementById('taskTitleInput').value='';document.getElementById('taskDescInput').value='';}
+async function addTask(){
+  const title=document.getElementById('taskTitleInput').value.trim();
+  if(!title)return;
+  try{const{data}=await db.from('shadow_tasks').insert({user_id:USER_ID,title,description:document.getElementById('taskDescInput').value.trim(),priority:document.getElementById('taskPriority').value,specialist:document.getElementById('taskSpecialist').value,status:'pending'}).select().single();if(data)tasks.unshift(data);closeAddTask();updateUI();}catch(e){}
+}
+
+async function openChat(type){
+  currentSpecialist=type;
+  const spec=specialists[type];
+  document.getElementById('chatSpecialistName').textContent=spec.name;
+  document.getElementById('chatSpecialistMode').textContent=spec.mode;
+  document.getElementById('chatSpecialistIcon').textContent=spec.icon;
   await loadConversationHistory(type);
-  const msgs = document.getElementById('chatMessages');
-  msgs.innerHTML = '';
-  if (conversations[type]?.length > 0) {
-    conversations[type].slice(-8).forEach(m => addChatMessage(m.role==='user'?'user':'shadow', m.content, false));
-    addChatMessage('shadow', `Welcome back! I remember our previous conversations. How can I help?`, false);
-  } else {
-    addChatMessage('shadow', spec.greeting, false);
-  }
-  ['homeScreen','tasksScreen','memoryScreen'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const msgs=document.getElementById('chatMessages');
+  msgs.innerHTML='';
+  if(conversations[type]?.length>0){conversations[type].slice(-8).forEach(m=>addChatMessage(m.role==='user'?'user':'shadow',m.content,false));addChatMessage('shadow','Welcome back! How can I help?',false);}
+  else{addChatMessage('shadow',spec.greeting,false);}
+  ['homeScreen','tasksScreen','memoryScreen','marketsScreen'].forEach(id=>document.getElementById(id).classList.remove('active'));
   document.getElementById('chatScreen').classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  setTimeout(() => document.getElementById('chatTextInput').focus(), 300);
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  setTimeout(()=>document.getElementById('chatTextInput').focus(),300);
 }
 
-function closeChat() {
-  document.getElementById('chatScreen').classList.remove('active');
-  document.getElementById('homeScreen').classList.add('active');
-  document.querySelector('[data-tab=home]').classList.add('active');
-}
+function closeChat(){document.getElementById('chatScreen').classList.remove('active');document.getElementById('homeScreen').classList.add('active');document.querySelector('[data-tab=home]').classList.add('active');}
 
-async function sendChatMessage() {
-  const input = document.getElementById('chatTextInput');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  addChatMessage('user', text);
-  await saveMessage(currentSpecialist, 'user', text);
-  document.getElementById('chatSendBtn').disabled = true;
-  const thinkId = addThinkingBubble();
-  if (!conversations[currentSpecialist]) conversations[currentSpecialist] = [];
-  conversations[currentSpecialist].push({ role: 'user', content: text });
-
-  try {
-    const spec = specialists[currentSpecialist];
-    const res = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
-        system: spec.prompt(buildMemoryContext(currentSpecialist)),
-        messages: conversations[currentSpecialist].slice(-10)
-      })
-    });
-
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Shadow encountered an error. Please try again.';
+async function sendChatMessage(){
+  const input=document.getElementById('chatTextInput');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  addChatMessage('user',text);
+  await saveMessage(currentSpecialist,'user',text);
+  document.getElementById('chatSendBtn').disabled=true;
+  const thinkId=addThinkingBubble();
+  if(!conversations[currentSpecialist])conversations[currentSpecialist]=[];
+  conversations[currentSpecialist].push({role:'user',content:text});
+  try{
+    const spec=specialists[currentSpecialist];
+    const reply=await callClaude({system:spec.prompt(buildMemoryContext(currentSpecialist)),messages:conversations[currentSpecialist].slice(-10)});
     removeThinkingBubble(thinkId);
-    conversations[currentSpecialist].push({ role: 'assistant', content: reply });
-    addChatMessage('shadow', reply);
-    await saveMessage(currentSpecialist, 'assistant', reply);
-
-    // AI memory extraction in background
-    const extracted = await extractMemoriesWithAI(text, reply, currentSpecialist);
-    if (extracted.length > 0) showMemoryToast(extracted);
-
-  } catch(e) {
+    conversations[currentSpecialist].push({role:'assistant',content:reply});
+    addChatMessage('shadow',reply);
+    await saveMessage(currentSpecialist,'assistant',reply);
+    const extracted=await extractMemoriesWithAI(text,reply,currentSpecialist);
+    if(extracted.length>0)showMemoryToast(extracted);
+  }catch(e){
     removeThinkingBubble(thinkId);
-    addChatMessage('shadow', 'Connection error. Please check your internet and try again.');
+    addChatMessage('shadow','Connection error after '+MAX_RETRIES+' attempts. Please try again.');
   }
-  document.getElementById('chatSendBtn').disabled = false;
+  document.getElementById('chatSendBtn').disabled=false;
 }
 
-function showMemoryToast(extracted) {
-  const msgs = document.getElementById('chatMessages');
-  const toast = document.createElement('div');
-  toast.className = 'memory-toast';
-  toast.innerHTML = `🧠 Remembered: ${extracted.map(m=>m.key).join(', ')}`;
-  msgs.appendChild(toast);
-  msgs.scrollTop = msgs.scrollHeight;
-  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
-}
+function showMemoryToast(extracted){const msgs=document.getElementById('chatMessages');const toast=document.createElement('div');toast.className='memory-toast';toast.innerHTML='🧠 Remembered: '+extracted.map(m=>m.key).join(', ');msgs.appendChild(toast);msgs.scrollTop=msgs.scrollHeight;setTimeout(()=>{if(toast.parentNode)toast.remove();},4000);}
+function addChatMessage(from,text,animate=true){const msgs=document.getElementById('chatMessages');const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});const fmt=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');const div=document.createElement('div');div.className='cmsg '+(from==='shadow'?'shadow':'user');if(!animate)div.style.animation='none';div.innerHTML='<div class="cmsg-avatar '+(from==='shadow'?'s':'u')+'">'+(from==='shadow'?'S':'A')+'</div><div><div class="cmsg-bubble">'+fmt+'</div><div class="cmsg-time">'+now+'</div></div>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function addThinkingBubble(){const msgs=document.getElementById('chatMessages');const id='think-'+Date.now();const div=document.createElement('div');div.id=id;div.className='cmsg shadow';div.innerHTML='<div class="cmsg-avatar s">S</div><div><div class="cmsg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;return id;}
+function removeThinkingBubble(id){const el=document.getElementById(id);if(el)el.remove();}
+function handleChatKey(e){if(e.key==='Enter')sendChatMessage();}
 
-function addChatMessage(from, text, animate=true) {
-  const msgs = document.getElementById('chatMessages');
-  const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-  const fmt = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-  const div = document.createElement('div');
-  div.className = `cmsg ${from==='shadow'?'shadow':'user'}`;
-  if (!animate) div.style.animation = 'none';
-  div.innerHTML = `<div class="cmsg-avatar ${from==='shadow'?'s':'u'}">${from==='shadow'?'S':'A'}</div><div><div class="cmsg-bubble">${fmt}</div><div class="cmsg-time">${now}</div></div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function addThinkingBubble() {
-  const msgs = document.getElementById('chatMessages');
-  const id = 'think-'+Date.now();
-  const div = document.createElement('div');
-  div.id = id; div.className = 'cmsg shadow';
-  div.innerHTML = `<div class="cmsg-avatar s">S</div><div><div class="cmsg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>`;
-  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
-  return id;
-}
-function removeThinkingBubble(id) { const el = document.getElementById(id); if (el) el.remove(); }
-function handleChatKey(e) { if (e.key==='Enter') sendChatMessage(); }
-
-// ── NAVIGATION ──
-function switchTab(tab, el) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  if (el) el.classList.add('active');
-  ['homeScreen','chatScreen','tasksScreen','memoryScreen'].forEach(id => document.getElementById(id).classList.remove('active'));
-  if (tab==='home') document.getElementById('homeScreen').classList.add('active');
-  else if (tab==='tasks') { document.getElementById('tasksScreen').classList.add('active'); renderTasksFull(); }
-  else if (tab==='memory') { document.getElementById('memoryScreen').classList.add('active'); renderMemoryScreen(); }
-  else if (tab==='chat-master') openChat('master');
+function switchTab(tab,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['homeScreen','chatScreen','tasksScreen','memoryScreen','marketsScreen'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  if(tab==='home')document.getElementById('homeScreen').classList.add('active');
+  else if(tab==='tasks'){document.getElementById('tasksScreen').classList.add('active');renderTasksFull();}
+  else if(tab==='memory'){document.getElementById('memoryScreen').classList.add('active');renderMemoryScreen();}
+  else if(tab==='markets'){document.getElementById('marketsScreen').classList.add('active');renderMarketsScreen();}
+  else if(tab==='chat-master')openChat('master');
   else openChat(tab);
 }
 
-// ── VOICE ──
-function setupRecognition(onResult, onEnd) {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { alert('Voice requires Safari on iOS 15+ or Chrome'); return null; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const r = new SR(); r.continuous=false; r.interimResults=true; r.lang='en-US';
-  r.onresult=onResult; r.onend=onEnd; r.onerror=()=>{ isListening=false; };
-  return r;
-}
-
-function openVoiceOverlay() {
-  document.getElementById('voiceTranscriptDisplay').textContent = 'Speak your command';
-  document.getElementById('voiceOverlay').classList.add('active');
-  recognition = setupRecognition(
-    (e) => { const t=Array.from(e.results).map(r=>r[0].transcript).join(''); document.getElementById('voiceTranscriptDisplay').textContent=t; if (e.results[0].isFinal) { setTimeout(()=>{ document.getElementById('voiceOverlay').classList.remove('active'); openChat('master'); setTimeout(()=>{ document.getElementById('chatTextInput').value=t; sendChatMessage(); },400); },500); } },
-    ()=>{ isListening=false; }
-  );
-  if (recognition) { recognition.start(); isListening=true; }
-}
-
-function cancelVoice() { if (recognition) recognition.stop(); isListening=false; document.getElementById('voiceOverlay').classList.remove('active'); }
-
-function toggleMic() {
-  if (isListening) { recognition.stop(); document.getElementById('micBtn').classList.remove('listening'); isListening=false; return; }
-  recognition = setupRecognition(
-    (e) => { const t=Array.from(e.results).map(r=>r[0].transcript).join(''); document.getElementById('chatTextInput').value=t; if (e.results[0].isFinal) { document.getElementById('micBtn').classList.remove('listening'); isListening=false; setTimeout(()=>sendChatMessage(),300); } },
-    ()=>{ isListening=false; document.getElementById('micBtn').classList.remove('listening'); }
-  );
-  if (recognition) { recognition.start(); isListening=true; document.getElementById('micBtn').classList.add('listening'); }
-}
-
-function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); }
-
-function setupCarouselDots() {
-  const carousel = document.getElementById('cardsCarousel');
-  const dots = document.querySelectorAll('.card-dot');
-  carousel.addEventListener('scroll', () => { const idx=Math.round(carousel.scrollLeft/(carousel.offsetWidth-40)); dots.forEach((d,i)=>d.classList.toggle('active',i===idx)); });
-}
+function setupRecognition(onResult,onEnd){if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){alert('Voice requires Safari iOS 15+ or Chrome');return null;}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();r.continuous=false;r.interimResults=true;r.lang='en-US';r.onresult=onResult;r.onend=onEnd;r.onerror=()=>{isListening=false;};return r;}
+function openVoiceOverlay(){document.getElementById('voiceTranscriptDisplay').textContent='Speak your command';document.getElementById('voiceOverlay').classList.add('active');recognition=setupRecognition((e)=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('voiceTranscriptDisplay').textContent=t;if(e.results[0].isFinal){setTimeout(()=>{document.getElementById('voiceOverlay').classList.remove('active');openChat('master');setTimeout(()=>{document.getElementById('chatTextInput').value=t;sendChatMessage();},400);},500);}},()=>{isListening=false;});if(recognition){recognition.start();isListening=true;}}
+function cancelVoice(){if(recognition)recognition.stop();isListening=false;document.getElementById('voiceOverlay').classList.remove('active');}
+function toggleMic(){if(isListening){recognition.stop();document.getElementById('micBtn').classList.remove('listening');isListening=false;return;}recognition=setupRecognition((e)=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('chatTextInput').value=t;if(e.results[0].isFinal){document.getElementById('micBtn').classList.remove('listening');isListening=false;setTimeout(()=>sendChatMessage(),300);}},()=>{isListening=false;document.getElementById('micBtn').classList.remove('listening');});if(recognition){recognition.start();isListening=true;document.getElementById('micBtn').classList.add('listening');}}
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});}
+function setupCarouselDots(){const carousel=document.getElementById('cardsCarousel');const dots=document.querySelectorAll('.card-dot');carousel.addEventListener('scroll',()=>{const idx=Math.round(carousel.scrollLeft/(carousel.offsetWidth-40));dots.forEach((d,i)=>d.classList.toggle('active',i===idx));});}
 
 initApp();
 </script>
