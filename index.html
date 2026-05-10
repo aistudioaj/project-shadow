@@ -17,7 +17,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .app{display:flex;flex-direction:column;height:100vh;height:-webkit-fill-available}
 .status-bar{height:var(--safe-top);background:var(--bg);flex-shrink:0}
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:999;transition:opacity 0.5s}
-.loading-screen.hidden{opacity:0;pointer-events:none}
+.loading-screen.hidden{opacity:0;pointer-events:none;display:none}
 .loading-logo{font-family:var(--display);font-size:52px;letter-spacing:10px;color:var(--accent)}
 .loading-sub{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase}
 .loading-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
@@ -200,6 +200,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <div class="loading-bar"><div class="loading-fill"></div></div>
 <div class="loading-status" id="loadingStatus">Initializing...</div>
 </div>
+<script>setTimeout(function(){var s=document.getElementById("loadingScreen");if(s){s.style.display="none";}var h=document.getElementById("homeScreen");if(h){h.classList.add("active");}},8000);</script>
 <div class="app">
 <div class="status-bar"></div>
 <div class="header">
@@ -463,10 +464,10 @@ function updateMarketStats(){
 }
 
 async function initApp(){
-  setLoadingStatus('Loading profile...');await loadProfile();
-  setLoadingStatus('Loading memories...');await loadMemories();
-  setLoadingStatus('Loading tasks...');await loadTasks();
-  setLoadingStatus('Fetching live markets...');await fetchAllMarketData();
+  try{setLoadingStatus('Loading profile...');await Promise.race([loadProfile(),sleep(3000)]);}catch(e){}
+  try{setLoadingStatus('Loading memories...');await Promise.race([loadMemories(),sleep(3000)]);}catch(e){}
+  try{setLoadingStatus('Loading tasks...');await Promise.race([loadTasks(),sleep(3000)]);}catch(e){}
+  try{setLoadingStatus('Fetching markets...');await Promise.race([fetchAllMarketData(),sleep(5000)]);}catch(e){}
   setLoadingStatus('Shadow ready ✓');await sleep(400);
   document.getElementById('loadingScreen').classList.add('hidden');
   updateUI();updateClock();
@@ -565,19 +566,60 @@ function updateUI(){
 function renderTasksPreview(){
   const c=document.getElementById('tasksPreview');
   const items=tasks.filter(t=>t.status!=='done').slice(0,4);
-  if(!items.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">No pending tasks. <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one →</span></div>';return;}
-  c.innerHTML=items.map(t=>'<div class="task-row"><div class="task-check" onclick="toggleTask(''+t.id+'',''+t.status+'')"></div><div class="task-content"><div class="task-title-text">'+t.title+'</div><div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div></div></div>').join('');
+  c.innerHTML='';
+  if(!items.length){
+    c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">No pending tasks. <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one</span></div>';
+    return;
+  }
+  items.forEach(t=>{
+    const row=document.createElement('div');
+    row.className='task-row';
+    const chk=document.createElement('div');
+    chk.className='task-check';
+    chk.onclick=()=>toggleTask(t.id,t.status);
+    const cnt=document.createElement('div');
+    cnt.className='task-content';
+    cnt.innerHTML='<div class="task-title-text">'+t.title+'</div><div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div>';
+    row.appendChild(chk);row.appendChild(cnt);
+    c.appendChild(row);
+  });
 }
 
 function renderTasksFull(){
   const c=document.getElementById('tasksFullList');
-  if(!tasks.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No tasks yet!</div>';return;}
+  c.innerHTML='';
+  if(!tasks.length){
+    c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No tasks yet!</div>';
+    return;
+  }
   const pending=tasks.filter(t=>t.status!=='done');
   const done=tasks.filter(t=>t.status==='done');
-  let html='';
-  if(pending.length){html+='<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Pending ('+pending.length+')</div>';html+=pending.map(t=>'<div class="task-row"><div class="task-check" onclick="toggleTask(''+t.id+'',''+t.status+'')"></div><div class="task-content"><div class="task-title-text">'+t.title+'</div>'+(t.description?'<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">'+t.description+'</div>':'')+'<div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div></div></div>').join('');}
-  if(done.length){html+='<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;">Done ('+done.length+')</div>';html+=done.slice(0,5).map(t=>'<div class="task-row" style="opacity:0.4;"><div class="task-check done">✓</div><div class="task-content"><div class="task-title-text done">'+t.title+'</div></div></div>').join('');}
-  c.innerHTML=html;
+  if(pending.length){
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;';
+    hdr.textContent='Pending ('+pending.length+')';
+    c.appendChild(hdr);
+    pending.forEach(t=>{
+      const row=document.createElement('div');row.className='task-row';
+      const chk=document.createElement('div');chk.className='task-check';chk.onclick=()=>toggleTask(t.id,t.status);
+      const cnt=document.createElement('div');cnt.className='task-content';
+      cnt.innerHTML='<div class="task-title-text">'+t.title+'</div>'+(t.description?'<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">'+t.description+'</div>':'')+'<div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div>';
+      row.appendChild(chk);row.appendChild(cnt);c.appendChild(row);
+    });
+  }
+  if(done.length){
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;';
+    hdr.textContent='Done ('+done.length+')';
+    c.appendChild(hdr);
+    done.slice(0,5).forEach(t=>{
+      const row=document.createElement('div');row.className='task-row';row.style.opacity='0.4';
+      const chk=document.createElement('div');chk.className='task-check done';chk.textContent='✓';chk.onclick=()=>toggleTask(t.id,t.status);
+      const cnt=document.createElement('div');cnt.className='task-content';
+      cnt.innerHTML='<div class="task-title-text done">'+t.title+'</div>';
+      row.appendChild(chk);row.appendChild(cnt);c.appendChild(row);
+    });
+  }
 }
 
 function renderMemoriesPreview(){
