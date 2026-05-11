@@ -394,7 +394,7 @@ let currentSpecialist='master',recognition=null,isListening=false;
 let marketData={};
 
 const US_STOCKS=[{sym:'AAPL',name:'Apple'},{sym:'MSFT',name:'Microsoft'},{sym:'NVDA',name:'Nvidia'},{sym:'AMZN',name:'Amazon'},{sym:'GOOGL',name:'Alphabet'},{sym:'META',name:'Meta'},{sym:'TSLA',name:'Tesla'},{sym:'JPM',name:'JPMorgan'}];
-const COMMODITIES=[{sym:'OANDA:XAU_USD',name:'Gold (XAU/USD)',display:'GOLD'},{sym:'OANDA:USOIL',name:'Oil WTI (USD)',display:'OIL'}];
+const COMMODITIES=[{sym:'GCUSD',name:'Gold (USD/oz)',display:'GOLD'},{sym:'CLUSD',name:'Oil WTI (USD)',display:'OIL'}];
 
 async function fetchQuote(symbol){
   try{
@@ -529,19 +529,25 @@ function buildMemoryContext(specialist){
   return rel.length?rel.map(m=>'- '+m.key+': '+m.value).join('\n'):'No memories yet.';
 }
 
+function getTodayContext(){
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Dubai'});
+  return 'TODAY: '+dateStr+' · '+timeStr+' (Abu Dhabi, GMT+4)';
+}
 const specialists={
   investment:{name:'INVESTMENT',mode:'ADVISOR',icon:'📈',greeting:"I'm your Investment Advisor. I have live market data. What would you like to know?",
-    prompt:m=>'You are Shadow\'s Investment Advisor for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\nBe direct and professional. Keep responses concise.'},
+    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Investment Advisor for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\nBe direct and professional. Keep responses concise.'},
   productivity:{name:'PRODUCTIVITY',mode:'SCOUT',icon:'🎯',greeting:"I'm your Productivity Scout. What do you need to tackle today?",
-    prompt:m=>'You are Shadow\'s Productivity Scout for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp manage tasks, optimize workflows. Be direct. Keep responses short.'},
+    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Productivity Scout for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp manage tasks, optimize workflows. Be direct. Keep responses short.'},
   tutor:{name:'TUTOR',mode:'ASSISTANT',icon:'🎓',greeting:"I'm your Tutor. What are we working on today?",
-    prompt:m=>'You are Shadow\'s Tutor for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp with studying, exercises, exam prep. Keep responses concise.'},
+    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Tutor for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp with studying, exercises, exam prep. Keep responses concise.'},
   travel:{name:'TRAVEL',mode:'ADVISOR',icon:'✈️',greeting:"I'm your Travel Advisor. Tell me where you're headed and I'll plan everything — itinerary, weather, hotels, budget and transfers. Who are you traveling with?",
-    prompt:m=>'You are Shadow\'s Travel Advisor for Abdulrahman (based in Abu Dhabi, UAE).\n\nMEMORY:\n'+m+'\n\nWhen planning trips always cover: 1) Ask who they travel with 2) Day-by-day itinerary 3) Weather forecast for travel dates 4) Hotel recommendations with price ranges in USD 5) Daily budget estimate (accommodation + food + activities) 6) Flight/transfer options from Abu Dhabi 7) Car rental or local transport options. Be thorough and enthusiastic. Use clear formatting.'},
+    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Travel Advisor for Abdulrahman (based in Abu Dhabi, UAE).\n\nMEMORY:\n'+m+'\n\nWhen planning trips always cover: 1) Ask who they travel with 2) Day-by-day itinerary 3) Weather forecast for travel dates 4) Hotel recommendations with price ranges in USD 5) Daily budget estimate (accommodation + food + activities) 6) Flight/transfer options from Abu Dhabi 7) Car rental or local transport options. Be thorough and enthusiastic. Use clear formatting.'},
   fitness:{name:'FITNESS',mode:'ASSISTANT',icon:'💪',greeting:"I'm your Fitness Assistant. What's your goal today?",
-    prompt:m=>'You are Shadow\'s Fitness Assistant for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nCreate plans, track habits. Always note to consult a doctor for medical decisions. Keep responses short.'},
+    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Fitness Assistant for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nCreate plans, track habits. Always note to consult a doctor for medical decisions. Keep responses short.'},
   master:{name:'SHADOW',mode:'MASTER ROUTER',icon:'⚡',greeting:"I'm Shadow, your personal AI OS. I have live market data and remember everything. What do you need?",
-    prompt:m=>'You are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional and direct. Keep responses short.'}
+    prompt:m=>getTodayContext()+'\n\nYou are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional and direct. Keep responses short.'}
 };
 
 function updateUI(){
