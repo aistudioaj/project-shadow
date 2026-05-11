@@ -1,0 +1,45 @@
+name: Shadow Morning Brief
+
+on:
+  schedule:
+    # 03:00 UTC = 07:00 Abu Dhabi (GMT+4)
+    - cron: '0 3 * * *'
+  
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  morning-brief:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Shadow Morning Brief
+        env:
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          USER_ID: abdulrahman
+          USER_NAME: AJ
+        run: python scripts/morning_brief.py
+
+      - name: Report status
+        if: always()
+        run: |
+          echo "Shadow Morning Brief completed at $(date -u)"
+          echo "Status: ${{ job.status }}"
