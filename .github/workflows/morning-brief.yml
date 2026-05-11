@@ -27,13 +27,14 @@ jobs:
 
       - name: Run Shadow Morning Brief
         env:
+          env:
           ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          RESEND_KEY: ${{ secrets.RESEND_KEY }}
           USER_ID: abdulrahman
           USER_NAME: AJ
         run: python scripts/morning_brief.py
