@@ -18,7 +18,6 @@ SUPABASE_URL  = os.environ['SUPABASE_URL']
 SUPABASE_KEY  = os.environ['SUPABASE_KEY']
 FINNHUB_KEY   = os.environ['FINNHUB_KEY']
 EMAIL_FROM    = os.environ['EMAIL_FROM']
-EMAIL_PASS    = os.environ['EMAIL_PASS']
 EMAIL_TO      = os.environ['EMAIL_TO']
 USER_ID       = os.environ.get('USER_ID', 'abdulrahman')
 USER_NAME     = os.environ.get('USER_NAME', 'AJ')
