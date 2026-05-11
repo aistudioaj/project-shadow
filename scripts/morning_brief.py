@@ -368,11 +368,8 @@ html_email = (
     '</table></td></tr></table></body></html>'
 )
 
-print("Sending email...")
-msg = MIMEMultipart('alternative')
-msg['Subject'] = "Shadow Brief - " + NOW.strftime('%a %b %d') + " - " + str(len(portfolio)) + " Holdings"
-msg['From'] = "Shadow AI <" + EMAIL_FROM + ">"
-msg['To'] = EMAIL_TO
+print("Sending email via Resend...")
+RESEND_KEY = os.environ['RESEND_KEY']
 
 plain = "Shadow Morning Brief - " + TODAY_STR + "\n\n"
 for key, val in sections.items():
@@ -380,15 +377,27 @@ for key, val in sections.items():
         plain += key.upper() + ":\n" + val + "\n\n"
 plain += "Open Shadow: https://aistudioaj.github.io/project-shadow/"
 
-msg.attach(MIMEText(plain, 'plain'))
-msg.attach(MIMEText(html_email, 'html'))
-
 try:
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    server.login(EMAIL_FROM, EMAIL_PASS)
-    server.sendmail(EMAIL_FROM, EMAIL_TO, msg.as_string())
-    server.quit()
-    print("Email sent to " + EMAIL_TO)
+    response = requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": "Bearer " + RESEND_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": "Shadow AI <onboarding@resend.dev>",
+            "to": [EMAIL_TO],
+            "subject": "Shadow Brief - " + NOW.strftime('%a %b %d') + " - " + str(len(portfolio)) + " Holdings",
+            "text": plain,
+            "html": html_email
+        },
+        timeout=30
+    )
+    if response.status_code == 200 or response.status_code == 201:
+        print("Email sent successfully to " + EMAIL_TO)
+    else:
+        print("Resend error: " + str(response.status_code) + " " + response.text)
+        raise Exception("Resend failed: " + response.text)
 except Exception as e:
     print("Email error: " + str(e))
     raise
