@@ -6,722 +6,1560 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Shadow">
-<meta name="theme-color" content="#0a0a0b">
-<title>Shadow</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#060810">
+<title>Shadow AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#0a0a0b;--bg2:#0d0f14;--bg3:#131720;--border:#1e2433;--border2:#2a3348;--accent:#3b82f6;--accent2:#2563eb;--accent-glow:rgba(59,130,246,0.2);--green:#00d4aa;--red:#ff4466;--yellow:#f0a500;--purple:#9966ff;--text:#e8eaf2;--text2:#8892a8;--text3:#454d60;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;--safe-top:env(safe-area-inset-top,44px);--safe-bottom:env(safe-area-inset-bottom,34px)}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
-.app{display:flex;flex-direction:column;height:100vh;height:-webkit-fill-available}
-.status-bar{height:var(--safe-top);background:var(--bg);flex-shrink:0}
-.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:999;transition:opacity 0.5s}
-.loading-screen.hidden{opacity:0;pointer-events:none;display:none}
-.loading-logo{font-family:var(--display);font-size:52px;letter-spacing:10px;color:var(--accent)}
-.loading-sub{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase}
-.loading-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
-.loading-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));animation:loadFill 2s ease forwards}
-@keyframes loadFill{from{width:0}to{width:100%}}
-.loading-status{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px}
-.header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
-.header-logo{font-family:var(--display);font-size:20px;letter-spacing:3px;color:var(--accent)}
-.header-right{display:flex;align-items:center;gap:12px}
-.header-clock{font-family:var(--mono);font-size:11px;color:var(--text3)}
-.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.market-badge{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px}
-.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
-.screen.active{display:flex}
-.home-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.home-scroll::-webkit-scrollbar{display:none}
-.greeting{padding:22px 20px 14px}
-.greeting-sub{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
-.greeting-name{font-family:var(--display);font-size:34px;letter-spacing:2px;color:var(--text);line-height:1}
-.greeting-name span{color:var(--accent)}
-.greeting-memory{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px}
-.quick-stats{display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;scrollbar-width:none}
-.quick-stats::-webkit-scrollbar{display:none}
-.qstat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:78px;flex-shrink:0;cursor:pointer;transition:border-color 0.15s}
-.qstat:hover{border-color:var(--accent)}
-.qstat-val{font-family:var(--mono);font-size:16px;font-weight:600;margin-bottom:3px}
-.qstat-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
-.market-section{padding:0 20px 16px}
-.market-header{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:12px 0 10px;display:flex;align-items:center;justify-content:space-between}
-.market-refresh{color:var(--accent);cursor:pointer;font-size:11px}
-.market-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.market-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color 0.15s}
-.market-card:hover{border-color:var(--accent)}
-.market-sym{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px}
-.market-name{font-size:11px;color:var(--text3);margin-bottom:6px}
-.market-price{font-family:var(--mono);font-size:17px;font-weight:600;margin-bottom:3px}
-.market-chg{font-family:var(--mono);font-size:11px}
-.up{color:var(--green)}.dn{color:var(--red)}
-.big-voice-btn{margin:0 20px 16px;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--bg2);border:1px solid var(--accent);border-radius:14px;cursor:pointer;transition:all 0.15s;box-shadow:0 0 20px var(--accent-glow)}
-.big-voice-btn:active{transform:scale(0.98)}
-.big-voice-icon{width:46px;height:46px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px}
-.big-voice-text{flex:1}
-.big-voice-label{font-size:15px;color:var(--text);font-weight:600;margin-bottom:2px}
-.big-voice-sub{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px}
-.cards-label{padding:0 20px 10px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
-.cards-carousel{padding:0 20px;display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
-.cards-carousel::-webkit-scrollbar{display:none}
-.spec-card{min-width:calc(100vw - 56px);scroll-snap-align:start;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:transform 0.15s;position:relative;overflow:hidden}
-.spec-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
-.spec-card:active{transform:scale(0.98)}
-.spec-card.invest::before{background:var(--accent)}
-.spec-card.productivity::before{background:var(--green)}
-.spec-card.tutor::before{background:var(--purple)}
-.spec-card.travel::before{background:var(--yellow)}
-.spec-card.fitness::before{background:var(--red)}
-.spec-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
-.spec-card-icon{font-size:32px}
-.spec-card-badge{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:1px;font-weight:600}
-.badge-invest{background:rgba(59,130,246,0.15);color:var(--accent)}
-.badge-productivity{background:rgba(0,212,170,0.15);color:var(--green)}
-.badge-tutor{background:rgba(153,102,255,0.15);color:var(--purple)}
-.badge-travel{background:rgba(240,165,0,0.15);color:var(--yellow)}
-.badge-fitness{background:rgba(255,68,102,0.15);color:var(--red)}
-.spec-card-name{font-family:var(--display);font-size:24px;letter-spacing:2px;margin-bottom:6px}
-.spec-card-desc{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px}
-.spec-card-stats{display:flex;gap:16px;padding-top:14px;border-top:1px solid var(--border)}
-.spec-stat{flex:1}
-.spec-stat-val{font-family:var(--mono);font-size:16px;font-weight:600;margin-bottom:2px}
-.spec-stat-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px}
-.spec-card-cta{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:1px}
-.card-dots{display:flex;justify-content:center;gap:6px;padding:12px 0 8px}
-.card-dot{width:5px;height:5px;border-radius:50%;background:var(--border);transition:all 0.2s}
-.card-dot.active{background:var(--accent);width:16px;border-radius:3px}
-.section{padding:0 20px 16px}
-.section-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:12px 0 10px;display:flex;align-items:center;justify-content:space-between}
-.section-action{color:var(--accent);cursor:pointer}
-.task-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
-.task-row:last-child{border-bottom:none}
-.task-check{width:18px;height:18px;border:1px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px;font-size:10px;transition:all 0.15s}
-.task-check.done{background:var(--green);border-color:var(--green)}
-.task-content{flex:1}
-.task-title-text{font-size:13px;color:var(--text);margin-bottom:3px}
-.task-title-text.done{text-decoration:line-through;color:var(--text3)}
-.task-meta{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;gap:8px;align-items:center}
-.task-priority{padding:1px 6px;border-radius:2px;font-size:9px}
-.priority-high{background:rgba(255,68,102,0.15);color:var(--red)}
-.priority-medium{background:rgba(59,130,246,0.15);color:var(--accent)}
-.priority-low{background:rgba(0,212,170,0.15);color:var(--green)}
-.memory-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
-.memory-row:last-child{border-bottom:none}
-.memory-key{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:100px}
-.memory-val{font-size:12px;color:var(--text2);flex:1}
-.chat-header{padding:14px 20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
-.chat-back{font-size:22px;cursor:pointer;color:var(--accent);padding:4px}
-.chat-specialist-info{flex:1}
-.chat-specialist-name{font-family:var(--display);font-size:18px;letter-spacing:2px;color:var(--text)}
-.chat-specialist-mode{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;display:flex;align-items:center;gap:6px;margin-top:2px}
-.memory-badge{background:rgba(59,130,246,0.15);color:var(--accent);padding:1px 6px;border-radius:2px;font-size:9px}
-.chat-messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
-.chat-messages::-webkit-scrollbar{display:none}
-.cmsg{display:flex;gap:10px;animation:fadeUp 0.25s ease}
-.cmsg.user{flex-direction:row-reverse}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.cmsg-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0}
-.cmsg-avatar.s{background:var(--accent);color:#fff}
-.cmsg-avatar.u{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
-.cmsg-bubble{max-width:78%;padding:12px 14px;border-radius:14px;font-size:14px;line-height:1.55}
-.cmsg.shadow .cmsg-bubble{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px}
-.cmsg.user .cmsg-bubble{background:var(--accent);color:#fff;font-weight:500;border-top-right-radius:4px}
-.cmsg-time{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:5px}
-.memory-toast{display:flex;align-items:center;gap:8px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 12px;margin:4px 0;font-family:var(--mono);font-size:11px;color:var(--accent);animation:fadeUp 0.3s ease}
-.thinking-dots{display:flex;gap:4px;padding:4px 2px;align-items:center}
-.thinking-dots span{width:5px;height:5px;background:var(--accent);border-radius:50%;animation:think 1.2s infinite;opacity:0.5}
-.thinking-dots span:nth-child(2){animation-delay:0.2s}
-.thinking-dots span:nth-child(3){animation-delay:0.4s}
-@keyframes think{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-5px);opacity:1}}
-.chat-input-bar{padding:12px 16px;padding-bottom:max(12px,var(--safe-bottom));background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.chat-text-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:10px 16px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color 0.15s;-webkit-appearance:none}
-.chat-text-input:focus{border-color:var(--accent)}
-.chat-text-input::placeholder{color:var(--text3)}
-.mic-btn{width:44px;height:44px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all 0.2s;flex-shrink:0}
-.mic-btn.listening{background:var(--red);border-color:var(--red);animation:micPulse 1s infinite}
-@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,68,102,0.4)}50%{box-shadow:0 0 0 12px rgba(255,68,102,0)}}
-.send-circle{width:44px;height:44px;border-radius:50%;background:var(--accent);border:none;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:all 0.15s;color:#fff;font-weight:700}
-.send-circle:active{transform:scale(0.92)}
-.send-circle:disabled{opacity:0.4}
-.screen-header{padding:16px 20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.screen-title{font-family:var(--display);font-size:22px;letter-spacing:2px}
-.screen-body{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch}
-.screen-body::-webkit-scrollbar{display:none}
-.markets-full{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch}
-.markets-full::-webkit-scrollbar{display:none}
-.market-group-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 10px;border-bottom:1px solid var(--border);margin-bottom:10px}
-.market-list-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
-.market-list-item:last-child{border-bottom:none}
-.market-list-sym{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:70px}
-.market-list-name{font-size:12px;color:var(--text3);flex:1}
-.market-list-right{text-align:right}
-.market-list-price{font-family:var(--mono);font-size:14px;font-weight:600}
-.market-list-chg{font-family:var(--mono);font-size:11px}
-.mem-section{margin-bottom:24px}
-.mem-section-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.mem-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.mem-item:last-child{border-bottom:none}
-.mem-item-key{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:110px;padding-top:1px}
-.mem-item-val{font-size:13px;color:var(--text2);flex:1;line-height:1.4}
-.mem-item-cat{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
-.voice-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:24px;backdrop-filter:blur(10px)}
-.voice-overlay.active{display:flex}
-.voice-ring{width:130px;height:130px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:52px;animation:voiceRing 1.2s infinite}
-@keyframes voiceRing{0%{box-shadow:0 0 0 0 var(--accent-glow)}70%{box-shadow:0 0 0 30px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}
-.voice-label{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--text2);text-transform:uppercase}
-.voice-transcript-display{font-size:16px;color:var(--text);text-align:center;max-width:280px;line-height:1.6;min-height:48px}
-.voice-cancel{font-family:var(--mono);font-size:12px;color:var(--text3);cursor:pointer;padding:12px 28px;border:1px solid var(--border);border-radius:22px;background:transparent}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:flex-end;backdrop-filter:blur(6px)}
-.modal.active{display:flex}
-.modal-content{width:100%;background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px;padding-bottom:max(24px,var(--safe-bottom));border-top:1px solid var(--border)}
-.modal-title{font-family:var(--display);font-size:24px;letter-spacing:2px;margin-bottom:20px}
-.modal-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;margin-bottom:12px;-webkit-appearance:none;transition:border-color 0.15s}
-.modal-input:focus{border-color:var(--accent)}
-.modal-input::placeholder{color:var(--text3)}
-.modal-row{display:flex;gap:10px;margin-bottom:16px}
-.modal-select{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;-webkit-appearance:none}
-.modal-btn{flex:1;padding:14px;border-radius:10px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;border:none}
-.modal-btn.cancel{background:var(--bg3);color:var(--text2)}
-.modal-btn.confirm{background:var(--accent);color:#fff}
-.add-btn{background:var(--accent);border:none;color:#fff;font-family:var(--mono);font-size:11px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
-.bottom-nav{display:flex;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:var(--safe-bottom);flex-shrink:0}
-.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;transition:color 0.15s;color:var(--text3);gap:3px}
-.nav-tab.active{color:var(--accent)}
-.nav-tab-icon{font-size:20px}
-.nav-tab-label{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase}
+:root {
+  --bg: #060810;
+  --bg1: #0a0d18;
+  --bg2: #0e1220;
+  --bg3: #141928;
+  --bg4: #1a2035;
+  --border: #1e2840;
+  --border2: #263352;
+  --accent: #4f8ef7;
+  --accent2: #2563eb;
+  --accent3: #1d4ed8;
+  --accent-glow: rgba(79,142,247,0.15);
+  --accent-glow2: rgba(79,142,247,0.3);
+  --green: #10d9a0;
+  --green-glow: rgba(16,217,160,0.15);
+  --red: #f43f5e;
+  --red-glow: rgba(244,63,94,0.15);
+  --yellow: #f59e0b;
+  --purple: #a855f7;
+  --text: #e2e8f8;
+  --text2: #7889a8;
+  --text3: #3d4d6a;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --display: 'Bebas Neue', sans-serif;
+  --safe-top: env(safe-area-inset-top, 44px);
+  --safe-bottom: env(safe-area-inset-bottom, 34px);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+.app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
+.safe-top { height: var(--safe-top); background: var(--bg); flex-shrink: 0; }
+
+/* ── LOADING ── */
+.splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.splash.out { opacity: 0; transform: scale(1.05); pointer-events: none; }
+
+.splash-logo-wrap {
+  position: relative;
+  width: 120px; height: 120px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 32px;
+}
+.splash-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background: linear-gradient(135deg, var(--accent), transparent, var(--accent2)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  animation: spin 3s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.splash-ring2 {
+  position: absolute; inset: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  animation: spin 6s linear infinite reverse;
+}
+.splash-s {
+  font-family: var(--display);
+  font-size: 48px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-glow2), 0 0 80px var(--accent-glow);
+  position: relative; z-index: 1;
+}
+.splash-name {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 8px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.splash-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 48px;
+}
+.splash-bar-wrap { width: 200px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; margin-bottom: 16px; }
+.splash-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent3), var(--accent)); border-radius: 1px; transition: width 0.4s ease; }
+.splash-status { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 2px; height: 16px; }
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  backdrop-filter: blur(20px);
+}
+.header-logo {
+  font-family: var(--display);
+  font-size: 22px; letter-spacing: 4px;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow2);
+}
+.header-center {
+  display: flex; flex-direction: column; align-items: center;
+}
+.header-date {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text2); letter-spacing: 0.5px;
+}
+.header-time {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: var(--accent); letter-spacing: 1px;
+}
+.header-right { display: flex; align-items: center; gap: 10px; }
+.live-dot {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 9px;
+  color: var(--green); letter-spacing: 1px;
+}
+.live-dot-pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+
+/* ── SCREENS ── */
+.screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.screen.active { display: flex; animation: screenIn 0.3s ease; }
+@keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── HOME SCROLL ── */
+.home-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.home-body::-webkit-scrollbar { display: none; }
+
+/* ── GREETING ── */
+.greeting-section {
+  padding: 24px 20px 20px;
+  background: linear-gradient(180deg, var(--bg1) 0%, var(--bg) 100%);
+}
+.greeting-label { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
+.greeting-name { font-family: var(--display); font-size: 38px; letter-spacing: 2px; color: var(--text); line-height: 1; margin-bottom: 8px; }
+.greeting-name em { color: var(--accent); font-style: normal; }
+.greeting-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.greeting-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px;
+  font-family: var(--mono); font-size: 10px; color: var(--text2);
+}
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: flex; gap: 10px;
+  padding: 0 20px 20px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.stats-row::-webkit-scrollbar { display: none; }
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  min-width: 100px; flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  opacity: 0; transition: opacity 0.2s;
+}
+.stat-card:active { transform: scale(0.96); }
+.stat-card.blue::before { background: var(--accent); }
+.stat-card.green::before { background: var(--green); }
+.stat-card.yellow::before { background: var(--yellow); }
+.stat-card.red::before { background: var(--red); }
+.stat-card.purple::before { background: var(--purple); }
+.stat-card:hover::before { opacity: 1; }
+.stat-val { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+.stat-sub { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+/* ── ASK SHADOW BTN ── */
+.ask-shadow-btn {
+  margin: 0 20px 20px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 24px var(--accent-glow), inset 0 0 24px rgba(79,142,247,0.03);
+  position: relative; overflow: hidden;
+}
+.ask-shadow-btn::before {
+  content: ''; position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(ellipse at center, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.ask-shadow-btn:hover::before { opacity: 1; }
+.ask-shadow-btn:active { transform: scale(0.98); }
+.ask-icon {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+  box-shadow: 0 0 20px var(--accent-glow2);
+}
+.ask-text { flex: 1; }
+.ask-label { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.ask-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; }
+.ask-arrow { color: var(--accent); font-size: 20px; }
+
+/* ── SECTION HEADER ── */
+.section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px 12px;
+}
+.section-hdr-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-hdr-action {
+  font-family: var(--mono); font-size: 10px; color: var(--accent);
+  cursor: pointer; letter-spacing: 0.5px;
+}
+
+/* ── MARKET CARDS ── */
+.markets-scroll {
+  display: flex; gap: 10px;
+  padding: 0 20px 20px;
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.markets-scroll::-webkit-scrollbar { display: none; }
+.mkt-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px; min-width: 130px; flex-shrink: 0;
+  cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.mkt-card::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 0; right: 0; height: 2px;
+  transition: opacity 0.2s;
+}
+.mkt-card.up::after { background: var(--green); opacity: 0.6; }
+.mkt-card.dn::after { background: var(--red); opacity: 0.6; }
+.mkt-card:active { transform: scale(0.96); }
+.mkt-sym { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 8px; letter-spacing: 1px; }
+.mkt-price { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.mkt-chg { font-family: var(--mono); font-size: 11px; display: flex; align-items: center; gap: 3px; }
+.up { color: var(--green); }
+.dn { color: var(--red); }
+.mkt-loading { font-family: var(--mono); font-size: 10px; color: var(--text3); padding: 20px; text-align: center; }
+
+/* ── SPECIALIST CARDS ── */
+.spec-scroll {
+  display: flex; gap: 12px;
+  padding: 0 20px 20px;
+  overflow-x: auto; scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.spec-scroll::-webkit-scrollbar { display: none; }
+.spec-card {
+  min-width: calc(100vw - 56px); scroll-snap-align: start;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform 0.15s;
+}
+.spec-card:active { transform: scale(0.98); }
+.spec-glow {
+  position: absolute; top: -40px; right: -40px;
+  width: 120px; height: 120px; border-radius: 50%;
+  opacity: 0.06; transition: opacity 0.3s;
+}
+.spec-card:hover .spec-glow { opacity: 0.12; }
+.spec-card.invest .spec-glow { background: var(--accent); }
+.spec-card.productivity .spec-glow { background: var(--green); }
+.spec-card.tutor .spec-glow { background: var(--purple); }
+.spec-card.travel .spec-glow { background: var(--yellow); }
+.spec-card.fitness .spec-glow { background: var(--red); }
+.spec-top-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.spec-card.invest .spec-top-bar { background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+.spec-card.productivity .spec-top-bar { background: linear-gradient(90deg, #059669, var(--green)); }
+.spec-card.tutor .spec-top-bar { background: linear-gradient(90deg, #7c3aed, var(--purple)); }
+.spec-card.travel .spec-top-bar { background: linear-gradient(90deg, #d97706, var(--yellow)); }
+.spec-card.fitness .spec-top-bar { background: linear-gradient(90deg, #be123c, var(--red)); }
+.spec-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.spec-icon { font-size: 34px; }
+.spec-badge {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 20px; font-weight: 600;
+}
+.spec-card.invest .spec-badge { background: rgba(79,142,247,0.15); color: var(--accent); }
+.spec-card.productivity .spec-badge { background: rgba(16,217,160,0.15); color: var(--green); }
+.spec-card.tutor .spec-badge { background: rgba(168,85,247,0.15); color: var(--purple); }
+.spec-card.travel .spec-badge { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.spec-card.fitness .spec-badge { background: rgba(244,63,94,0.15); color: var(--red); }
+.spec-name { font-family: var(--display); font-size: 26px; letter-spacing: 2px; margin-bottom: 6px; }
+.spec-desc { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
+.spec-stats { display: flex; gap: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.spec-stat-val { font-family: var(--mono); font-size: 17px; font-weight: 600; margin-bottom: 2px; }
+.spec-stat-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; }
+.spec-cta {
+  margin-top: 14px; padding: 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+  letter-spacing: 1px; gap: 6px;
+  transition: all 0.2s;
+}
+.spec-card:hover .spec-cta { border-color: var(--border2); color: var(--text); }
+
+/* DOTS */
+.dots { display: flex; justify-content: center; gap: 6px; padding: 8px 0 16px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); transition: all 0.25s; }
+.dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
+
+/* ── QUICK ACTIONS ── */
+.quick-actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; padding: 0 20px 24px;
+}
+.qa-btn {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 10px;
+}
+.qa-btn:active { transform: scale(0.97); border-color: var(--accent); }
+.qa-icon { font-size: 20px; }
+.qa-text { flex: 1; }
+.qa-label { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.qa-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+/* ── TASKS PREVIEW ── */
+.task-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.15s;
+}
+.task-item:last-child { border-bottom: none; }
+.task-item:active { background: var(--bg2); }
+.task-cb {
+  width: 20px; height: 20px; border: 1.5px solid var(--border2);
+  border-radius: 6px; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; font-size: 11px;
+}
+.task-cb.done { background: var(--green); border-color: var(--green); color: var(--bg); }
+.task-body { flex: 1; }
+.task-title { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+.task-title.done { text-decoration: line-through; color: var(--text3); }
+.task-chips { display: flex; gap: 6px; align-items: center; }
+.chip {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: 20px;
+}
+.chip-high { background: var(--red-glow); color: var(--red); }
+.chip-medium { background: var(--accent-glow); color: var(--accent); }
+.chip-low { background: var(--green-glow); color: var(--green); }
+.chip-spec { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
+/* ── CHAT SCREEN ── */
+.chat-hdr {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px;
+  background: var(--bg1); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chat-back { font-size: 24px; color: var(--accent); cursor: pointer; padding: 2px 4px; }
+.chat-hdr-info { flex: 1; }
+.chat-hdr-name { font-family: var(--display); font-size: 20px; letter-spacing: 2px; }
+.chat-hdr-mode {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  display: flex; align-items: center; gap: 6px; margin-top: 2px;
+}
+.mem-chip {
+  background: rgba(79,142,247,0.1); color: var(--accent);
+  font-family: var(--mono); font-size: 9px;
+  padding: 2px 7px; border-radius: 20px;
+  border: 1px solid rgba(79,142,247,0.2);
+}
+.chat-voice-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 11px;
+  font-size: 16px; cursor: pointer; transition: all 0.2s;
+}
+.chat-voice-btn.on { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+
+.chat-msgs {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.chat-msgs::-webkit-scrollbar { width: 3px; }
+.chat-msgs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.msg { display: flex; gap: 10px; animation: msgIn 0.25s ease; }
+.msg.user { flex-direction: row-reverse; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.msg-av {
+  width: 32px; height: 32px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  flex-shrink: 0;
+}
+.msg-av.s { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #fff; box-shadow: 0 0 14px var(--accent-glow2); }
+.msg-av.u { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+
+.msg-bubble {
+  max-width: 80%; padding: 12px 16px;
+  border-radius: 16px; font-size: 14px; line-height: 1.6;
+}
+.msg.shadow .msg-bubble {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text); border-top-left-radius: 4px;
+}
+.msg.user .msg-bubble {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  color: #fff; border-top-right-radius: 4px;
+  box-shadow: 0 4px 20px var(--accent-glow2);
+}
+.msg-meta {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  margin-top: 5px; display: flex; align-items: center; gap: 8px;
+}
+.msg-speak {
+  cursor: pointer; opacity: 0.5; transition: opacity 0.15s; font-size: 12px;
+}
+.msg-speak:hover { opacity: 1; }
+
+.thinking { display: flex; gap: 5px; align-items: center; padding: 6px 2px; }
+.thinking span {
+  width: 6px; height: 6px; background: var(--accent);
+  border-radius: 50%; animation: think 1.2s infinite; opacity: 0.4;
+}
+.thinking span:nth-child(2) { animation-delay: 0.2s; }
+.thinking span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes think { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-6px);opacity:1} }
+
+.mem-toast {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: 10px; padding: 8px 14px;
+  font-family: var(--mono); font-size: 11px; color: var(--accent);
+  animation: msgIn 0.25s ease; margin: 0;
+}
+
+.chat-input-bar {
+  padding: 12px 16px;
+  padding-bottom: max(12px, var(--safe-bottom));
+  background: var(--bg1); border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.chat-input {
+  flex: 1; background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 24px; padding: 11px 18px;
+  font-family: var(--sans); font-size: 14px; color: var(--text);
+  outline: none; transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.chat-input::placeholder { color: var(--text3); }
+.mic-btn {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--bg3); border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.mic-btn.on { background: var(--red); border-color: var(--red); animation: micPulse 1s infinite; }
+@keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0.4)} 50%{box-shadow:0 0 0 10px rgba(244,63,94,0)} }
+.send-btn {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border: none; color: #fff; font-size: 20px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+  box-shadow: 0 4px 16px var(--accent-glow2);
+  display: flex; align-items: center; justify-content: center;
+}
+.send-btn:active { transform: scale(0.92); }
+.send-btn:disabled { opacity: 0.4; box-shadow: none; }
+
+/* ── MARKETS SCREEN ── */
+.screen-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg1); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.screen-title { font-family: var(--display); font-size: 24px; letter-spacing: 2px; }
+.screen-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
+.refresh-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 14px;
+  font-family: var(--mono); font-size: 11px; color: var(--accent);
+  cursor: pointer; transition: all 0.2s; letter-spacing: 1px;
+}
+.refresh-btn:active { transform: scale(0.96); }
+
+.markets-body { flex: 1; overflow-y: auto; padding: 0 20px; -webkit-overflow-scrolling: touch; }
+.markets-body::-webkit-scrollbar { display: none; }
+.mkt-group-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase;
+  padding: 16px 0 10px; border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.mkt-row {
+  display: flex; align-items: center; padding: 14px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: all 0.15s;
+}
+.mkt-row:last-child { border-bottom: none; }
+.mkt-row:active { background: var(--bg2); border-radius: var(--radius-sm); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+.mkt-row-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+.mkt-row-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-family: var(--mono); font-weight: 700;
+  flex-shrink: 0; color: var(--text2);
+}
+.mkt-row-sym { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--text); }
+.mkt-row-name { font-size: 12px; color: var(--text3); }
+.mkt-row-right { text-align: right; }
+.mkt-row-price { font-family: var(--mono); font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.mkt-row-chg { font-family: var(--mono); font-size: 11px; }
+.mkt-badge {
+  padding: 3px 8px; border-radius: 6px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+}
+.mkt-badge.up { background: var(--green-glow); color: var(--green); }
+.mkt-badge.dn { background: var(--red-glow); color: var(--red); }
+
+/* ── TASKS SCREEN ── */
+.tasks-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tasks-body::-webkit-scrollbar { display: none; }
+.tasks-group-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase;
+  padding: 16px 20px 8px;
+}
+.add-task-fab {
+  position: fixed; bottom: calc(80px + var(--safe-bottom)); right: 20px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border: none; color: #fff; font-size: 24px; font-weight: 300;
+  cursor: pointer; box-shadow: 0 4px 20px var(--accent-glow2);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; z-index: 50;
+}
+.add-task-fab:active { transform: scale(0.92); }
+
+/* ── MEMORY SCREEN ── */
+.memory-body { flex: 1; overflow-y: auto; padding: 0 20px; -webkit-overflow-scrolling: touch; }
+.memory-body::-webkit-scrollbar { display: none; }
+.mem-group { margin-bottom: 24px; }
+.mem-group-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase;
+  padding: 16px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mem-count { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 1px 8px; font-size: 10px; }
+.mem-item {
+  display: flex; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.mem-item:last-child { border-bottom: none; }
+.mem-key { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 120px; padding-top: 1px; }
+.mem-val { font-size: 13px; color: var(--text2); flex: 1; line-height: 1.5; }
+.mem-meta { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 3px; }
+
+/* ── VOICE OVERLAY ── */
+.voice-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(6,8,16,0.95); z-index: 200;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px; backdrop-filter: blur(20px);
+}
+.voice-overlay.on { display: flex; }
+.voice-orb {
+  position: relative;
+  width: 140px; height: 140px;
+  display: flex; align-items: center; justify-content: center;
+}
+.voice-orb-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: orbPulse 1.5s ease infinite;
+}
+.voice-orb-ring2 {
+  position: absolute; inset: -15px; border-radius: 50%;
+  border: 1px solid rgba(79,142,247,0.3);
+  animation: orbPulse 1.5s ease infinite 0.3s;
+}
+.voice-orb-ring3 {
+  position: absolute; inset: -30px; border-radius: 50%;
+  border: 1px solid rgba(79,142,247,0.15);
+  animation: orbPulse 1.5s ease infinite 0.6s;
+}
+@keyframes orbPulse {
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.08);opacity:0.5}
+}
+.voice-orb-center {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; box-shadow: 0 0 40px var(--accent-glow2);
+  position: relative; z-index: 1;
+}
+.voice-label { font-family: var(--mono); font-size: 12px; letter-spacing: 3px; color: var(--text2); text-transform: uppercase; }
+.voice-transcript { font-size: 16px; color: var(--text); text-align: center; max-width: 280px; line-height: 1.6; min-height: 48px; }
+.voice-cancel {
+  font-family: var(--mono); font-size: 12px; color: var(--text3);
+  padding: 12px 28px; border: 1px solid var(--border); border-radius: 24px;
+  background: transparent; cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.voice-cancel:hover { border-color: var(--red); color: var(--red); }
+
+/* ── MODAL ── */
+.modal { display: none; position: fixed; inset: 0; background: rgba(6,8,16,0.85); z-index: 300; align-items: flex-end; backdrop-filter: blur(8px); }
+.modal.on { display: flex; }
+.modal-sheet {
+  width: 100%; background: var(--bg2);
+  border-radius: 24px 24px 0 0; padding: 24px 20px;
+  padding-bottom: max(24px, var(--safe-bottom));
+  border-top: 1px solid var(--border);
+  animation: sheetUp 0.3s ease;
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-family: var(--display); font-size: 26px; letter-spacing: 2px; margin-bottom: 20px; }
+.modal-input {
+  width: 100%; background: var(--bg3);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 13px 16px; font-family: var(--sans); font-size: 14px;
+  color: var(--text); outline: none; margin-bottom: 12px;
+  -webkit-appearance: none; transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: var(--accent); }
+.modal-input::placeholder { color: var(--text3); }
+.modal-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.modal-select {
+  flex: 1; background: var(--bg3); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 14px;
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+  outline: none; -webkit-appearance: none;
+}
+.modal-btns { display: flex; gap: 10px; }
+.modal-cancel { flex: 1; padding: 14px; border-radius: var(--radius-sm); background: var(--bg3); border: 1px solid var(--border); color: var(--text2); font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 1px; cursor: pointer; }
+.modal-confirm { flex: 1; padding: 14px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--accent2), var(--accent)); border: none; color: #fff; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 1px; cursor: pointer; box-shadow: 0 4px 16px var(--accent-glow2); }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  display: flex; background: var(--bg1);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom); flex-shrink: 0;
+}
+.nav-tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 10px 4px 8px;
+  cursor: pointer; transition: all 0.2s; color: var(--text3); gap: 4px;
+  position: relative;
+}
+.nav-tab.active { color: var(--accent); }
+.nav-tab.active::before {
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+  background: var(--accent); border-radius: 0 0 2px 2px;
+  box-shadow: 0 0 8px var(--accent);
+}
+.nav-icon { font-size: 22px; transition: transform 0.2s; }
+.nav-tab.active .nav-icon { transform: translateY(-2px); }
+.nav-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; }
 </style>
 </head>
 <body>
-<div class="loading-screen" id="loadingScreen">
-<div class="loading-logo">SHADOW</div>
-<div class="loading-sub">Personal AI Operating System v2</div>
-<div class="loading-bar"><div class="loading-fill"></div></div>
-<div class="loading-status" id="loadingStatus">Initializing...</div>
+
+<!-- SPLASH -->
+<div class="splash" id="splash">
+  <div class="splash-logo-wrap">
+    <div class="splash-ring"></div>
+    <div class="splash-ring2"></div>
+    <div class="splash-s">S</div>
+  </div>
+  <div class="splash-name">SHADOW</div>
+  <div class="splash-sub">Personal AI Operating System</div>
+  <div class="splash-bar-wrap"><div class="splash-bar" id="splashBar"></div></div>
+  <div class="splash-status" id="splashStatus">Initializing...</div>
 </div>
-<script>setTimeout(function(){var s=document.getElementById("loadingScreen");if(s){s.style.display="none";}var h=document.getElementById("homeScreen");if(h){h.classList.add("active");}},8000);</script>
+
 <div class="app">
-<div class="status-bar"></div>
-<div class="header">
-<div class="header-logo">SHADOW</div>
-<div class="header-right">
-<div class="market-badge" id="marketBadge">📈 LIVE</div>
-<div class="header-clock" id="clock">--:--</div>
-<div class="online-dot"></div>
+  <div class="safe-top"></div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">SHADOW</div>
+    <div class="header-center">
+      <div class="header-date" id="headerDate">Loading...</div>
+      <div class="header-time" id="headerTime">--:--</div>
+    </div>
+    <div class="header-right">
+      <div class="live-dot">
+        <div class="live-dot-pulse"></div>
+        LIVE
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="homeScreen">
+    <div class="home-body">
+
+      <!-- GREETING -->
+      <div class="greeting-section">
+        <div class="greeting-label" id="greetLabel">Good morning</div>
+        <div class="greeting-name" id="greetName">ABDULRAH<em>MAN</em></div>
+        <div class="greeting-meta">
+          <div class="greeting-chip">🧠 <span id="memCount">0</span> memories</div>
+          <div class="greeting-chip">✅ <span id="taskCount">0</span> tasks</div>
+          <div class="greeting-chip" id="marketChip">📈 Markets live</div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card blue" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
+          <div class="stat-val" style="color:var(--accent)" id="statAAPL">—</div>
+          <div class="stat-label">AAPL</div>
+          <div class="stat-sub" id="statAAPLchg">—</div>
+        </div>
+        <div class="stat-card green" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
+          <div class="stat-val" style="color:var(--green)" id="statNVDA">—</div>
+          <div class="stat-label">NVDA</div>
+          <div class="stat-sub" id="statNVDAchg">—</div>
+        </div>
+        <div class="stat-card yellow" onclick="switchTab('tasks',document.querySelector('[data-tab=tasks]'))">
+          <div class="stat-val" style="color:var(--yellow)" id="statTasks">—</div>
+          <div class="stat-label">Tasks</div>
+          <div class="stat-sub" id="statDue">due today</div>
+        </div>
+        <div class="stat-card purple" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">
+          <div class="stat-val" style="color:var(--purple)" id="statMem">—</div>
+          <div class="stat-label">Memories</div>
+          <div class="stat-sub">learned</div>
+        </div>
+      </div>
+
+      <!-- ASK SHADOW -->
+      <div class="ask-shadow-btn" onclick="openChat('master')">
+        <div class="ask-icon">⚡</div>
+        <div class="ask-text">
+          <div class="ask-label">Ask Shadow</div>
+          <div class="ask-sub">TAP TO CHAT · VOICE READY</div>
+        </div>
+        <div class="ask-arrow">›</div>
+      </div>
+
+      <!-- MARKETS -->
+      <div class="section-hdr">
+        <div class="section-hdr-title">📊 Live Markets</div>
+        <div class="section-hdr-action" onclick="fetchAllMarketData()">↻ Refresh</div>
+      </div>
+      <div class="markets-scroll" id="homeMarketsScroll">
+        <div class="mkt-loading">Fetching live prices...</div>
+      </div>
+
+      <!-- SPECIALISTS -->
+      <div class="section-hdr">
+        <div class="section-hdr-title">🤖 Specialists</div>
+        <div class="section-hdr-action" id="specDots2"></div>
+      </div>
+      <div class="spec-scroll" id="specScroll">
+        <div class="spec-card invest" onclick="openChat('investment')">
+          <div class="spec-glow"></div>
+          <div class="spec-top-bar"></div>
+          <div class="spec-head"><div class="spec-icon">📈</div><div class="spec-badge">LIVE DATA</div></div>
+          <div class="spec-name">INVESTMENT</div>
+          <div class="spec-desc">Real-time market analysis, portfolio tracking and buy/sell signals for US stocks.</div>
+          <div class="spec-stats">
+            <div><div class="spec-stat-val" style="color:var(--accent)" id="cAAPL">—</div><div class="spec-stat-lbl">AAPL</div></div>
+            <div><div class="spec-stat-val" style="color:var(--accent)" id="cNVDA">—</div><div class="spec-stat-lbl">NVDA</div></div>
+            <div><div class="spec-stat-val" style="color:var(--accent)" id="cMSFT">—</div><div class="spec-stat-lbl">MSFT</div></div>
+          </div>
+          <div class="spec-cta">💬 Chat with Advisor ›</div>
+        </div>
+        <div class="spec-card productivity" onclick="openChat('productivity')">
+          <div class="spec-glow"></div>
+          <div class="spec-top-bar"></div>
+          <div class="spec-head"><div class="spec-icon">🎯</div><div class="spec-badge" id="specProdBadge">0 TASKS</div></div>
+          <div class="spec-name">PRODUCTIVITY</div>
+          <div class="spec-desc">Task management, workflow optimization and daily planning to maximize your output.</div>
+          <div class="spec-stats">
+            <div><div class="spec-stat-val" style="color:var(--red)" id="cDueToday">—</div><div class="spec-stat-lbl">Due Today</div></div>
+            <div><div class="spec-stat-val" style="color:var(--green)" id="cPending">—</div><div class="spec-stat-lbl">Pending</div></div>
+          </div>
+          <div class="spec-cta">💬 Chat with Scout ›</div>
+        </div>
+        <div class="spec-card tutor" onclick="openChat('tutor')">
+          <div class="spec-glow"></div>
+          <div class="spec-top-bar"></div>
+          <div class="spec-head"><div class="spec-icon">🎓</div><div class="spec-badge">LEARN</div></div>
+          <div class="spec-name">TUTOR</div>
+          <div class="spec-desc">Study sessions, GL Assessment prep, practice exercises and exam preparation.</div>
+          <div class="spec-stats">
+            <div><div class="spec-stat-val" style="color:var(--purple)" id="cTutorMem">—</div><div class="spec-stat-lbl">Notes</div></div>
+            <div><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-lbl">Status</div></div>
+          </div>
+          <div class="spec-cta">💬 Chat with Tutor ›</div>
+        </div>
+        <div class="spec-card travel" onclick="openChat('travel')">
+          <div class="spec-glow"></div>
+          <div class="spec-top-bar"></div>
+          <div class="spec-head"><div class="spec-icon">✈️</div><div class="spec-badge">SMART</div></div>
+          <div class="spec-name">TRAVEL</div>
+          <div class="spec-desc">Full trip planning — itinerary, weather, hotels, daily budgets and transfer options.</div>
+          <div class="spec-stats">
+            <div><div class="spec-stat-val" style="color:var(--yellow)">Abu</div><div class="spec-stat-lbl">Dhabi</div></div>
+            <div><div class="spec-stat-val" style="color:var(--text2)">Plan</div><div class="spec-stat-lbl">A Trip</div></div>
+          </div>
+          <div class="spec-cta">💬 Chat with Advisor ›</div>
+        </div>
+        <div class="spec-card fitness" onclick="openChat('fitness')">
+          <div class="spec-glow"></div>
+          <div class="spec-top-bar"></div>
+          <div class="spec-head"><div class="spec-icon">💪</div><div class="spec-badge">HEALTH</div></div>
+          <div class="spec-name">FITNESS</div>
+          <div class="spec-desc">Workout planning, habit tracking, wellness guidance. Runs 5K & cycles.</div>
+          <div class="spec-stats">
+            <div><div class="spec-stat-val" style="color:var(--green)" id="cStreak">—</div><div class="spec-stat-lbl">Streak</div></div>
+            <div><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-lbl">Status</div></div>
+          </div>
+          <div class="spec-cta">💬 Chat with Assistant ›</div>
+        </div>
+      </div>
+      <div class="dots" id="specDots">
+        <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="section-hdr">
+        <div class="section-hdr-title">⚡ Quick Actions</div>
+      </div>
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="openAddTask()">
+          <div class="qa-icon">➕</div>
+          <div class="qa-text"><div class="qa-label">Add Task</div><div class="qa-sub">Quick capture</div></div>
+        </div>
+        <div class="qa-btn" onclick="openChat('investment')">
+          <div class="qa-icon">📊</div>
+          <div class="qa-text"><div class="qa-label">Market Brief</div><div class="qa-sub">AI analysis</div></div>
+        </div>
+        <div class="qa-btn" onclick="openChat('travel')">
+          <div class="qa-icon">🗺️</div>
+          <div class="qa-text"><div class="qa-label">Plan a Trip</div><div class="qa-sub">Full itinerary</div></div>
+        </div>
+        <div class="qa-btn" onclick="openChat('tutor')">
+          <div class="qa-icon">📚</div>
+          <div class="qa-text"><div class="qa-label">Study Session</div><div class="qa-sub">GL Assessment</div></div>
+        </div>
+      </div>
+
+      <!-- RECENT TASKS -->
+      <div class="section-hdr" style="padding-top:4px;">
+        <div class="section-hdr-title">✅ Recent Tasks</div>
+        <div class="section-hdr-action" onclick="switchTab('tasks',document.querySelector('[data-tab=tasks]'))">View all</div>
+      </div>
+      <div id="tasksPreview" style="padding-bottom:24px;">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 20px;">Loading tasks...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="screen" id="chatScreen">
+    <div class="chat-hdr">
+      <div class="chat-back" onclick="closeChat()">‹</div>
+      <div class="chat-hdr-info">
+        <div class="chat-hdr-name" id="chatName">SHADOW</div>
+        <div class="chat-hdr-mode">
+          <span id="chatMode">MASTER</span>
+          <span class="mem-chip">🧠 MEMORY</span>
+        </div>
+      </div>
+      <div style="font-size:22px;" id="chatIcon">⚡</div>
+      <button class="chat-voice-btn" id="voiceToggleBtn" onclick="toggleShadowVoice()" title="Toggle voice">🔇</button>
+    </div>
+    <div class="chat-msgs" id="chatMsgs"></div>
+    <div class="chat-input-bar">
+      <div class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</div>
+      <input class="chat-input" id="chatInput" placeholder="Message Shadow..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()">↑</button>
+    </div>
+  </div>
+
+  <!-- MARKETS -->
+  <div class="screen" id="marketsScreen">
+    <div class="screen-hdr">
+      <div>
+        <div class="screen-title">MARKETS</div>
+        <div class="screen-sub" id="mktLastUpdate">Fetching live data...</div>
+      </div>
+      <div class="refresh-btn" onclick="fetchAllMarketData()">↻ REFRESH</div>
+    </div>
+    <div class="markets-body" id="marketsBody">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="screen" id="tasksScreen">
+    <div class="screen-hdr">
+      <div><div class="screen-title">TASKS</div><div class="screen-sub" id="tasksSub">Loading...</div></div>
+    </div>
+    <div class="tasks-body" id="tasksBody">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px;">Loading...</div>
+    </div>
+    <button class="add-task-fab" onclick="openAddTask()">+</button>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="screen" id="memoryScreen">
+    <div class="screen-hdr">
+      <div>
+        <div class="screen-title">MEMORY</div>
+        <div class="screen-sub">Everything Shadow knows about you</div>
+      </div>
+    </div>
+    <div class="memory-body" id="memoryBody">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-tab active" data-tab="home" onclick="switchTab('home',this)"><div class="nav-icon">⚡</div><div class="nav-lbl">Home</div></div>
+    <div class="nav-tab" data-tab="chat-master" onclick="switchTab('chat-master',this)"><div class="nav-icon">💬</div><div class="nav-lbl">Shadow</div></div>
+    <div class="nav-tab" data-tab="markets" onclick="switchTab('markets',this)"><div class="nav-icon">📈</div><div class="nav-lbl">Markets</div></div>
+    <div class="nav-tab" data-tab="tasks" onclick="switchTab('tasks',this)"><div class="nav-icon">✅</div><div class="nav-lbl">Tasks</div></div>
+    <div class="nav-tab" data-tab="memory" onclick="switchTab('memory',this)"><div class="nav-icon">🧠</div><div class="nav-lbl">Memory</div></div>
+  </div>
 </div>
-</div>
-<!-- HOME -->
-<div class="screen active" id="homeScreen">
-<div class="home-scroll">
-<div class="greeting">
-<div class="greeting-sub" id="greetingSub">Good Morning</div>
-<div class="greeting-name" id="greetingName">SHADOW<span> AI</span></div>
-<div class="greeting-memory" id="greetingMemory">Loading...</div>
-</div>
-<div class="quick-stats">
-<div class="qstat" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
-<div class="qstat-val" style="color:var(--accent)" id="statAAPL">—</div>
-<div class="qstat-label">AAPL</div>
-</div>
-<div class="qstat" onclick="switchTab('tasks',document.querySelector('[data-tab=tasks]'))">
-<div class="qstat-val" style="color:var(--green)" id="statTasks">—</div>
-<div class="qstat-label">Tasks</div>
-</div>
-<div class="qstat" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">
-<div class="qstat-val" style="color:var(--accent)" id="statMemories">—</div>
-<div class="qstat-label">Memories</div>
-</div>
-<div class="qstat" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
-<div class="qstat-val" style="color:var(--yellow)" id="statGold">—</div>
-<div class="qstat-label">Gold</div>
-</div>
-<div class="qstat" onclick="switchTab('markets',document.querySelector('[data-tab=markets]'))">
-<div class="qstat-val" style="color:var(--text2)" id="statOil">—</div>
-<div class="qstat-label">Oil WTI</div>
-</div>
-</div>
-<div class="market-section">
-<div class="market-header">📊 Live Markets <span class="market-refresh" onclick="fetchAllMarketData()">↻ Refresh</span></div>
-<div class="market-grid" id="homeMarketGrid"><div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:16px;grid-column:span 2;text-align:center;">Fetching live prices...</div></div>
-</div>
-<div class="big-voice-btn" onclick="openVoiceOverlay()">
-<div class="big-voice-icon">🎙️</div>
-<div class="big-voice-text"><div class="big-voice-label">Ask Shadow</div><div class="big-voice-sub">TAP TO SPEAK</div></div>
-<div style="color:var(--accent);font-size:18px;">›</div>
-</div>
-<div class="cards-label">Specialists — Swipe to explore</div>
-<div class="cards-carousel" id="cardsCarousel">
-<div class="spec-card invest" onclick="openChat('investment')">
-<div class="spec-card-top"><div class="spec-card-icon">📈</div><div class="spec-card-badge badge-invest">LIVE DATA</div></div>
-<div class="spec-card-name">INVESTMENT</div>
-<div class="spec-card-desc">Real-time market analysis, portfolio tracking, buy/sell signals for US stocks, Gold and Oil.</div>
-<div class="spec-card-stats">
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="cardAAPL">—</div><div class="spec-stat-label">AAPL</div></div>
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)" id="cardNVDA">—</div><div class="spec-stat-label">NVDA</div></div>
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--yellow)" id="cardGold">—</div><div class="spec-stat-label">Gold</div></div>
-</div>
-<div class="spec-card-cta">💬 Chat with Advisor →</div>
-</div>
-<div class="spec-card productivity" onclick="openChat('productivity')">
-<div class="spec-card-top"><div class="spec-card-icon">🎯</div><div class="spec-card-badge badge-productivity" id="taskBadge">TASKS</div></div>
-<div class="spec-card-name">PRODUCTIVITY</div>
-<div class="spec-card-desc">Task management, workflow optimization, reminders and daily planning.</div>
-<div class="spec-card-stats">
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--red)" id="tasksDueToday">—</div><div class="spec-stat-label">Due Today</div></div>
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="tasksPending">—</div><div class="spec-stat-label">Pending</div></div>
-</div>
-<div class="spec-card-cta">💬 Chat with Scout →</div>
-</div>
-<div class="spec-card tutor" onclick="openChat('tutor')">
-<div class="spec-card-top"><div class="spec-card-icon">🎓</div><div class="spec-card-badge badge-tutor">LEARN</div></div>
-<div class="spec-card-name">TUTOR</div>
-<div class="spec-card-desc">Study sessions, practice exercises, exam prep and lesson planning.</div>
-<div class="spec-card-stats">
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--purple)" id="tutorMemCount">—</div><div class="spec-stat-label">Notes</div></div>
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
-</div>
-<div class="spec-card-cta">💬 Chat with Tutor →</div>
-</div>
-<div class="spec-card travel" onclick="openChat('travel')">
-<div class="spec-card-top"><div class="spec-card-icon">✈️</div><div class="spec-card-badge badge-travel">SMART</div></div>
-<div class="spec-card-name">TRAVEL</div>
-<div class="spec-card-desc">Itinerary planning, weather briefings, hotels, daily budgets and transfer options.</div>
-<div class="spec-card-stats">
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--text2)">0</div><div class="spec-stat-label">Trips</div></div>
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--yellow)">Plan</div><div class="spec-stat-label">A Trip</div></div>
-</div>
-<div class="spec-card-cta">💬 Chat with Advisor →</div>
-</div>
-<div class="spec-card fitness" onclick="openChat('fitness')">
-<div class="spec-card-top"><div class="spec-card-icon">💪</div><div class="spec-card-badge badge-fitness">HEALTH</div></div>
-<div class="spec-card-name">FITNESS</div>
-<div class="spec-card-desc">Workout planning, habit tracking, wellness guidance and medical research.</div>
-<div class="spec-card-stats">
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--green)" id="fitnessStreak">—</div><div class="spec-stat-label">Streak</div></div>
-<div class="spec-stat"><div class="spec-stat-val" style="color:var(--accent)">Ready</div><div class="spec-stat-label">Status</div></div>
-</div>
-<div class="spec-card-cta">💬 Chat with Assistant →</div>
-</div>
-</div>
-<div class="card-dots" id="cardDots">
-<div class="card-dot active"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-</div>
-<div class="section">
-<div class="section-title">✅ Tasks <span class="section-action" onclick="openAddTask()">+ ADD</span></div>
-<div id="tasksPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
-</div>
-<div class="section">
-<div class="section-title">🧠 Shadow Knows <span class="section-action" onclick="switchTab('memory',document.querySelector('[data-tab=memory]'))">VIEW ALL</span></div>
-<div id="memoriesPreview"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Loading...</div></div>
-</div>
-</div>
-</div>
-<!-- CHAT -->
-<div class="screen" id="chatScreen">
-<div class="chat-header">
-<div class="chat-back" onclick="closeChat()">‹</div>
-<div class="chat-specialist-info">
-<div class="chat-specialist-name" id="chatSpecialistName">SHADOW</div>
-<div class="chat-specialist-mode"><span id="chatSpecialistMode">MASTER</span><span class="memory-badge">🧠 MEMORY</span></div>
-</div>
-<div style="font-size:22px;" id="chatSpecialistIcon">⚡</div>
-</div>
-<div class="chat-messages" id="chatMessages"></div>
-<div class="chat-input-bar">
-<div class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</div>
-<input class="chat-text-input" id="chatTextInput" placeholder="Message Shadow..." onkeydown="handleChatKey(event)">
-<button class="send-circle" id="chatSendBtn" onclick="sendChatMessage()">↑</button>
-</div>
-</div>
-<!-- MARKETS -->
-<div class="screen" id="marketsScreen">
-<div class="screen-header">
-<div><div class="screen-title">MARKETS</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;" id="marketLastUpdate">Loading...</div></div>
-<button class="add-btn" onclick="fetchAllMarketData()">↻ LIVE</button>
-</div>
-<div class="markets-full" id="marketsFullList"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div></div>
-</div>
-<!-- TASKS -->
-<div class="screen" id="tasksScreen">
-<div class="screen-header"><div class="screen-title">TASKS</div><button class="add-btn" onclick="openAddTask()">+ ADD</button></div>
-<div class="screen-body" id="tasksFullList"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div></div>
-</div>
-<!-- MEMORY -->
-<div class="screen" id="memoryScreen">
-<div class="screen-header"><div><div class="screen-title">MEMORY</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">Everything Shadow knows about you</div></div></div>
-<div class="screen-body" id="memoryScreenContent"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">Loading...</div></div>
-</div>
-<div class="bottom-nav">
-<div class="nav-tab active" data-tab="home" onclick="switchTab('home',this)"><div class="nav-tab-icon">⚡</div><div class="nav-tab-label">Home</div></div>
-<div class="nav-tab" data-tab="chat-master" onclick="switchTab('chat-master',this)"><div class="nav-tab-icon">💬</div><div class="nav-tab-label">Shadow</div></div>
-<div class="nav-tab" data-tab="markets" onclick="switchTab('markets',this)"><div class="nav-tab-icon">📈</div><div class="nav-tab-label">Markets</div></div>
-<div class="nav-tab" data-tab="tasks" onclick="switchTab('tasks',this)"><div class="nav-tab-icon">✅</div><div class="nav-tab-label">Tasks</div></div>
-<div class="nav-tab" data-tab="memory" onclick="switchTab('memory',this)"><div class="nav-tab-icon">🧠</div><div class="nav-tab-label">Memory</div></div>
-</div>
-</div>
+
+<!-- VOICE OVERLAY -->
 <div class="voice-overlay" id="voiceOverlay">
-<div class="voice-ring">🎙️</div>
-<div class="voice-label">Listening...</div>
-<div class="voice-transcript-display" id="voiceTranscriptDisplay">Speak your command</div>
-<button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
+  <div class="voice-orb">
+    <div class="voice-orb-ring3"></div>
+    <div class="voice-orb-ring2"></div>
+    <div class="voice-orb-ring"></div>
+    <div class="voice-orb-center">🎙️</div>
+  </div>
+  <div class="voice-label">Listening...</div>
+  <div class="voice-transcript" id="voiceTranscript">Speak your command</div>
+  <button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
 </div>
-<div class="modal" id="addTaskModal">
-<div class="modal-content">
-<div class="modal-title">NEW TASK</div>
-<input class="modal-input" id="taskTitleInput" placeholder="Task title...">
-<input class="modal-input" id="taskDescInput" placeholder="Description (optional)...">
-<div class="modal-row">
-<select class="modal-select" id="taskPriority"><option value="high">🔴 High</option><option value="medium" selected>🔵 Medium</option><option value="low">🟢 Low</option></select>
-<select class="modal-select" id="taskSpecialist"><option value="productivity">🎯 Productivity</option><option value="investment">📈 Investment</option><option value="tutor">🎓 Tutor</option><option value="travel">✈️ Travel</option><option value="fitness">💪 Fitness</option></select>
+
+<!-- ADD TASK MODAL -->
+<div class="modal" id="taskModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">NEW TASK</div>
+    <input class="modal-input" id="taskTitleInput" placeholder="What needs to be done?">
+    <input class="modal-input" id="taskDescInput" placeholder="Details (optional)...">
+    <div class="modal-row">
+      <select class="modal-select" id="taskPriority">
+        <option value="high">🔴 High priority</option>
+        <option value="medium" selected>🔵 Medium priority</option>
+        <option value="low">🟢 Low priority</option>
+      </select>
+      <select class="modal-select" id="taskSpec">
+        <option value="productivity">🎯 Productivity</option>
+        <option value="investment">📈 Investment</option>
+        <option value="tutor">🎓 Tutor</option>
+        <option value="travel">✈️ Travel</option>
+        <option value="fitness">💪 Fitness</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeTaskModal()">CANCEL</button>
+      <button class="modal-confirm" onclick="saveTask()">ADD TASK</button>
+    </div>
+  </div>
 </div>
-<div class="modal-row"><button class="modal-btn cancel" onclick="closeAddTask()">CANCEL</button><button class="modal-btn confirm" onclick="addTask()">ADD TASK</button></div>
-</div>
-</div>
+
 <script>
-const PROXY_URL='https://shadow-proxy.aistudio-aj.workers.dev/';
+// ── CONFIG ──
+const PROXY='https://shadow-proxy.aistudio-aj.workers.dev/';
 const FINNHUB_KEY='d803371r01qj3ct8s9ugd803371r01qj3ct8s9v0';
-const FINNHUB_BASE='https://finnhub.io/api/v1';
-const SUPABASE_URL='https://xqdnohqbimfrtalvdmyp.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
-const USER_ID='abdulrahman';
+const FINNHUB='https://finnhub.io/api/v1';
+const SB_URL='https://xqdnohqbimfrtalvdmyp.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
+const UID='abdulrahman';
 const MODEL='claude-sonnet-4-5';
-const MAX_RETRIES=3;
+const RETRIES=3;
 const {createClient}=supabase;
-const db=createClient(SUPABASE_URL,SUPABASE_KEY);
-let profile=null,memories=[],tasks=[],conversations={};
-let currentSpecialist='master',recognition=null,isListening=false;
-let marketData={};
+const db=createClient(SB_URL,SB_KEY);
 
-const US_STOCKS=[{sym:'AAPL',name:'Apple'},{sym:'MSFT',name:'Microsoft'},{sym:'NVDA',name:'Nvidia'},{sym:'AMZN',name:'Amazon'},{sym:'GOOGL',name:'Alphabet'},{sym:'META',name:'Meta'},{sym:'TSLA',name:'Tesla'},{sym:'JPM',name:'JPMorgan'}];
-const COMMODITIES=[{sym:'GCUSD',name:'Gold (USD/oz)',display:'GOLD'},{sym:'CLUSD',name:'Oil WTI (USD)',display:'OIL'}];
+let profile=null,memories=[],tasks=[],convos={};
+let curSpec='master',recog=null,isListening=false;
+let mktData={},shadowVoiceOn=false,curUtt=null,lastShadowText='';
 
-async function fetchQuote(symbol){
-  try{
-    const res=await fetch(FINNHUB_BASE+'/quote?symbol='+symbol+'&token='+FINNHUB_KEY);
-    const data=await res.json();
-    if(data.c&&data.c>0)return data;
-    return null;
-  }catch(e){return null;}
+const STOCKS=[
+  {sym:'AAPL',name:'Apple',icon:'🍎'},
+  {sym:'MSFT',name:'Microsoft',icon:'🪟'},
+  {sym:'NVDA',name:'Nvidia',icon:'⚡'},
+  {sym:'AMZN',name:'Amazon',icon:'📦'},
+  {sym:'GOOGL',name:'Alphabet',icon:'🔍'},
+  {sym:'META',name:'Meta',icon:'👤'},
+  {sym:'TSLA',name:'Tesla',icon:'🚗'},
+  {sym:'JPM',name:'JPMorgan',icon:'🏦'},
+];
+
+// ── CLOCK ──
+function updateClock(){
+  const now=new Date();
+  const d=now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  const t=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  const el=document.getElementById('headerDate');
+  const tel=document.getElementById('headerTime');
+  if(el)el.textContent=d;
+  if(tel)tel.textContent=t;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ── DATE CONTEXT ──
+function getDateCtx(){
+  const now=new Date();
+  return 'TODAY: '+now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Dubai'})+' (Abu Dhabi, GMT+4)';
 }
 
-async function fetchAllMarketData(){
-  const el=document.getElementById('marketLastUpdate');
-  if(el)el.textContent='Fetching live data...';
-  const all=[...US_STOCKS.map(async s=>{
-    const data=await fetchQuote(s.sym);
-    if(data)marketData[s.sym]={...s,price:data.c,change:data.d,changePct:data.dp,high:data.h,low:data.l};
-  }),...COMMODITIES.map(async c=>{
-    const data=await fetchQuote(c.sym);
-    if(data)marketData[c.display]={...c,price:data.c,change:data.d,changePct:data.dp};
-  })];
-  await Promise.all(all);
-  const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-  if(el)el.textContent='Updated: '+now;
-  renderHomeMarkets();renderMarketsScreen();updateMarketStats();
+// ── SPLASH ──
+let splashProgress=0;
+function setSplash(msg,pct){
+  const s=document.getElementById('splashStatus');
+  const b=document.getElementById('splashBar');
+  if(s)s.textContent=msg;
+  if(b)b.style.width=pct+'%';
 }
 
-function fmtPrice(p){if(!p)return '—';if(p>1000)return '$'+p.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');return '$'+p.toFixed(2);}
-function fmtPct(p){if(p==null)return '';const s=p>=0?'+':'';return s+p.toFixed(2)+'%';}
-
-function renderHomeMarkets(){
-  const grid=document.getElementById('homeMarketGrid');
-  if(!grid)return;
-  const items=['AAPL','NVDA','MSFT','AMZN','GOLD','OIL'];
-  const icons={GOLD:'🥇',OIL:'🛢️'};
-  grid.innerHTML=items.map(sym=>{
-    const d=marketData[sym];
-    if(!d)return '<div class="market-card"><div class="market-sym">'+sym+'</div><div class="market-price" style="color:var(--text3)">—</div></div>';
-    const up=d.changePct>=0;
-    return '<div class="market-card" onclick="openChat(this.dataset.s)" data-s="investment">'+'<div class="market-sym">'+(icons[sym]||'')+' '+sym+'</div>'+'<div class="market-name">'+(d.name||'')+'</div>'+'<div class="market-price '+(up?'up':'dn')+'">'+fmtPrice(d.price)+'</div>'+'<div class="market-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.changePct||0).toFixed(2)+'%</div></div>';
-  }).join('');
-}
-
-function renderMarketsScreen(){
-  const c=document.getElementById('marketsFullList');
-  if(!c)return;
-  const usHtml=US_STOCKS.map(s=>{
-    const d=marketData[s.sym];
-    if(!d)return '<div class="market-list-item"><div class="market-list-sym">'+s.sym+'</div><div class="market-list-name">'+s.name+'</div><div class="market-list-right"><div class="market-list-price" style="color:var(--text3)">—</div></div></div>';
-    const up=d.changePct>=0;
-    return '<div class="market-list-item" onclick="openChat(this.dataset.s)" data-s="investment">'+'<div class="market-list-sym">'+s.sym+'</div><div class="market-list-name">'+s.name+'</div>'+'<div class="market-list-right"><div class="market-list-price '+(up?'up':'dn')+'">'+fmtPrice(d.price)+'</div><div class="market-list-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.changePct||0).toFixed(2)+'%</div></div></div>';
-  }).join('');
-  const commHtml=COMMODITIES.map(c2=>{
-    const d=marketData[c2.display];
-    if(!d)return '<div class="market-list-item"><div class="market-list-sym">'+c2.display+'</div><div class="market-list-name">'+c2.name+'</div><div class="market-list-right"><div class="market-list-price" style="color:var(--text3)">—</div></div></div>';
-    const up=d.changePct>=0;
-    return '<div class="market-list-item"><div class="market-list-sym">'+c2.display+'</div><div class="market-list-name">'+c2.name+'</div><div class="market-list-right"><div class="market-list-price '+(up?'up':'dn')+'">'+fmtPrice(d.price)+'</div><div class="market-list-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.changePct||0).toFixed(2)+'%</div></div></div>';
-  }).join('');
-  c.innerHTML='<div class="market-group-title">🇺🇸 US Stocks</div>'+usHtml+'<div class="market-group-title">🏅 Commodities</div>'+commHtml;
-}
-
-function updateMarketStats(){
-  const aapl=marketData['AAPL'],nvda=marketData['NVDA'],gold=marketData['GOLD'],oil=marketData['OIL'];
-  if(aapl){document.getElementById('statAAPL').textContent=fmtPrice(aapl.price);document.getElementById('cardAAPL').textContent=fmtPrice(aapl.price);}
-  if(nvda)document.getElementById('cardNVDA').textContent=fmtPrice(nvda.price);
-  if(gold){document.getElementById('statGold').textContent=fmtPrice(gold.price);document.getElementById('cardGold').textContent=fmtPrice(gold.price);}
-  if(oil)document.getElementById('statOil').textContent=fmtPrice(oil.price);
-}
-
-async function initApp(){
-  try{setLoadingStatus('Loading profile...');await Promise.race([loadProfile(),sleep(3000)]);}catch(e){}
-  try{setLoadingStatus('Loading memories...');await Promise.race([loadMemories(),sleep(3000)]);}catch(e){}
-  try{setLoadingStatus('Loading tasks...');await Promise.race([loadTasks(),sleep(3000)]);}catch(e){}
-  try{setLoadingStatus('Fetching markets...');await Promise.race([fetchAllMarketData(),sleep(5000)]);}catch(e){}
-  setLoadingStatus('Shadow ready ✓');await sleep(400);
-  document.getElementById('loadingScreen').classList.add('hidden');
-  updateUI();updateClock();
+// ── INIT ──
+async function init(){
+  setSplash('Loading profile...',20);
+  try{await Promise.race([loadProfile(),sleep(3000)]);}catch(e){}
+  setSplash('Loading memories...',45);
+  try{await Promise.race([loadMemories(),sleep(3000)]);}catch(e){}
+  setSplash('Loading tasks...',65);
+  try{await Promise.race([loadTasks(),sleep(3000)]);}catch(e){}
+  setSplash('Fetching live markets...',85);
+  try{await Promise.race([fetchAllMarketData(),sleep(5000)]);}catch(e){}
+  setSplash('Shadow ready ✓',100);
+  await sleep(600);
+  document.getElementById('splash').classList.add('out');
+  setTimeout(()=>{document.getElementById('splash').style.display='none';},700);
+  updateUI();
+  setupCarouselDots();
   setInterval(updateClock,1000);
   setInterval(fetchAllMarketData,60000);
-  setupCarouselDots();
+  // Voice welcome
+  setTimeout(()=>{
+    const h=new Date().getHours();
+    const gr=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+    const name=(profile&&profile.name?profile.name.split(' ')[0]:'AJ');
+    const p=tasks.filter(t=>t.status!=='done').length;
+    speakText(gr+', '+name+'. Today is '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'. You have '+p+' pending tasks. Shadow is ready.');
+  },1200);
 }
-
-function setLoadingStatus(msg){document.getElementById('loadingStatus').textContent=msg;}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-async function loadProfile(){try{const{data}=await db.from('shadow_profile').select('*').eq('user_id',USER_ID).single();if(data)profile=data;}catch(e){}}
-async function loadMemories(){try{const{data}=await db.from('shadow_memory').select('*').eq('user_id',USER_ID).order('importance',{ascending:false});if(data)memories=data;}catch(e){}}
-async function loadTasks(){try{const{data}=await db.from('shadow_tasks').select('*').eq('user_id',USER_ID).order('created_at',{ascending:false});if(data)tasks=data;}catch(e){}}
-async function loadConversationHistory(specialist){try{const{data}=await db.from('shadow_conversations').select('*').eq('user_id',USER_ID).eq('specialist',specialist).order('created_at',{ascending:true}).limit(20);if(data)conversations[specialist]=data.map(r=>({role:r.role,content:r.content}));}catch(e){}}
-async function saveMessage(specialist,role,content){try{await db.from('shadow_conversations').insert({user_id:USER_ID,specialist,role,content});}catch(e){}}
-async function saveMemoryFact(category,key,value,specialist='master',importance=2){
+// ── DATA ──
+async function loadProfile(){try{const{data}=await db.from('shadow_profile').select('*').eq('user_id',UID).single();if(data)profile=data;}catch(e){}}
+async function loadMemories(){try{const{data}=await db.from('shadow_memory').select('*').eq('user_id',UID).order('importance',{ascending:false});if(data)memories=data;}catch(e){}}
+async function loadTasks(){try{const{data}=await db.from('shadow_tasks').select('*').eq('user_id',UID).order('created_at',{ascending:false});if(data)tasks=data;}catch(e){}}
+async function loadConvos(spec){try{const{data}=await db.from('shadow_conversations').select('*').eq('user_id',UID).eq('specialist',spec).order('created_at',{ascending:true}).limit(20);if(data)convos[spec]=data.map(r=>({role:r.role,content:r.content}));}catch(e){}}
+async function saveMsg(spec,role,content){try{await db.from('shadow_conversations').insert({user_id:UID,specialist:spec,role,content});}catch(e){}}
+async function saveMem(cat,key,val,spec='master',imp=2){
   try{
-    const{data:existing}=await db.from('shadow_memory').select('id').eq('user_id',USER_ID).eq('key',key).maybeSingle();
-    if(existing){await db.from('shadow_memory').update({value,updated_at:new Date().toISOString()}).eq('id',existing.id);}
-    else{await db.from('shadow_memory').insert({user_id:USER_ID,category,key,value,specialist,importance});}
+    const{data:ex}=await db.from('shadow_memory').select('id').eq('user_id',UID).eq('key',key).maybeSingle();
+    if(ex)await db.from('shadow_memory').update({value:val,updated_at:new Date().toISOString()}).eq('id',ex.id);
+    else await db.from('shadow_memory').insert({user_id:UID,category:cat,key,value:val,specialist:spec,importance:imp});
     await loadMemories();updateUI();
   }catch(e){}
 }
 
-async function callClaude(payload,retries=MAX_RETRIES){
-  for(let attempt=1;attempt<=retries;attempt++){
+// ── MARKET DATA ──
+async function fetchQuote(sym){
+  try{
+    const r=await fetch(FINNHUB+'/quote?symbol='+sym+'&token='+FINNHUB_KEY);
+    const d=await r.json();
+    if(d.c&&d.c>0)return d;
+    return null;
+  }catch(e){return null;}
+}
+async function fetchAllMarketData(){
+  document.getElementById('mktLastUpdate').textContent='Fetching live data...';
+  const promises=STOCKS.map(async s=>{
+    const d=await fetchQuote(s.sym);
+    if(d)mktData[s.sym]={...s,price:d.c,change:d.d,pct:d.dp,high:d.h,low:d.l,prev:d.pc};
+  });
+  await Promise.all(promises);
+  const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  document.getElementById('mktLastUpdate').textContent='Last updated '+now;
+  renderHomeMarkets();
+  renderMarketsScreen();
+  updateMarketStats();
+}
+function fmtP(p){if(!p&&p!==0)return '—';if(p>999)return '$'+p.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');return '$'+p.toFixed(2);}
+function fmtC(c,p){if(c==null)return '';const s=c>=0?'+':'';return s+p.toFixed(2)+'%';}
+
+function renderHomeMarkets(){
+  const el=document.getElementById('homeMarketsScroll');
+  if(!el)return;
+  const items=['AAPL','NVDA','MSFT','AMZN','META','TSLA'];
+  if(!items.some(s=>mktData[s])){el.innerHTML='<div class="mkt-loading">Markets closed or loading...</div>';return;}
+  el.innerHTML=items.map(sym=>{
+    const d=mktData[sym];
+    if(!d)return '<div class="mkt-card"><div class="mkt-sym">'+sym+'</div><div class="mkt-price" style="color:var(--text3)">—</div></div>';
+    const up=d.pct>=0;
+    return '<div class="mkt-card '+(up?'up':'dn')+'" onclick="openChat(\'investment\')">'
+      +'<div class="mkt-sym">'+sym+'</div>'
+      +'<div class="mkt-price '+(up?'up':'dn')+'">'+fmtP(d.price)+'</div>'
+      +'<div class="mkt-chg '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.pct||0).toFixed(2)+'%</div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderMarketsScreen(){
+  const el=document.getElementById('marketsBody');
+  if(!el)return;
+  const rows=STOCKS.map(s=>{
+    const d=mktData[s.sym];
+    const up=d&&d.pct>=0;
+    return '<div class="mkt-row" onclick="openChat(\'investment\')">'
+      +'<div class="mkt-row-left">'
+      +'<div class="mkt-row-icon">'+s.icon+'</div>'
+      +'<div><div class="mkt-row-sym">'+s.sym+'</div><div class="mkt-row-name">'+s.name+'</div></div>'
+      +'</div>'
+      +'<div class="mkt-row-right">'
+      +'<div class="mkt-row-price '+(d?(up?'up':'dn'):'')+'">'+fmtP(d?d.price:null)+'</div>'
+      +(d?'<div class="mkt-badge '+(up?'up':'dn')+'">'+(up?'▲':'▼')+' '+Math.abs(d.pct||0).toFixed(2)+'%</div>':'')
+      +'</div>'
+      +'</div>';
+  }).join('');
+  el.innerHTML='<div class="mkt-group-title">🇺🇸 US Equities</div>'+rows;
+}
+
+function updateMarketStats(){
+  const a=mktData['AAPL'],n=mktData['NVDA'],m=mktData['MSFT'];
+  if(a){
+    document.getElementById('statAAPL').textContent=fmtP(a.price);
+    const el=document.getElementById('statAAPLchg');
+    if(el){el.textContent=(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%';el.style.color=a.pct>=0?'var(--green)':'var(--red)';}
+    document.getElementById('cAAPL').textContent=fmtP(a.price);
+  }
+  if(n){document.getElementById('statNVDA').textContent=fmtP(n.price);const el=document.getElementById('statNVDAchg');if(el){el.textContent=(n.pct>=0?'+':'')+n.pct.toFixed(2)+'%';el.style.color=n.pct>=0?'var(--green)':'var(--red)';}document.getElementById('cNVDA').textContent=fmtP(n.price);}
+  if(m)document.getElementById('cMSFT').textContent=fmtP(m.price);
+}
+
+// ── UI ──
+function updateUI(){
+  const h=new Date().getHours();
+  const gr=['Good night','Good morning','Good afternoon','Good evening'];
+  const gi=document.getElementById('greetLabel');
+  if(gi)gi.textContent=gr[h<5?0:h<12?1:h<17?2:3];
+  const mc=document.getElementById('memCount');if(mc)mc.textContent=memories.length;
+  const pending=tasks.filter(t=>t.status!=='done').length;
+  const dueToday=tasks.filter(t=>t.due_date&&new Date(t.due_date).toDateString()===new Date().toDateString()).length;
+  const tc=document.getElementById('taskCount');if(tc)tc.textContent=pending;
+  const st=document.getElementById('statTasks');if(st)st.textContent=pending;
+  const sd=document.getElementById('statDue');if(sd)sd.textContent=dueToday+' due today';
+  const sm=document.getElementById('statMem');if(sm)sm.textContent=memories.length;
+  const pb=document.getElementById('specProdBadge');if(pb)pb.textContent=pending+' TASKS';
+  const cd=document.getElementById('cDueToday');if(cd)cd.textContent=dueToday;
+  const cp=document.getElementById('cPending');if(cp)cp.textContent=pending;
+  const ct=document.getElementById('cTutorMem');if(ct)ct.textContent=memories.filter(m=>m.specialist==='tutor').length||'—';
+  renderTasksPreview();
+  renderTasksScreen();
+  renderMemoryScreen();
+}
+
+function renderTasksPreview(){
+  const el=document.getElementById('tasksPreview');
+  if(!el)return;
+  const items=tasks.filter(t=>t.status!=='done').slice(0,4);
+  if(!items.length){el.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 20px;">No pending tasks · <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one →</span></div>';return;}
+  el.innerHTML='';
+  items.forEach(t=>{
+    const row=document.createElement('div');
+    row.className='task-item';
+    const cb=document.createElement('div');
+    cb.className='task-cb';
+    cb.onclick=()=>toggleTask(t.id,t.status);
+    const body=document.createElement('div');
+    body.className='task-body';
+    body.innerHTML='<div class="task-title">'+t.title+'</div><div class="task-chips"><span class="chip chip-'+t.priority+'">'+t.priority+'</span><span class="chip chip-spec">'+(t.specialist||'general')+'</span></div>';
+    row.appendChild(cb);row.appendChild(body);
+    el.appendChild(row);
+  });
+}
+
+function renderTasksScreen(){
+  const el=document.getElementById('tasksBody');
+  if(!el)return;
+  const pending=tasks.filter(t=>t.status!=='done');
+  const done=tasks.filter(t=>t.status==='done');
+  const sub=document.getElementById('tasksSub');
+  if(sub)sub.textContent=pending.length+' pending · '+done.length+' completed';
+  el.innerHTML='';
+  if(pending.length){
+    const hdr=document.createElement('div');
+    hdr.className='tasks-group-title';
+    hdr.textContent='Pending ('+pending.length+')';
+    el.appendChild(hdr);
+    pending.forEach(t=>{
+      const row=document.createElement('div');
+      row.className='task-item';
+      const cb=document.createElement('div');cb.className='task-cb';cb.onclick=()=>toggleTask(t.id,t.status);
+      const body=document.createElement('div');body.className='task-body';
+      body.innerHTML='<div class="task-title">'+t.title+'</div>'+(t.description?'<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">'+t.description+'</div>':'')+'<div class="task-chips"><span class="chip chip-'+t.priority+'">'+t.priority+'</span><span class="chip chip-spec">'+(t.specialist||'general')+'</span></div>';
+      row.appendChild(cb);row.appendChild(body);el.appendChild(row);
+    });
+  }
+  if(done.length){
+    const hdr=document.createElement('div');hdr.className='tasks-group-title';hdr.textContent='Completed ('+done.length+')';el.appendChild(hdr);
+    done.slice(0,5).forEach(t=>{
+      const row=document.createElement('div');row.className='task-item';row.style.opacity='0.4';
+      const cb=document.createElement('div');cb.className='task-cb done';cb.textContent='✓';cb.onclick=()=>toggleTask(t.id,t.status);
+      const body=document.createElement('div');body.className='task-body';body.innerHTML='<div class="task-title done">'+t.title+'</div>';
+      row.appendChild(cb);row.appendChild(body);el.appendChild(row);
+    });
+  }
+  if(!tasks.length)el.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px;">No tasks yet. Tap + to add one!</div>';
+}
+
+function renderMemoryScreen(){
+  const el=document.getElementById('memoryBody');
+  if(!el)return;
+  if(!memories.length){el.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No memories yet. Start chatting!</div>';return;}
+  const cats=[...new Set(memories.map(m=>m.category))];
+  el.innerHTML=cats.map(cat=>{
+    const items=memories.filter(m=>m.category===cat);
+    return '<div class="mem-group">'
+      +'<div class="mem-group-title"><span>'+cat+'</span><span class="mem-count">'+items.length+'</span></div>'
+      +items.map(m=>'<div class="mem-item"><div class="mem-key">'+m.key+'</div><div><div class="mem-val">'+m.value+'</div><div class="mem-meta">'+(m.specialist||'general')+' · '+('★').repeat(m.importance||1)+'</div></div></div>').join('')
+      +'</div>';
+  }).join('');
+}
+
+// ── TASKS CRUD ──
+async function toggleTask(id,status){
+  const ns=status==='done'?'pending':'done';
+  try{await db.from('shadow_tasks').update({status:ns}).eq('id',id);tasks=tasks.map(t=>t.id===id?{...t,status:ns}:t);updateUI();}catch(e){}
+}
+function openAddTask(){document.getElementById('taskModal').classList.add('on');setTimeout(()=>document.getElementById('taskTitleInput').focus(),100);}
+function closeTaskModal(){document.getElementById('taskModal').classList.remove('on');document.getElementById('taskTitleInput').value='';document.getElementById('taskDescInput').value='';}
+async function saveTask(){
+  const title=document.getElementById('taskTitleInput').value.trim();
+  if(!title)return;
+  try{
+    const{data}=await db.from('shadow_tasks').insert({user_id:UID,title,description:document.getElementById('taskDescInput').value.trim(),priority:document.getElementById('taskPriority').value,specialist:document.getElementById('taskSpec').value,status:'pending'}).select().single();
+    if(data)tasks.unshift(data);
+    closeTaskModal();updateUI();
+  }catch(e){}
+}
+
+// ── CLAUDE API ──
+async function callClaude(payload){
+  for(let i=1;i<=RETRIES;i++){
     try{
-      const res=await fetch(PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,model:MODEL,max_tokens:1000})});
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      const data=await res.json();
-      if(data.content?.[0]?.text)return data.content[0].text;
+      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,model:MODEL,max_tokens:1000})});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const d=await r.json();
+      if(d.content?.[0]?.text)return d.content[0].text;
       throw new Error('Empty');
     }catch(e){
-      if(attempt===retries)throw e;
-      await sleep(1000*attempt);
+      if(i===RETRIES)throw e;
+      await sleep(1000*i);
     }
   }
 }
 
-async function extractMemoriesWithAI(userMsg,assistantReply,specialist){
+// ── AI MEMORY EXTRACTION ──
+async function extractMem(userMsg,reply,spec){
   try{
-    const reply=await callClaude({system:'Extract important long-term facts from conversations. Respond ONLY with JSON array or []. Format: [{"category":"fact|goal|preference|habit","key":"short_key","value":"what to remember","importance":1|2|3}]',messages:[{role:'user',content:'Specialist: '+specialist+'\nUser: "'+userMsg+'"\nAssistant: "'+assistantReply.substring(0,200)+'"\n\nWhat should be remembered?'}]});
-    const extracted=JSON.parse(reply.replace(/```json|```/g,'').trim());
-    if(Array.isArray(extracted)&&extracted.length>0){for(const mem of extracted)await saveMemoryFact(mem.category,mem.key,mem.value,specialist,mem.importance||2);return extracted;}
+    const r=await callClaude({
+      system:'Extract important long-term facts from conversations. Respond ONLY with JSON array or []. Format: [{"category":"fact|goal|preference|habit","key":"short_key","value":"what to remember","importance":1|2|3}] Only extract genuinely useful long-term info.',
+      messages:[{role:'user',content:'Specialist:'+spec+'\nUser:"'+userMsg+'"\nAssistant:"'+reply.substring(0,200)+'"\nWhat should be remembered?'}]
+    });
+    const ex=JSON.parse(r.replace(/```json|```/g,'').trim());
+    if(Array.isArray(ex)&&ex.length>0){for(const m of ex)await saveMem(m.category,m.key,m.value,spec,m.importance||2);return ex;}
   }catch(e){}
   return[];
 }
 
-function buildMarketContext(){
-  const lines=[];
-  US_STOCKS.forEach(s=>{const d=marketData[s.sym];if(d)lines.push(s.sym+': '+fmtPrice(d.price)+' ('+fmtPct(d.changePct)+')');});
-  COMMODITIES.forEach(c=>{const d=marketData[c.display];if(d)lines.push(c.display+': '+fmtPrice(d.price)+' ('+fmtPct(d.changePct)+')');});
-  return lines.length?lines.join(', '):'Market data loading...';
+// ── SPECIALISTS ──
+function buildMktCtx(){
+  const lines=STOCKS.map(s=>{const d=mktData[s.sym];return d?s.sym+': '+fmtP(d.price)+' ('+fmtC(d.change,d.pct)+')':null;}).filter(Boolean);
+  return lines.length?lines.join(', '):'Market data unavailable - markets may be closed';
 }
-
-function buildMemoryContext(specialist){
-  const rel=memories.filter(m=>!m.specialist||m.specialist===specialist||m.specialist==='master');
+function buildMemCtx(spec){
+  const rel=memories.filter(m=>!m.specialist||m.specialist===spec||m.specialist==='master');
   return rel.length?rel.map(m=>'- '+m.key+': '+m.value).join('\n'):'No memories yet.';
 }
 
-function getTodayContext(){
-  const now=new Date();
-  const dateStr=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Dubai'});
-  return 'TODAY: '+dateStr+' · '+timeStr+' (Abu Dhabi, GMT+4)';
-}
-const specialists={
-  investment:{name:'INVESTMENT',mode:'ADVISOR',icon:'📈',greeting:"I'm your Investment Advisor. I have live market data. What would you like to know?",
-    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Investment Advisor for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\nBe direct and professional. Keep responses concise.'},
-  productivity:{name:'PRODUCTIVITY',mode:'SCOUT',icon:'🎯',greeting:"I'm your Productivity Scout. What do you need to tackle today?",
-    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Productivity Scout for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp manage tasks, optimize workflows. Be direct. Keep responses short.'},
-  tutor:{name:'TUTOR',mode:'ASSISTANT',icon:'🎓',greeting:"I'm your Tutor. What are we working on today?",
-    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Tutor for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp with studying, exercises, exam prep. Keep responses concise.'},
-  travel:{name:'TRAVEL',mode:'ADVISOR',icon:'✈️',greeting:"I'm your Travel Advisor. Tell me where you're headed and I'll plan everything — itinerary, weather, hotels, budget and transfers. Who are you traveling with?",
-    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Travel Advisor for Abdulrahman (based in Abu Dhabi, UAE).\n\nMEMORY:\n'+m+'\n\nWhen planning trips always cover: 1) Ask who they travel with 2) Day-by-day itinerary 3) Weather forecast for travel dates 4) Hotel recommendations with price ranges in USD 5) Daily budget estimate (accommodation + food + activities) 6) Flight/transfer options from Abu Dhabi 7) Car rental or local transport options. Be thorough and enthusiastic. Use clear formatting.'},
-  fitness:{name:'FITNESS',mode:'ASSISTANT',icon:'💪',greeting:"I'm your Fitness Assistant. What's your goal today?",
-    prompt:m=>getTodayContext()+'\n\nYou are Shadow\'s Fitness Assistant for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nCreate plans, track habits. Always note to consult a doctor for medical decisions. Keep responses short.'},
-  master:{name:'SHADOW',mode:'MASTER ROUTER',icon:'⚡',greeting:"I'm Shadow, your personal AI OS. I have live market data and remember everything. What do you need?",
-    prompt:m=>getTodayContext()+'\n\nYou are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMarketContext()+'\n\nMEMORY:\n'+m+'\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional and direct. Keep responses short.'}
+const SPECS={
+  investment:{name:'INVESTMENT',mode:'ADVISOR',icon:'📈',
+    greet:"I'm your Investment Advisor. I have live market data and memory of our past analysis. What would you like to know about your portfolio?",
+    prompt:m=>getDateCtx()+'\n\nYou are Shadow\'s Investment Advisor for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMktCtx()+'\n\nMEMORY:\n'+m+'\n\nBe direct and professional. Use live data in your responses. Keep responses concise and mobile-friendly.'},
+  productivity:{name:'PRODUCTIVITY',mode:'SCOUT',icon:'🎯',
+    greet:"I'm your Productivity Scout. I remember your goals and tasks. What do you need to tackle today?",
+    prompt:m=>getDateCtx()+'\n\nYou are Shadow\'s Productivity Scout for Abdulrahman.\n\nMEMORY:\n'+m+'\n\nHelp manage tasks, optimize workflows. Be direct. Keep responses short.'},
+  tutor:{name:'TUTOR',mode:'ASSISTANT',icon:'🎓',
+    greet:"I'm your Tutor. I know your kids are preparing for GL Assessment. What are we working on today?",
+    prompt:m=>getDateCtx()+'\n\nYou are Shadow\'s Tutor for Abdulrahman. His child is in Year 6 preparing for GL Assessment next week.\n\nMEMORY:\n'+m+'\n\nHelp with studying, exercises, exam prep. Keep responses concise.'},
+  travel:{name:'TRAVEL',mode:'ADVISOR',icon:'✈️',
+    greet:"I'm your Travel Advisor. Tell me where you're headed and I'll plan everything — itinerary, weather, hotels, daily budget and transfers. Who are you traveling with?",
+    prompt:m=>getDateCtx()+'\n\nYou are Shadow\'s Travel Advisor for Abdulrahman (based in Abu Dhabi, UAE).\n\nMEMORY:\n'+m+'\n\nWhen planning trips always cover: 1) Who they travel with 2) Day-by-day itinerary 3) Weather forecast 4) Hotel recommendations with prices in USD 5) Daily budget estimate 6) Flights/transfers from Abu Dhabi 7) Car rental or transport options. Be thorough and enthusiastic.'},
+  fitness:{name:'FITNESS',mode:'ASSISTANT',icon:'💪',
+    greet:"I'm your Fitness Assistant. I know you run 5K and cycle. What's your goal today?",
+    prompt:m=>getDateCtx()+'\n\nYou are Shadow\'s Fitness Assistant for Abdulrahman. He runs 5K and does cycling.\n\nMEMORY:\n'+m+'\n\nCreate plans, track habits. Always note to consult a doctor for medical decisions. Be motivating. Keep responses short.'},
+  master:{name:'SHADOW',mode:'MASTER ROUTER',icon:'⚡',
+    greet:"Good to see you. I'm Shadow, your personal AI OS. I have live market data and remember everything about you. What do you need?",
+    prompt:m=>getDateCtx()+'\n\nYou are Shadow, personal AI OS for Abdulrahman (Abu Dhabi, UAE).\n\nLIVE MARKET DATA:\n'+buildMktCtx()+'\n\nMEMORY:\n'+m+'\n\n5 specialists: Investment, Productivity, Tutor, Travel, Fitness. Be professional, direct and genuinely helpful. Keep responses short and mobile-friendly. Portfolio: AAPL, MSFT, NVDA, AMZN, GOOGL.'}
 };
+function getDateCtx(){const now=new Date();return 'TODAY: '+now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true})+' (Abu Dhabi, GMT+4)';}
 
-function updateUI(){
-  const h=new Date().getHours();
-  const greets=['Good Night','Good Morning','Good Afternoon','Good Evening'];
-  document.getElementById('greetingSub').textContent=greets[h<5?0:h<12?1:h<17?2:3];
-  const name=profile?.name||'Abdulrahman';
-  const parts=name.split(' ');
-  document.getElementById('greetingName').innerHTML=parts[0]+'<span>'+(parts.slice(1).join(' ')?' '+parts.slice(1).join(' '):'')+'</span>';
-  document.getElementById('greetingMemory').textContent='🧠 '+memories.length+' memories · '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  const pending=tasks.filter(t=>t.status!=='done').length;
-  const dueToday=tasks.filter(t=>t.due_date&&new Date(t.due_date).toDateString()===new Date().toDateString()).length;
-  document.getElementById('statTasks').textContent=pending;
-  document.getElementById('statMemories').textContent=memories.length;
-  const tp=document.getElementById('tasksPending');if(tp)tp.textContent=pending;
-  const td=document.getElementById('tasksDueToday');if(td)td.textContent=dueToday;
-  const tb=document.getElementById('taskBadge');if(tb)tb.textContent=pending+' TASKS';
-  const tm=document.getElementById('tutorMemCount');if(tm)tm.textContent=memories.filter(m=>m.specialist==='tutor').length||'—';
-  renderTasksPreview();renderMemoriesPreview();renderTasksFull();renderMemoryScreen();
-}
-
-function renderTasksPreview(){
-  const c=document.getElementById('tasksPreview');
-  const items=tasks.filter(t=>t.status!=='done').slice(0,4);
-  c.innerHTML='';
-  if(!items.length){
-    c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">No pending tasks. <span style="color:var(--accent);cursor:pointer;" onclick="openAddTask()">Add one</span></div>';
-    return;
-  }
-  items.forEach(t=>{
-    const row=document.createElement('div');
-    row.className='task-row';
-    const chk=document.createElement('div');
-    chk.className='task-check';
-    chk.onclick=()=>toggleTask(t.id,t.status);
-    const cnt=document.createElement('div');
-    cnt.className='task-content';
-    cnt.innerHTML='<div class="task-title-text">'+t.title+'</div><div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div>';
-    row.appendChild(chk);row.appendChild(cnt);
-    c.appendChild(row);
-  });
-}
-
-function renderTasksFull(){
-  const c=document.getElementById('tasksFullList');
-  c.innerHTML='';
-  if(!tasks.length){
-    c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No tasks yet!</div>';
-    return;
-  }
-  const pending=tasks.filter(t=>t.status!=='done');
-  const done=tasks.filter(t=>t.status==='done');
-  if(pending.length){
-    const hdr=document.createElement('div');
-    hdr.style.cssText='font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;';
-    hdr.textContent='Pending ('+pending.length+')';
-    c.appendChild(hdr);
-    pending.forEach(t=>{
-      const row=document.createElement('div');row.className='task-row';
-      const chk=document.createElement('div');chk.className='task-check';chk.onclick=()=>toggleTask(t.id,t.status);
-      const cnt=document.createElement('div');cnt.className='task-content';
-      cnt.innerHTML='<div class="task-title-text">'+t.title+'</div>'+(t.description?'<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">'+t.description+'</div>':'')+'<div class="task-meta"><span class="task-priority priority-'+t.priority+'">'+t.priority+'</span><span>'+(t.specialist||'general')+'</span></div>';
-      row.appendChild(chk);row.appendChild(cnt);c.appendChild(row);
-    });
-  }
-  if(done.length){
-    const hdr=document.createElement('div');
-    hdr.style.cssText='font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:16px 0 8px;';
-    hdr.textContent='Done ('+done.length+')';
-    c.appendChild(hdr);
-    done.slice(0,5).forEach(t=>{
-      const row=document.createElement('div');row.className='task-row';row.style.opacity='0.4';
-      const chk=document.createElement('div');chk.className='task-check done';chk.textContent='✓';chk.onclick=()=>toggleTask(t.id,t.status);
-      const cnt=document.createElement('div');cnt.className='task-content';
-      cnt.innerHTML='<div class="task-title-text done">'+t.title+'</div>';
-      row.appendChild(chk);row.appendChild(cnt);c.appendChild(row);
-    });
-  }
-}
-
-function renderMemoriesPreview(){
-  const c=document.getElementById('memoriesPreview');
-  if(!memories.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:12px 0;">Chat with Shadow to build memory!</div>';return;}
-  c.innerHTML=memories.slice(0,4).map(m=>'<div class="memory-row"><div class="memory-key">'+m.key+'</div><div class="memory-val">'+m.value+'</div></div>').join('');
-}
-
-function renderMemoryScreen(){
-  const c=document.getElementById('memoryScreenContent');
-  if(!memories.length){c.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:20px 0;">No memories yet. Start chatting!</div>';return;}
-  const cats=[...new Set(memories.map(m=>m.category))];
-  c.innerHTML=cats.map(cat=>{const items=memories.filter(m=>m.category===cat);return '<div class="mem-section"><div class="mem-section-title">'+cat+' ('+items.length+')</div>'+items.map(m=>'<div class="mem-item"><div class="mem-item-key">'+m.key+'</div><div><div class="mem-item-val">'+m.value+'</div><div class="mem-item-cat">'+(m.specialist||'general')+' · '+'★'.repeat(m.importance||1)+'</div></div></div>').join('')+'</div>';}).join('');
-}
-
-async function toggleTask(id,status){const newStatus=status==='done'?'pending':'done';try{await db.from('shadow_tasks').update({status:newStatus}).eq('id',id);tasks=tasks.map(t=>t.id===id?{...t,status:newStatus}:t);updateUI();}catch(e){}}
-function openAddTask(){document.getElementById('addTaskModal').classList.add('active');setTimeout(()=>document.getElementById('taskTitleInput').focus(),100);}
-function closeAddTask(){document.getElementById('addTaskModal').classList.remove('active');document.getElementById('taskTitleInput').value='';document.getElementById('taskDescInput').value='';}
-async function addTask(){
-  const title=document.getElementById('taskTitleInput').value.trim();
-  if(!title)return;
-  try{const{data}=await db.from('shadow_tasks').insert({user_id:USER_ID,title,description:document.getElementById('taskDescInput').value.trim(),priority:document.getElementById('taskPriority').value,specialist:document.getElementById('taskSpecialist').value,status:'pending'}).select().single();if(data)tasks.unshift(data);closeAddTask();updateUI();}catch(e){}
-}
-
+// ── CHAT ──
 async function openChat(type){
-  currentSpecialist=type;
-  const spec=specialists[type];
-  document.getElementById('chatSpecialistName').textContent=spec.name;
-  document.getElementById('chatSpecialistMode').textContent=spec.mode;
-  document.getElementById('chatSpecialistIcon').textContent=spec.icon;
-  await loadConversationHistory(type);
-  const msgs=document.getElementById('chatMessages');
+  curSpec=type;
+  const sp=SPECS[type];
+  document.getElementById('chatName').textContent=sp.name;
+  document.getElementById('chatMode').textContent=sp.mode;
+  document.getElementById('chatIcon').textContent=sp.icon;
+  await loadConvos(type);
+  const msgs=document.getElementById('chatMsgs');
   msgs.innerHTML='';
-  if(conversations[type]?.length>0){conversations[type].slice(-8).forEach(m=>addChatMessage(m.role==='user'?'user':'shadow',m.content,false));addChatMessage('shadow','Welcome back! How can I help?',false);}
-  else{addChatMessage('shadow',spec.greeting,false);}
+  if(convos[type]&&convos[type].length>0){
+    convos[type].slice(-8).forEach(m=>addMsg(m.role==='user'?'user':'shadow',m.content,false));
+    addMsg('shadow','Welcome back! How can I help?',false);
+  } else {
+    addMsg('shadow',sp.greet,false);
+  }
   ['homeScreen','tasksScreen','memoryScreen','marketsScreen'].forEach(id=>document.getElementById(id).classList.remove('active'));
   document.getElementById('chatScreen').classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  setTimeout(()=>document.getElementById('chatTextInput').focus(),300);
+  setTimeout(()=>document.getElementById('chatInput').focus(),300);
+}
+function closeChat(){
+  document.getElementById('chatScreen').classList.remove('active');
+  document.getElementById('homeScreen').classList.add('active');
+  document.querySelector('[data-tab=home]').classList.add('active');
 }
 
-function closeChat(){document.getElementById('chatScreen').classList.remove('active');document.getElementById('homeScreen').classList.add('active');document.querySelector('[data-tab=home]').classList.add('active');}
-
-async function sendChatMessage(){
-  const input=document.getElementById('chatTextInput');
-  const text=input.value.trim();
-  if(!text)return;
-  input.value='';
-  addChatMessage('user',text);
-  await saveMessage(currentSpecialist,'user',text);
-  document.getElementById('chatSendBtn').disabled=true;
-  const thinkId=addThinkingBubble();
-  if(!conversations[currentSpecialist])conversations[currentSpecialist]=[];
-  conversations[currentSpecialist].push({role:'user',content:text});
+async function sendMsg(){
+  const inp=document.getElementById('chatInput');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  inp.value='';
+  addMsg('user',txt);
+  await saveMsg(curSpec,'user',txt);
+  document.getElementById('sendBtn').disabled=true;
+  const tid=addThinking();
+  if(!convos[curSpec])convos[curSpec]=[];
+  convos[curSpec].push({role:'user',content:txt});
   try{
-    const spec=specialists[currentSpecialist];
-    const reply=await callClaude({system:spec.prompt(buildMemoryContext(currentSpecialist)),messages:conversations[currentSpecialist].slice(-10)});
-    removeThinkingBubble(thinkId);
-    conversations[currentSpecialist].push({role:'assistant',content:reply});
-    addChatMessage('shadow',reply);
-    await saveMessage(currentSpecialist,'assistant',reply);
-    const extracted=await extractMemoriesWithAI(text,reply,currentSpecialist);
-    if(extracted.length>0)showMemoryToast(extracted);
+    const sp=SPECS[curSpec];
+    const reply=await callClaude({system:sp.prompt(buildMemCtx(curSpec)),messages:convos[curSpec].slice(-10)});
+    removeThinking(tid);
+    convos[curSpec].push({role:'assistant',content:reply});
+    addMsg('shadow',reply);
+    await saveMsg(curSpec,'assistant',reply);
+    const ex=await extractMem(txt,reply,curSpec);
+    if(ex.length>0)showMemToast(ex);
   }catch(e){
-    removeThinkingBubble(thinkId);
-    addChatMessage('shadow','Connection error after '+MAX_RETRIES+' attempts. Please try again.');
+    removeThinking(tid);
+    addMsg('shadow','Connection error after '+RETRIES+' attempts. Please try again.');
   }
-  document.getElementById('chatSendBtn').disabled=false;
+  document.getElementById('sendBtn').disabled=false;
 }
 
-function showMemoryToast(extracted){const msgs=document.getElementById('chatMessages');const toast=document.createElement('div');toast.className='memory-toast';toast.innerHTML='🧠 Remembered: '+extracted.map(m=>m.key).join(', ');msgs.appendChild(toast);msgs.scrollTop=msgs.scrollHeight;setTimeout(()=>{if(toast.parentNode)toast.remove();},4000);}
-function addChatMessage(from,text,animate=true){const msgs=document.getElementById('chatMessages');const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});const fmt=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');const div=document.createElement('div');div.className='cmsg '+(from==='shadow'?'shadow':'user');if(!animate)div.style.animation='none';div.innerHTML='<div class="cmsg-avatar '+(from==='shadow'?'s':'u')+'">'+(from==='shadow'?'S':'A')+'</div><div><div class="cmsg-bubble">'+fmt+'</div><div class="cmsg-time">'+now+'</div></div>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
-function addThinkingBubble(){const msgs=document.getElementById('chatMessages');const id='think-'+Date.now();const div=document.createElement('div');div.id=id;div.className='cmsg shadow';div.innerHTML='<div class="cmsg-avatar s">S</div><div><div class="cmsg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;return id;}
-function removeThinkingBubble(id){const el=document.getElementById(id);if(el)el.remove();}
-function handleChatKey(e){if(e.key==='Enter')sendChatMessage();}
+function addMsg(from,text,animate=true){
+  const msgs=document.getElementById('chatMsgs');
+  const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const div=document.createElement('div');
+  div.className='msg '+(from==='shadow'?'shadow':'user');
+  if(!animate)div.style.animation='none';
+  const av=document.createElement('div');
+  av.className='msg-av '+(from==='shadow'?'s':'u');
+  av.textContent=from==='shadow'?'S':'A';
+  const bubble=document.createElement('div');
+  bubble.className='msg-bubble';
+  bubble.innerHTML=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  const meta=document.createElement('div');
+  meta.className='msg-meta';
+  meta.textContent=now;
+  if(from==='shadow'){
+    lastShadowText=text;
+    const spk=document.createElement('span');
+    spk.className='msg-speak';
+    spk.textContent='🔊';
+    spk.title='Read aloud';
+    spk.onclick=()=>speakText(text);
+    meta.appendChild(spk);
+    if(shadowVoiceOn)setTimeout(()=>speakText(text),100);
+  }
+  const wrap=document.createElement('div');
+  wrap.appendChild(bubble);wrap.appendChild(meta);
+  div.appendChild(av);div.appendChild(wrap);
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function addThinking(){
+  const msgs=document.getElementById('chatMsgs');
+  const id='th-'+Date.now();
+  const div=document.createElement('div');div.id=id;div.className='msg shadow';
+  const av=document.createElement('div');av.className='msg-av s';av.textContent='S';
+  const wrap=document.createElement('div');
+  const bubble=document.createElement('div');bubble.className='msg-bubble';
+  const dots=document.createElement('div');dots.className='thinking';
+  dots.innerHTML='<span></span><span></span><span></span>';
+  bubble.appendChild(dots);wrap.appendChild(bubble);div.appendChild(av);div.appendChild(wrap);
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+  return id;
+}
+function removeThinking(id){const el=document.getElementById(id);if(el)el.remove();}
+function showMemToast(ex){
+  const msgs=document.getElementById('chatMsgs');
+  const t=document.createElement('div');t.className='mem-toast';
+  t.innerHTML='🧠 Remembered: '+ex.map(m=>m.key).join(', ');
+  msgs.appendChild(t);msgs.scrollTop=msgs.scrollHeight;
+  setTimeout(()=>{if(t.parentNode)t.remove();},4000);
+}
 
+// ── VOICE TTS ──
+function speakText(text){
+  if(!('speechSynthesis' in window))return;
+  if(curUtt)window.speechSynthesis.cancel();
+  const clean=text.replace(/<[^>]*>/g,'').replace(/\*\*/g,'').replace(/#+/g,'').trim();
+  const utt=new SpeechSynthesisUtterance(clean);
+  const voices=window.speechSynthesis.getVoices();
+  const pref=['Daniel','Arthur','Gordon','Oliver','Aaron','Alex','David'];
+  let v=null;
+  for(const n of pref){v=voices.find(x=>x.name.includes(n)&&x.lang.startsWith('en'));if(v)break;}
+  if(!v)v=voices.find(x=>x.lang.startsWith('en-GB'));
+  if(!v)v=voices.find(x=>x.lang.startsWith('en'));
+  if(v)utt.voice=v;
+  utt.rate=0.88;utt.pitch=0.75;utt.volume=1;
+  curUtt=utt;
+  utt.onend=()=>{curUtt=null;};
+  window.speechSynthesis.speak(utt);
+}
+function toggleShadowVoice(){
+  shadowVoiceOn=!shadowVoiceOn;
+  const btn=document.getElementById('voiceToggleBtn');
+  if(shadowVoiceOn){
+    btn.textContent='🔊';btn.classList.add('on');
+  } else {
+    btn.textContent='🔇';btn.classList.remove('on');
+    if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
+  }
+}
+if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
+
+// ── VOICE STT ──
+function setupRecog(onResult,onEnd){
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){alert('Voice requires Safari iOS 15+ or Chrome');return null;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const r=new SR();r.continuous=false;r.interimResults=true;r.lang='en-US';
+  r.onresult=onResult;r.onend=onEnd;r.onerror=()=>{isListening=false;};
+  return r;
+}
+function openVoiceOverlay(){
+  document.getElementById('voiceTranscript').textContent='Speak your command';
+  document.getElementById('voiceOverlay').classList.add('on');
+  recog=setupRecog(
+    e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('voiceTranscript').textContent=t;if(e.results[0].isFinal){setTimeout(()=>{document.getElementById('voiceOverlay').classList.remove('on');openChat('master');setTimeout(()=>{document.getElementById('chatInput').value=t;sendMsg();},400);},500);}},
+    ()=>{isListening=false;}
+  );
+  if(recog){recog.start();isListening=true;}
+}
+function cancelVoice(){if(recog)recog.stop();isListening=false;document.getElementById('voiceOverlay').classList.remove('on');}
+function toggleMic(){
+  if(isListening){recog.stop();document.getElementById('micBtn').classList.remove('on');isListening=false;return;}
+  recog=setupRecog(
+    e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('chatInput').value=t;if(e.results[0].isFinal){document.getElementById('micBtn').classList.remove('on');isListening=false;setTimeout(()=>sendMsg(),300);}},
+    ()=>{isListening=false;document.getElementById('micBtn').classList.remove('on');}
+  );
+  if(recog){recog.start();isListening=true;document.getElementById('micBtn').classList.add('on');}
+}
+
+// ── NAVIGATION ──
 function switchTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   if(el)el.classList.add('active');
   ['homeScreen','chatScreen','tasksScreen','memoryScreen','marketsScreen'].forEach(id=>document.getElementById(id).classList.remove('active'));
   if(tab==='home')document.getElementById('homeScreen').classList.add('active');
-  else if(tab==='tasks'){document.getElementById('tasksScreen').classList.add('active');renderTasksFull();}
+  else if(tab==='tasks'){document.getElementById('tasksScreen').classList.add('active');renderTasksScreen();}
   else if(tab==='memory'){document.getElementById('memoryScreen').classList.add('active');renderMemoryScreen();}
   else if(tab==='markets'){document.getElementById('marketsScreen').classList.add('active');renderMarketsScreen();}
   else if(tab==='chat-master')openChat('master');
   else openChat(tab);
 }
 
-function setupRecognition(onResult,onEnd){if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){alert('Voice requires Safari iOS 15+ or Chrome');return null;}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();r.continuous=false;r.interimResults=true;r.lang='en-US';r.onresult=onResult;r.onend=onEnd;r.onerror=()=>{isListening=false;};return r;}
-function openVoiceOverlay(){document.getElementById('voiceTranscriptDisplay').textContent='Speak your command';document.getElementById('voiceOverlay').classList.add('active');recognition=setupRecognition((e)=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('voiceTranscriptDisplay').textContent=t;if(e.results[0].isFinal){setTimeout(()=>{document.getElementById('voiceOverlay').classList.remove('active');openChat('master');setTimeout(()=>{document.getElementById('chatTextInput').value=t;sendChatMessage();},400);},500);}},()=>{isListening=false;});if(recognition){recognition.start();isListening=true;}}
-function cancelVoice(){if(recognition)recognition.stop();isListening=false;document.getElementById('voiceOverlay').classList.remove('active');}
-function toggleMic(){if(isListening){recognition.stop();document.getElementById('micBtn').classList.remove('listening');isListening=false;return;}recognition=setupRecognition((e)=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('chatTextInput').value=t;if(e.results[0].isFinal){document.getElementById('micBtn').classList.remove('listening');isListening=false;setTimeout(()=>sendChatMessage(),300);}},()=>{isListening=false;document.getElementById('micBtn').classList.remove('listening');});if(recognition){recognition.start();isListening=true;document.getElementById('micBtn').classList.add('listening');}}
-function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});}
-function setupCarouselDots(){const carousel=document.getElementById('cardsCarousel');const dots=document.querySelectorAll('.card-dot');carousel.addEventListener('scroll',()=>{const idx=Math.round(carousel.scrollLeft/(carousel.offsetWidth-40));dots.forEach((d,i)=>d.classList.toggle('active',i===idx));});}
+// ── CAROUSEL DOTS ──
+function setupCarouselDots(){
+  const c=document.getElementById('specScroll');
+  const ds=document.querySelectorAll('#specDots .dot');
+  if(!c)return;
+  c.addEventListener('scroll',()=>{
+    const idx=Math.round(c.scrollLeft/(c.offsetWidth-40));
+    ds.forEach((d,i)=>d.classList.toggle('active',i===idx));
+  });
+}
 
-initApp();
+// ── START ──
+setTimeout(()=>{
+  const b=document.getElementById('splashBar');
+  if(b)b.style.width='5%';
+},100);
+init();
 </script>
 </body>
 </html>
