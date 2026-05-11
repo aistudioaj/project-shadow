@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 """
 Project Shadow - Morning Intelligence Brief
@@ -16,7 +15,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-#  CONFIG FROM ENVIRONMENT 
+# ── CONFIG FROM ENVIRONMENT ──
 ANTHROPIC_KEY = os.environ['ANTHROPIC_KEY']
 SUPABASE_URL  = os.environ['SUPABASE_URL']
 SUPABASE_KEY  = os.environ['SUPABASE_KEY']
@@ -33,11 +32,11 @@ NOW = datetime.now(ABU_DHABI_TZ)
 TODAY_STR = NOW.strftime('%A, %B %d, %Y')
 TIME_STR = NOW.strftime('%I:%M %p')
 
-print(f"[SUNRISE] Shadow Morning Brief starting: {TODAY_STR} {TIME_STR}")
+print(f"🌅 Shadow Morning Brief starting: {TODAY_STR} {TIME_STR}")
 
-# 
+# ──────────────────────────────────────────────
 # 1. FETCH PORTFOLIO & MARKET DATA
-# 
+# ──────────────────────────────────────────────
 def fetch_quote(symbol):
     try:
         url = f"https://finnhub.io/api/v1/quote?symbol={symbol}&token={FINNHUB_KEY}"
@@ -46,7 +45,7 @@ def fetch_quote(symbol):
         if data.get('c', 0) > 0:
             return data
     except Exception as e:
-        print(f"  [WARNING] Quote error for {symbol}: {e}")
+        print(f"  ⚠️ Quote error for {symbol}: {e}")
     return None
 
 def fetch_portfolio():
@@ -59,7 +58,7 @@ def fetch_portfolio():
         r = requests.get(url, headers=headers, timeout=10)
         return r.json()
     except Exception as e:
-        print(f"  [WARNING] Portfolio fetch error: {e}")
+        print(f"  ⚠️ Portfolio fetch error: {e}")
         return []
 
 def fetch_tasks():
@@ -72,7 +71,7 @@ def fetch_tasks():
         r = requests.get(url, headers=headers, timeout=10)
         return r.json()
     except Exception as e:
-        print(f"  [WARNING] Tasks fetch error: {e}")
+        print(f"  ⚠️ Tasks fetch error: {e}")
         return []
 
 def fetch_memories():
@@ -85,34 +84,34 @@ def fetch_memories():
         r = requests.get(url, headers=headers, timeout=10)
         return r.json()
     except Exception as e:
-        print(f"  [WARNING] Memory fetch error: {e}")
+        print(f"  ⚠️ Memory fetch error: {e}")
         return []
 
-print("[CHART] Fetching market data...")
+print("📈 Fetching market data...")
 WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'JPM']
 market_data = {}
 for sym in WATCHLIST:
     q = fetch_quote(sym)
     if q:
         market_data[sym] = q
-        print(f"  [OK] {sym}: ${q['c']:.2f} ({q['dp']:+.2f}%)")
+        print(f"  ✅ {sym}: ${q['c']:.2f} ({q['dp']:+.2f}%)")
 
-print("[PORTFOLIO] Fetching portfolio...")
+print("💼 Fetching portfolio...")
 portfolio = fetch_portfolio()
-print(f"  [OK] {len(portfolio)} holdings")
+print(f"  ✅ {len(portfolio)} holdings")
 
-print("[OK] Fetching tasks...")
+print("✅ Fetching tasks...")
 tasks = fetch_tasks()
-print(f"  [OK] {len(tasks)} pending tasks")
+print(f"  ✅ {len(tasks)} pending tasks")
 
-print("[MEMORY] Fetching memories...")
+print("🧠 Fetching memories...")
 memories = fetch_memories()
-print(f"  [OK] {len(memories)} memories")
+print(f"  ✅ {len(memories)} memories")
 
-# 
+# ──────────────────────────────────────────────
 # 2. FETCH WEATHER (Abu Dhabi)
-# 
-print("[WEATHER] Fetching weather...")
+# ──────────────────────────────────────────────
+print("🌤️ Fetching weather...")
 weather_info = "Weather data unavailable"
 try:
     url = "https://api.open-meteo.com/v1/forecast"
@@ -147,22 +146,22 @@ try:
             tmin = daily['temperature_2m_min'][i]
             wc = daily['weathercode'][i]
             cond = wcode_map.get(wc, 'Clear')
-            forecast_days.append(f"{day_name}: {cond}, {tmax:.0f}C / {tmin:.0f}C")
+            forecast_days.append(f"{day_name}: {cond}, {tmax:.0f}°C / {tmin:.0f}°C")
 
-    weather_info = f"Current: {condition}, {temp:.0f}C | " + "  ".join(forecast_days)
-    print(f"  [OK] {weather_info[:80]}...")
+    weather_info = f"Current: {condition}, {temp:.0f}°C | " + " · ".join(forecast_days)
+    print(f"  ✅ {weather_info[:80]}...")
 except Exception as e:
-    print(f"  [WARNING] Weather error: {e}")
+    print(f"  ⚠️ Weather error: {e}")
 
-# 
+# ──────────────────────────────────────────────
 # 3. BUILD CONTEXT FOR CLAUDE
-# 
+# ──────────────────────────────────────────────
 def build_market_context():
     if not market_data:
         return "Market data unavailable - markets may be closed."
     lines = []
     for sym, q in market_data.items():
-        direction = "" if q['dp'] >= 0 else ""
+        direction = "▲" if q['dp'] >= 0 else "▼"
         lines.append(f"{sym}: ${q['c']:.2f} {direction} {q['dp']:+.2f}% (change: ${q['d']:+.2f})")
     return "\n".join(lines)
 
@@ -184,7 +183,7 @@ def build_portfolio_context():
             gain_pct = (gain / cost_basis * 100) if cost_basis > 0 else 0
             total_value += current_val
             total_cost += cost_basis
-            direction = "" if gain >= 0 else ""
+            direction = "▲" if gain >= 0 else "▼"
             lines.append(f"{ticker}: {shares} shares @ ${avg_price:.2f} avg | Now ${q['c']:.2f} | Value ${current_val:,.2f} | P&L {direction} ${gain:+,.2f} ({gain_pct:+.2f}%)")
     if total_value > 0:
         total_pnl = total_value - total_cost
@@ -222,10 +221,10 @@ def build_memory_context():
         lines.append("KEY FACTS: " + "; ".join([f"{m['key']}: {m['value']}" for m in key_mems[:5]]))
     return "\n".join(lines) if lines else "General memories stored."
 
-# 
+# ──────────────────────────────────────────────
 # 4. CALL CLAUDE FOR INTELLIGENCE
-# 
-print("[AI] Calling Claude for intelligence brief...")
+# ──────────────────────────────────────────────
+print("🤖 Calling Claude for intelligence brief...")
 
 system_prompt = f"""You are Shadow, a personal AI operating system generating a morning intelligence brief for {USER_NAME} in Abu Dhabi, UAE.
 
@@ -290,14 +289,14 @@ try:
         timeout=60
     )
     brief_raw = response.json()['content'][0]['text']
-    print("  [OK] Claude responded successfully")
+    print("  ✅ Claude responded successfully")
 except Exception as e:
-    print(f"  [WARNING] Claude error: {e}")
+    print(f"  ⚠️ Claude error: {e}")
     brief_raw = f"[SHADOW_VERDICT]Good morning {USER_NAME}. Shadow encountered an error generating today's brief. Please check the system.[/SHADOW_VERDICT]"
 
-# 
+# ──────────────────────────────────────────────
 # 5. PARSE CLAUDE RESPONSE
-# 
+# ──────────────────────────────────────────────
 def extract_section(text, tag):
     start = text.find(f'[{tag}]')
     end = text.find(f'[/{tag}]')
@@ -316,9 +315,9 @@ sections = {
     'verdict': extract_section(brief_raw, 'SHADOW_VERDICT'),
 }
 
-# 
+# ──────────────────────────────────────────────
 # 6. BUILD PORTFOLIO TABLE
-# 
+# ──────────────────────────────────────────────
 def build_portfolio_table():
     if not portfolio or not market_data:
         return "<p style='color:#6b7280;font-size:13px;'>No holdings or market data available.</p>"
@@ -344,7 +343,7 @@ def build_portfolio_table():
 
         gain_color = '#10d9a0' if gain >= 0 else '#f43f5e'
         day_color = '#10d9a0' if q['dp'] >= 0 else '#f43f5e'
-        gain_arrow = '' if gain >= 0 else ''
+        gain_arrow = '▲' if gain >= 0 else '▼'
 
         rows.append(f"""
         <tr>
@@ -364,7 +363,7 @@ def build_portfolio_table():
     total_pnl = total_value - total_cost
     total_pnl_pct = (total_pnl / total_cost * 100) if total_cost > 0 else 0
     total_color = '#10d9a0' if total_pnl >= 0 else '#f43f5e'
-    total_arrow = '' if total_pnl >= 0 else ''
+    total_arrow = '▲' if total_pnl >= 0 else '▼'
 
     return f"""
     <table style="width:100%;border-collapse:collapse;">
@@ -387,14 +386,14 @@ def build_portfolio_table():
       </tbody>
     </table>"""
 
-# 
+# ──────────────────────────────────────────────
 # 7. BUILD MARKET TICKER ROW
-# 
+# ──────────────────────────────────────────────
 def build_market_ticker():
     items = []
     for sym, q in market_data.items():
         color = '#10d9a0' if q['dp'] >= 0 else '#f43f5e'
-        arrow = '' if q['dp'] >= 0 else ''
+        arrow = '▲' if q['dp'] >= 0 else '▼'
         items.append(f"""
         <td style="padding:10px 20px;border-right:1px solid #1e2840;text-align:center;white-space:nowrap;">
           <div style="font-family:monospace;font-size:11px;font-weight:700;color:#8892a8;margin-bottom:4px;">{sym}</div>
@@ -403,9 +402,9 @@ def build_market_ticker():
         </td>""")
     return '<table style="width:100%;border-collapse:collapse;"><tr>' + ''.join(items) + '</tr></table>'
 
-# 
+# ──────────────────────────────────────────────
 # 8. BUILD HTML EMAIL
-# 
+# ──────────────────────────────────────────────
 def section_html(icon, title, content, accent='#4f8ef7'):
     if not content:
         return ""
@@ -429,7 +428,7 @@ html_email = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shadow Brief  {TODAY_STR}</title>
+<title>Shadow Brief · {TODAY_STR}</title>
 </head>
 <body style="margin:0;padding:0;background:#060810;font-family:'Inter',sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#060810;min-height:100vh;">
@@ -440,14 +439,14 @@ html_email = f"""<!DOCTYPE html>
   <tr><td style="background:linear-gradient(135deg,#0e1220 0%,#141928 100%);border:1px solid #1e2840;border-radius:16px;padding:32px;margin-bottom:24px;text-align:center;">
     <div style="font-family:monospace;font-size:42px;font-weight:900;letter-spacing:8px;color:#4f8ef7;text-shadow:0 0 40px rgba(79,142,247,0.4);margin-bottom:8px;">SHADOW</div>
     <div style="font-family:monospace;font-size:11px;letter-spacing:3px;color:#454d60;text-transform:uppercase;margin-bottom:24px;">MORNING INTELLIGENCE BRIEF</div>
-    <div style="font-family:monospace;font-size:13px;color:#7889a8;">{TODAY_STR}  {TIME_STR}  Abu Dhabi, GMT+4</div>
+    <div style="font-family:monospace;font-size:13px;color:#7889a8;">{TODAY_STR} · {TIME_STR} · Abu Dhabi, GMT+4</div>
   </td></tr>
 
   <tr><td style="height:16px;"></td></tr>
 
   <!-- GREETING -->
   <tr><td style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;padding:24px;margin-bottom:16px;">
-    <div style="font-size:22px;font-weight:700;color:#e2e8f8;margin-bottom:8px;">{greeting_word}, {USER_NAME}. </div>
+    <div style="font-size:22px;font-weight:700;color:#e2e8f8;margin-bottom:8px;">{greeting_word}, {USER_NAME}. 👋</div>
     <div style="font-size:14px;color:#6b7280;line-height:1.6;">Here is your daily intelligence brief. Shadow has analyzed your portfolio, monitored global developments, and prepared everything you need to start the day sharp.</div>
   </td></tr>
 
@@ -456,7 +455,7 @@ html_email = f"""<!DOCTYPE html>
   <!-- MARKET TICKER -->
   <tr><td style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;margin-bottom:16px;">
     <div style="padding:12px 20px;background:#141928;border-bottom:1px solid #1e2840;">
-      <span style="font-family:monospace;font-size:10px;letter-spacing:2px;color:#4f8ef7;text-transform:uppercase;font-weight:700;">[MARKETS] Live Market Snapshot</span>
+      <span style="font-family:monospace;font-size:10px;letter-spacing:2px;color:#4f8ef7;text-transform:uppercase;font-weight:700;">📊 Live Market Snapshot</span>
     </div>
     <div style="overflow-x:auto;">
       {build_market_ticker()}
@@ -468,7 +467,7 @@ html_email = f"""<!DOCTYPE html>
   <!-- SHADOW VERDICT (top) -->
   {"" if not sections['verdict'] else f"""
   <tr><td style="background:linear-gradient(135deg,#1d4ed8,#2563eb);border-radius:12px;padding:24px;margin-bottom:16px;">
-    <div style="font-family:monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:12px;">SHADOW VERDICT</div>
+    <div style="font-family:monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:12px;">⚡ Shadow's Verdict</div>
     <div style="font-size:15px;color:#ffffff;line-height:1.7;font-weight:500;">{sections['verdict'].replace(chr(10),'<br>')}</div>
   </td></tr>
   <tr><td style="height:16px;"></td></tr>"""}
@@ -476,7 +475,7 @@ html_email = f"""<!DOCTYPE html>
   <!-- PORTFOLIO TABLE -->
   <tr><td style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;margin-bottom:16px;">
     <div style="padding:14px 20px;background:#141928;border-bottom:1px solid #1e2840;">
-      <span style="font-family:monospace;font-size:11px;letter-spacing:2px;color:#4f8ef7;text-transform:uppercase;font-weight:700;">[PORTFOLIO] Your Portfolio</span>
+      <span style="font-family:monospace;font-size:11px;letter-spacing:2px;color:#4f8ef7;text-transform:uppercase;font-weight:700;">💼 Your Portfolio</span>
     </div>
     <div style="overflow-x:auto;">
       {build_portfolio_table()}
@@ -487,26 +486,26 @@ html_email = f"""<!DOCTYPE html>
 
   <!-- SECTIONS -->
   <tr><td>
-    {section_html('[CHART]', 'Market Analysis', sections['market'], '#4f8ef7')}
-    {section_html('[AI]', 'AI & Technology News', sections['ai_news'], '#a855f7')}
-    {section_html('[GLOBE]', 'Geopolitical Intelligence', sections['geopolitical'], '#f59e0b')}
-    {section_html('[SUN]', 'Weather & Conditions', sections['weather'], '#10d9a0')}
-    {section_html('[PORTFOLIO]', 'Portfolio Intelligence', sections['portfolio'], '#4f8ef7')}
-    {section_html('[OK]', 'Tasks & Priorities', sections['tasks'], '#10d9a0')}
-    {section_html('[TRAVEL]', 'Travel Updates', sections['travel'], '#f59e0b')}
+    {section_html('📈', 'Market Analysis', sections['market'], '#4f8ef7')}
+    {section_html('🤖', 'AI & Technology News', sections['ai_news'], '#a855f7')}
+    {section_html('🌍', 'Geopolitical Intelligence', sections['geopolitical'], '#f59e0b')}
+    {section_html('☀️', 'Weather & Conditions', sections['weather'], '#10d9a0')}
+    {section_html('💼', 'Portfolio Intelligence', sections['portfolio'], '#4f8ef7')}
+    {section_html('✅', 'Tasks & Priorities', sections['tasks'], '#10d9a0')}
+    {section_html('✈️', 'Travel Updates', sections['travel'], '#f59e0b')}
   </td></tr>
 
   <!-- CTA -->
   <tr><td style="text-align:center;padding:24px 0;">
     <a href="https://aistudioaj.github.io/project-shadow/" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#4f8ef7);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:10px;font-family:monospace;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">
-      OPEN SHADOW
+      ⚡ OPEN SHADOW
     </a>
   </td></tr>
 
   <!-- FOOTER -->
   <tr><td style="padding:20px;text-align:center;border-top:1px solid #1e2840;">
     <div style="font-family:monospace;font-size:10px;color:#3d4d6a;letter-spacing:1px;">
-      PROJECT SHADOW  PERSONAL AI OPERATING SYSTEM<br>
+      PROJECT SHADOW · PERSONAL AI OPERATING SYSTEM<br>
       Generated {TODAY_STR} at {TIME_STR} Abu Dhabi<br>
       <span style="color:#4f8ef7;">shadow.aistudio.aj</span>
     </div>
@@ -518,13 +517,13 @@ html_email = f"""<!DOCTYPE html>
 </body>
 </html>"""
 
-# 
+# ──────────────────────────────────────────────
 # 9. SEND EMAIL
-# 
-print("[EMAIL] Sending email...")
+# ──────────────────────────────────────────────
+print("📧 Sending email...")
 
 msg = MIMEMultipart('alternative')
-msg['Subject'] = f"shadow Shadow Brief  {NOW.strftime('%a %b %d')}  {len(portfolio)} Holdings  {len(tasks)} Tasks"
+msg['Subject'] = f"⚡ Shadow Brief · {NOW.strftime('%a %b %d')} · {len(portfolio)} Holdings · {len(tasks)} Tasks"
 msg['From'] = f"Shadow AI <{EMAIL_FROM}>"
 msg['To'] = EMAIL_TO
 
@@ -560,12 +559,12 @@ try:
     server.login(EMAIL_FROM, EMAIL_PASS)
     server.sendmail(EMAIL_FROM, EMAIL_TO, msg.as_string())
     server.quit()
-    print(f"  [OK] Email sent to {EMAIL_TO}")
+    print(f"  ✅ Email sent to {EMAIL_TO}")
 except Exception as e:
-    print(f"  [ERROR] Email error: {e}")
+    print(f"  ❌ Email error: {e}")
     raise
 
-print(f"\n[OK] Shadow Morning Brief complete! {TODAY_STR}")
+print(f"\n✅ Shadow Morning Brief complete! {TODAY_STR}")
 print(f"   Sections generated: {sum(1 for v in sections.values() if v)}/8")
 print(f"   Portfolio: {len(portfolio)} holdings")
 print(f"   Tasks: {len(tasks)} pending")
