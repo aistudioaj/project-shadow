@@ -270,7 +270,11 @@ S = {
 print("  Sections: " + str(sum(1 for v in S.values() if v)) + "/10")
 
 def fmt(t):
-    return t.replace('\n','<br>')
+    import re
+    t = t.replace('\n','<br>')
+    t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
+    t = t.replace('*','')
+    return t
 
 def sec(title, content, color):
     if not content:
