@@ -2057,176 +2057,43 @@ function showMemToast(ex){
 }
 
 // ── VOICE TTS ──
-function speakText(text){
-  if(!('speechSynthesis' in window))return;
-  if(curUtt)window.speechSynthesis.cancel();
-  const clean=text.replace(/<[^>]*>/g,'').replace(/\*\*/g,'').replace(/#+/g,'').trim();
-  const utt=new SpeechSynthesisUtterance(clean);
+// ElevenLabs voice config
+const EL_KEY = 'sk_a1c423c7804f0149e42c63fe4dec763b9f11437cbbe28449';
+const EL_VOICE = 'MdeqL1TMyZWz86QOELK8';
+let elAudio = null;
+
+async function speakText(text){
+  if(elAudio){elAudio.pause();elAudio=null;}
+  if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
+  const clean=text.replace(/<[^>]*>/g,'').replace(/[*][*]/g,'').replace(/[*]/g,'').replace(/#+/g,'').trim();
+  if(!clean)return;
+  try{
+    const resp=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+EL_VOICE,{
+      method:'POST',
+      headers:{'Accept':'audio/mpeg','Content-Type':'application/json','xi-api-key':EL_KEY},
+      body:JSON.stringify({text:clean.substring(0,1000),model_id:'eleven_monolingual_v1',voice_settings:{stability:0.5,similarity_boost:0.75,style:0.3,use_speaker_boost:true}})
+    });
+    if(!resp.ok){fallbackSpeak(clean);return;}
+    const blob=await resp.blob();
+    const url=URL.createObjectURL(blob);
+    elAudio=new Audio(url);
+    elAudio.onended=()=>{URL.revokeObjectURL(url);elAudio=null;};
+    elAudio.play();
+  }catch(e){fallbackSpeak(clean);}
+}
+
+function fallbackSpeak(text){
+  if(!('speechSynthesis'in window))return;
+  const utt=new SpeechSynthesisUtterance(text);
   const voices=window.speechSynthesis.getVoices();
-  const pref=['Daniel','Arthur','Gordon','Oliver','Aaron','Alex','David'];
+  const pref=['Daniel','Arthur','Gordon','George'];
   let v=null;
   for(const n of pref){v=voices.find(x=>x.name.includes(n)&&x.lang.startsWith('en'));if(v)break;}
   if(!v)v=voices.find(x=>x.lang.startsWith('en-GB'));
-  if(!v)v=voices.find(x=>x.lang.startsWith('en'));
   if(v)utt.voice=v;
   utt.rate=0.88;utt.pitch=0.75;utt.volume=1;
-  curUtt=utt;
-  utt.onend=()=>{curUtt=null;};
+  curUtt=utt;utt.onend=()=>{curUtt=null;};
   window.speechSynthesis.speak(utt);
-}
-function toggleShadowVoice(){
-  shadowVoiceOn=!shadowVoiceOn;
-  const btn=document.getElementById('voiceToggleBtn');
-  if(shadowVoiceOn){
-    btn.textContent='🔊';btn.classList.add('on');
-  } else {
-    btn.textContent='🔇';btn.classList.remove('on');
-    if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
-  }
-}
-if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
-
-// ── VOICE STT ──
-function setupRecog(onResult,onEnd){
-  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){alert('Voice requires Safari iOS 15+ or Chrome');return null;}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  const r=new SR();r.continuous=false;r.interimResults=true;r.lang='en-US';
-  r.onresult=onResult;r.onend=onEnd;r.onerror=()=>{isListening=false;};
-  return r;
-}
-function openVoiceOverlay(){
-  document.getElementById('voiceTranscript').textContent='Speak your command';
-  document.getElementById('voiceOverlay').classList.add('on');
-  recog=setupRecog(
-    e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('voiceTranscript').textContent=t;if(e.results[0].isFinal){setTimeout(()=>{document.getElementById('voiceOverlay').classList.remove('on');openChat('master');setTimeout(()=>{document.getElementById('chatInput').value=t;sendMsg();},400);},500);}},
-    ()=>{isListening=false;}
-  );
-  if(recog){recog.start();isListening=true;}
-}
-function cancelVoice(){if(recog)recog.stop();isListening=false;document.getElementById('voiceOverlay').classList.remove('on');}
-function toggleMic(){
-  if(isListening){recog.stop();document.getElementById('micBtn').classList.remove('on');isListening=false;return;}
-  recog=setupRecog(
-    e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('chatInput').value=t;if(e.results[0].isFinal){document.getElementById('micBtn').classList.remove('on');isListening=false;setTimeout(()=>sendMsg(),300);}},
-    ()=>{isListening=false;document.getElementById('micBtn').classList.remove('on');}
-  );
-  if(recog){recog.start();isListening=true;document.getElementById('micBtn').classList.add('on');}
-}
-
-// ── NAVIGATION ──
-function switchTab(tab,el){
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  if(el)el.classList.add('active');
-  ['homeScreen','chatScreen','tasksScreen','memoryScreen','marketsScreen','travelScreen','stockScreen','portfolioScreen','briefScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('active');});
-  if(tab==='home')document.getElementById('homeScreen').classList.add('active');
-  else if(tab==='tasks'){document.getElementById('tasksScreen').classList.add('active');renderTasksScreen();}
-  else if(tab==='memory'){document.getElementById('memoryScreen').classList.add('active');renderMemoryScreen();}
-  else if(tab==='markets'){document.getElementById('marketsScreen').classList.add('active');renderMarketsScreen();}
-  else if(tab==='travel-screen'){openTravelScreen();}
-  else if(tab==='chat-master')openChat('master');
-  else openChat(tab);
-}
-
-// ── CAROUSEL DOTS ──
-function setupCarouselDots(){
-  const c=document.getElementById('specScroll');
-  const ds=document.querySelectorAll('#specDots .dot');
-  if(!c)return;
-  c.addEventListener('scroll',()=>{
-    const idx=Math.round(c.scrollLeft/(c.offsetWidth-40));
-    ds.forEach((d,i)=>d.classList.toggle('active',i===idx));
-  });
-}
-
-
-// ── STOCK DETAIL ──
-const STOCK_INFO = {
-  AAPL:{name:'Apple Inc.',icon:'🍎',sector:'Technology'},
-  MSFT:{name:'Microsoft Corp.',icon:'🪟',sector:'Technology'},
-  NVDA:{name:'NVIDIA Corp.',icon:'⚡',sector:'Semiconductors'},
-  AMZN:{name:'Amazon.com Inc.',icon:'📦',sector:'Consumer Discretionary'},
-  GOOGL:{name:'Alphabet Inc.',icon:'🔍',sector:'Technology'},
-  META:{name:'Meta Platforms',icon:'👤',sector:'Technology'},
-  TSLA:{name:'Tesla Inc.',icon:'🚗',sector:'Consumer Discretionary'},
-  JPM:{name:'JPMorgan Chase',icon:'🏦',sector:'Financials'},
-};
-
-async function openStock(sym){
-  const info = STOCK_INFO[sym] || {name:sym,icon:'📈',sector:'Equity'};
-  const d = mktData[sym];
-
-  // Update header
-  document.getElementById('stockScreenSym').textContent = sym;
-  document.getElementById('stockScreenName').textContent = info.name;
-  document.getElementById('stockScreenIcon').textContent = info.icon;
-
-  // Update hero
-  document.getElementById('sdLogo').textContent = info.icon;
-  document.getElementById('sdSym').textContent = sym;
-  document.getElementById('sdName').textContent = info.name;
-
-  if(d){
-    const up = d.pct >= 0;
-    document.getElementById('sdPrice').textContent = fmtP(d.price);
-    document.getElementById('sdPrice').className = 'stock-price-big ' + (up?'up':'dn');
-    const badge = document.getElementById('sdChgBadge');
-    badge.textContent = (up?'▲ +':'▼ ') + Math.abs(d.pct||0).toFixed(2) + '% · ' + (d.change>=0?'+':'') + (d.change||0).toFixed(2);
-    badge.className = 'stock-chg-badge ' + (up?'up':'dn');
-    document.getElementById('sdHigh').textContent = fmtP(d.high);
-    document.getElementById('sdLow').textContent = fmtP(d.low);
-    document.getElementById('sdPrev').textContent = fmtP(d.prev);
-    document.getElementById('sdChange').textContent = (d.change>=0?'+':'') + (d.change||0).toFixed(2);
-    document.getElementById('sdChange').className = 'stock-stat-value ' + (up?'up':'dn');
-  } else {
-    document.getElementById('sdPrice').textContent = 'Markets closed';
-    document.getElementById('sdChgBadge').textContent = 'No live data';
-  }
-
-  document.getElementById('sdStatus').textContent = info.sector + ' · Finnhub';
-
-  // Ask Shadow button
-  document.getElementById('stockAskBtn').onclick = () => {
-    closeStock();
-    openChat('investment');
-    setTimeout(()=>{
-      document.getElementById('chatInput').value = 'Give me a full analysis of ' + sym + ' including current price, trend, and your recommendation.';
-      sendMsg();
-    }, 400);
-  };
-
-  // Fetch news
-  fetchStockNews(sym);
-
-  // Show screen
-  ['homeScreen','chatScreen','tasksScreen','memoryScreen','marketsScreen','travelScreen'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.classList.remove('active');
-  });
-  document.getElementById('stockScreen').classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-}
-
-async function fetchStockNews(sym){
-  const el = document.getElementById('stockNews');
-  el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:16px 0;">Fetching news...</div>';
-  try{
-    const r = await fetch(FINNHUB+'/company-news?symbol='+sym+'&from='+getNewsDate(7)+'&to='+getNewsDate(0)+'&token='+FINNHUB_KEY);
-    const data = await r.json();
-    if(data && data.length > 0){
-      const items = data.slice(0,5);
-      el.innerHTML='';
-      items.forEach(n=>{
-        const d=document.createElement('div');
-        d.className='stock-news-item';
-        d.onclick=()=>window.open(n.url,'_blank');
-        d.innerHTML='<div class="stock-news-headline">'+n.headline+'</div><div class="stock-news-meta">'+n.source+' · '+new Date(n.datetime*1000).toLocaleDateString()+'</div>';
-        el.appendChild(d);
-      });
-    } else {
-      el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:16px 0;">No recent news available.</div>';
-    }
-  }catch(e){
-    el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:16px 0;">Could not load news.</div>';
-  }
 }
 
 function getNewsDate(daysAgo){
