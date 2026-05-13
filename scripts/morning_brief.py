@@ -244,8 +244,8 @@ try:
     resp = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={"Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
-        json={"model": "claude-sonnet-4-5", "max_tokens": 3000, "system": system_prompt, "messages": [{"role": "user", "content": user_msg}]},
-        timeout=180
+        json={"model": "claude-sonnet-4-5", "max_tokens": 5000, "system": system_prompt, "messages": [{"role": "user", "content": user_msg}]},
+        timeout=90
     )
     d = resp.json()
     if d.get('content'):
