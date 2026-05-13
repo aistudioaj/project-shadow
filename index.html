@@ -1760,7 +1760,7 @@ function renderMarketsScreen(){
 function updateMarketStats(){
   const a=mktData['AAPL'],n=mktData['NVDA'],m=mktData['MSFT'];
   if(a){
-    document.getElementById('statAAPL').textContent=fmtP(a.price);
+    const saEl=document.getElementById('statAAPL'); if(saEl) saEl.textContent=fmtP(a.price);
     const el=document.getElementById('statAAPLchg');
     if(el){el.textContent=(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%';el.style.color=a.pct>=0?'var(--green)':'var(--red)';}
     document.getElementById('cAAPL').textContent=fmtP(a.price);
@@ -2705,13 +2705,16 @@ function setupCarouselDots(){
 }
 
 // ── TAB SWITCHING ──
-function switchTab(tab){
+function switchTab(tab, el){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  const screen = document.getElementById(tab+'Screen');
+  // Map tab names to screen IDs
+  const screenMap = {'chat-master':'chatScreen','home':'homeScreen','markets':'marketsScreen','tasks':'tasksScreen','memory':'memoryScreen'};
+  const screenId = screenMap[tab] || tab+'Screen';
+  const screen = document.getElementById(screenId);
   if(screen) screen.classList.add('active');
-  const navTab = document.querySelector('[data-tab="'+tab+'"]');
-  if(navTab) navTab.classList.add('active');
+  if(el) el.classList.add('active');
+  else { const navTab = document.querySelector('[data-tab="'+tab+'"]'); if(navTab) navTab.classList.add('active'); }
   if(tab==='markets') fetchAllMarketData();
   if(tab==='tasks') loadTasks();
   if(tab==='memory') loadMemories();
