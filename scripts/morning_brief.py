@@ -204,7 +204,17 @@ system_prompt = (
     "Today: " + TODAY_STR + " at " + TIME_STR + " Abu Dhabi GMT+4.\n\n"
     "RULES: Be specific with numbers. Be actionable. No hedging.\n"
     "Each section ends with a clear implication or action.\n\n"
-    "YOU MUST wrap each section with these EXACT markers:\n[MARKET_OPEN]\ncontent\n[/MARKET_OPEN]\n[PORTFOLIO_PULSE]\ncontent\n[/PORTFOLIO_PULSE]\n[EARNINGS_WATCH]\ncontent\n[/EARNINGS_WATCH]\n[STOCK_NEWS]\ncontent\n[/STOCK_NEWS]\n[AI_TECH]\ncontent\n[/AI_TECH]\n[GEOPOLITICAL]\ncontent\n[/GEOPOLITICAL]\n[WEATHER]\ncontent\n[/WEATHER]\n[TASKS]\ncontent\n[/TASKS]\n[TRAVEL]\ncontent\n[/TRAVEL]\n[SHADOW_VERDICT]\ncontent\n[/SHADOW_VERDICT]\n"
+    "Use these markers:\n"
+    "[MARKET_OPEN] [/MARKET_OPEN]\n"
+    "[PORTFOLIO_PULSE] [/PORTFOLIO_PULSE]\n"
+    "[EARNINGS_WATCH] [/EARNINGS_WATCH]\n"
+    "[STOCK_NEWS] [/STOCK_NEWS]\n"
+    "[AI_TECH] [/AI_TECH]\n"
+    "[GEOPOLITICAL] [/GEOPOLITICAL]\n"
+    "[WEATHER] [/WEATHER]\n"
+    "[TASKS] [/TASKS]\n"
+    "[TRAVEL] [/TRAVEL]\n"
+    "[SHADOW_VERDICT] [/SHADOW_VERDICT]\n\n"
     "DATA:\n"
     "MARKETS:\n" + mkt_ctx() + "\n\n"
     "PORTFOLIO:\n" + port_ctx() + "\n\n"
@@ -270,11 +280,7 @@ S = {
 print("  Sections: " + str(sum(1 for v in S.values() if v)) + "/10")
 
 def fmt(t):
-    import re
-    t = t.replace('\n','<br>')
-    t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
-    t = t.replace('*','')
-    return t
+    return t.replace('\n','<br>')
 
 def sec(title, content, color):
     if not content:
