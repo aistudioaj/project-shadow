@@ -2062,7 +2062,7 @@ const EL_KEY = 'sk_a1c423c7804f0149e42c63fe4dec763b9f11437cbbe28449';
 const EL_VOICE = 'MdeqL1TMyZWz86QOELK8';
 let elAudio = null;
 
-async function speakText(text){
+async function speakWithElevenLabs(text){
   if(elAudio){elAudio.pause();elAudio=null;}
   if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
   const clean=text.replace(/<[^>]*>/g,'').replace(/[*][*]/g,'').replace(/[*]/g,'').replace(/#+/g,'').trim();
@@ -2095,6 +2095,12 @@ function fallbackSpeak(text){
   curUtt=utt;utt.onend=()=>{curUtt=null;};
   window.speechSynthesis.speak(utt);
 }
+
+// Main speakText - uses ElevenLabs with browser TTS fallback
+function speakText(text){
+  speakWithElevenLabs(text).catch(()=>fallbackSpeak(text));
+}
+
 
 function getNewsDate(daysAgo){
   const d = new Date();d.setDate(d.getDate()-daysAgo);
@@ -2676,6 +2682,80 @@ setTimeout(()=>{
   if(b)b.style.width='5%';
 },100);
 init();
+
+// ── CAROUSEL DOTS ──
+function setupCarouselDots(){
+  const track = document.querySelector('.specialists-track');
+  const dotsContainer = document.querySelector('.carousel-dots');
+  if(!track || !dotsContainer) return;
+  const cards = track.querySelectorAll('.specialist-card');
+  dotsContainer.innerHTML = '';
+  cards.forEach((_,i)=>{
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===0?' active':'');
+    dot.onclick = ()=>{
+      track.scrollTo({left: i * track.offsetWidth, behavior:'smooth'});
+    };
+    dotsContainer.appendChild(dot);
+  });
+  track.onscroll = ()=>{
+    const idx = Math.round(track.scrollLeft / track.offsetWidth);
+    dotsContainer.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  };
+}
+
+// ── TAB SWITCHING ──
+function switchTab(tab){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const screen = document.getElementById(tab+'Screen');
+  if(screen) screen.classList.add('active');
+  const navTab = document.querySelector('[data-tab="'+tab+'"]');
+  if(navTab) navTab.classList.add('active');
+  if(tab==='markets') fetchAllMarketData();
+  if(tab==='tasks') loadTasks();
+  if(tab==='memory') loadMemories();
+  if(tab==='home') loadTodayBrief();
+}
+
+// ── MIC TOGGLE ──
+function toggleMic(){
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    showToast('Voice input not supported on this browser');
+    return;
+  }
+  if(isListening){
+    if(recognition) recognition.stop();
+    isListening = false;
+    document.querySelectorAll('.mic-btn').forEach(b=>b.classList.remove('listening'));
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.onstart = ()=>{
+    isListening = true;
+    document.querySelectorAll('.mic-btn').forEach(b=>b.classList.add('listening'));
+  };
+  recognition.onresult = (e)=>{
+    const transcript = e.results[0][0].transcript;
+    const input = document.getElementById('chatInput') || document.getElementById('masterInput');
+    if(input){ input.value = transcript; sendMessage(); }
+  };
+  recognition.onerror = ()=>{ isListening=false; document.querySelectorAll('.mic-btn').forEach(b=>b.classList.remove('listening')); };
+  recognition.onend = ()=>{ isListening=false; document.querySelectorAll('.mic-btn').forEach(b=>b.classList.remove('listening')); };
+  recognition.start();
+}
+
+// ── SHADOW VOICE TOGGLE ──
+function toggleShadowVoice(){
+  shadowVoiceOn = !shadowVoiceOn;
+  const btn = document.querySelector('.chat-voice-btn');
+  if(btn) btn.textContent = shadowVoiceOn ? '🔊' : '🔇';
+  showToast(shadowVoiceOn ? 'Shadow voice on' : 'Shadow voice off');
+}
+
 </script>
 </body>
-<!-- 1778698683 --></html>
+</html>
