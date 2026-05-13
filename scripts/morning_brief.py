@@ -517,7 +517,14 @@ html = (
 
     '</table></td></tr></table></body></html>'
 )
-
+print("Saving brief to Supabase...")
+try:
+    brief_data = {"user_id": USER_ID, "brief_date": NOW.strftime('%Y-%m-%d'), "verdict": S.get('verdict',''), "market": S.get('market',''), "portfolio": S.get('portfolio',''), "earnings": S.get('earnings',''), "news": S.get('news',''), "ai_tech": S.get('ai',''), "geopolitical": S.get('geo',''), "weather": S.get('weather',''), "tasks": S.get('tasks',''), "travel": S.get('travel',''), "sections_count": sum(1 for v in S.values() if v)}
+    headers2 = {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json'}
+    r2 = requests.post(SUPABASE_URL + "/rest/v1/shadow_briefs", headers=headers2, json=brief_data, timeout=10)
+    print("  Brief saved: " + str(r2.status_code))
+except Exception as e:
+    print("  Brief save error: " + str(e))
 print("Sending via Resend...")
 plain = "Shadow Morning Brief " + TODAY_STR + "\n\n" + "\n\n".join([k.upper() + ":\n" + v for k,v in S.items() if v])
 plain += "\n\nOpen Shadow: https://aistudioaj.github.io/project-shadow/"
