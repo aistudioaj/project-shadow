@@ -205,16 +205,16 @@ system_prompt = (
     "RULES: Be specific with numbers. Be actionable. No hedging.\n"
     "Each section ends with a clear implication or action.\n\n"
     "Use these markers:\n"
-    "[MARKET_OPEN] [/MARKET_OPEN]\n"
-    "[PORTFOLIO_PULSE] [/PORTFOLIO_PULSE]\n"
-    "[EARNINGS_WATCH] [/EARNINGS_WATCH]\n"
-    "[STOCK_NEWS] [/STOCK_NEWS]\n"
-    "[AI_TECH] [/AI_TECH]\n"
-    "[GEOPOLITICAL] [/GEOPOLITICAL]\n"
-    "[WEATHER] [/WEATHER]\n"
-    "[TASKS] [/TASKS]\n"
-    "[TRAVEL] [/TRAVEL]\n"
-    "[SHADOW_VERDICT] [/SHADOW_VERDICT]\n\n"
+    "[MARKET_OPEN]\nWrite market analysis here\n[/MARKET_OPEN]\n"
+"[PORTFOLIO_PULSE]\nWrite portfolio analysis here\n[/PORTFOLIO_PULSE]\n"
+"[EARNINGS_WATCH]\nWrite earnings analysis here\n[/EARNINGS_WATCH]\n"
+"[STOCK_NEWS]\nWrite stock news here\n[/STOCK_NEWS]\n"
+"[AI_TECH]\nWrite AI tech news here\n[/AI_TECH]\n"
+"[GEOPOLITICAL]\nWrite geopolitical analysis here\n[/GEOPOLITICAL]\n"
+"[WEATHER]\nWrite weather here\n[/WEATHER]\n"
+"[TASKS]\nWrite task priorities here\n[/TASKS]\n"
+"[TRAVEL]\nWrite travel intelligence here\n[/TRAVEL]\n"
+"[SHADOW_VERDICT]\nWrite verdict here\n[/SHADOW_VERDICT]\n"
     "DATA:\n"
     "MARKETS:\n" + mkt_ctx() + "\n\n"
     "PORTFOLIO:\n" + port_ctx() + "\n\n"
@@ -244,7 +244,7 @@ try:
     resp = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={"Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
-        json={"model": "claude-sonnet-4-5", "max_tokens": 5000, "system": system_prompt, "messages": [{"role": "user", "content": user_msg}]},
+        json={"model": "claude-sonnet-4-5", "max_tokens": 3000, "system": system_prompt, "messages": [{"role": "user", "content": user_msg}]},
         timeout=90
     )
     d = resp.json()
@@ -280,7 +280,11 @@ S = {
 print("  Sections: " + str(sum(1 for v in S.values() if v)) + "/10")
 
 def fmt(t):
-    return t.replace('\n','<br>')
+    import re
+    t = t.replace('\n','<br>')
+    t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
+    t = t.replace('*','')
+    return t
 
 def sec(title, content, color):
     if not content:
