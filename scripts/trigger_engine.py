@@ -56,7 +56,7 @@ def save_alert(alert_type, title, message, priority='normal'):
             'Authorization': 'Bearer ' + SUPABASE_KEY,
             'Content-Type': 'application/json'
         }
-        r = requests.post(SUPABASE_URL + "/rest/v1/shadow_alerts", headers=headers, json=data, timeout=10)
+        r = requests.post(SUPABASE_URL + "/rest/v1/shadow_proactive_alerts", headers=headers, json=data, timeout=10)
         if r.status_code in [200, 201]:
             print("  Alert saved: " + title)
             return True
@@ -70,7 +70,7 @@ def save_alert(alert_type, title, message, priority='normal'):
 def already_alerted(alert_type, identifier):
     try:
         today = NOW.strftime('%Y-%m-%d')
-        url = (SUPABASE_URL + "/rest/v1/shadow_alerts?user_id=eq." + USER_ID +
+        url = (SUPABASE_URL + "/rest/v1/shadow_proactive_alerts?user_id=eq." + USER_ID +
                "&type=eq." + alert_type +
                "&title=like.*" + identifier + "*" +
                "&created_at=gte." + today +
