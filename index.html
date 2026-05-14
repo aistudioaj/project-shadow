@@ -1675,8 +1675,8 @@ async function init(){
     const gr=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
     const name=(profile&&profile.name?profile.name.split(' ')[0]:'AJ');
     const p=tasks.filter(t=>t.status!=='done').length;
-    speakText(gr+', '+name+'. Today is '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'. You have '+p+' pending tasks. Shadow is ready.');
-  },1200);
+    speakWithElevenLabs(gr+', '+name+'. Today is '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'. You have '+p+' pending tasks. Shadow is ready.');
+  },2500).catch(()=>console.log('Welcome voice skipped'));
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
