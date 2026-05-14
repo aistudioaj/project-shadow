@@ -1,0 +1,28 @@
+name: Shadow Trigger Engine
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run trigger engine
+        run: python scripts/trigger_engine.py
+        env:
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          RESEND_KEY: ${{ secrets.RESEND_KEY }}
+          USER_ID: abdulrahman
+          USER_NAME: AJ
