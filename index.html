@@ -2754,11 +2754,14 @@ function toggleMic(){
 // ── SHADOW VOICE TOGGLE ──
 function toggleShadowVoice(){
   shadowVoiceOn = !shadowVoiceOn;
+  if(!shadowVoiceOn){
+    if(typeof elAudio !== 'undefined' && elAudio){elAudio.pause();elAudio=null;}
+    if(typeof curUtt !== 'undefined' && curUtt){window.speechSynthesis.cancel();curUtt=null;}
+  }
   const btn = document.querySelector('.chat-voice-btn');
   if(btn) btn.textContent = shadowVoiceOn ? '🔊' : '🔇';
-  showToast(shadowVoiceOn ? 'Shadow voice on' : 'Shadow voice off');
+  showToast(shadowVoiceOn ? 'Arthur voice on' : 'Voice off');
 }
-
 </script>
 </body>
 </html>
