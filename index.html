@@ -1003,6 +1003,33 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
 </div>
 
+<!-- TRAVEL PLANNER SCREEN -->
+<div class="screen" id="travelScreen">
+  <div class="screen-hdr">
+    <div class="brief-back" onclick="closeTravelScreen()" style="font-size:24px;color:var(--t2);cursor:pointer;padding:4px;margin-right:12px">‹</div>
+    <div>
+      <div class="screen-title">Travel Planner</div>
+      <div class="screen-sub">Your AI concierge</div>
+    </div>
+  </div>
+  <div class="scroll-body" id="travelBody">
+    <div style="padding:20px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:16px">Plan a Trip</div>
+        <input id="travelDest" placeholder="Destination (e.g. Tokyo, London)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <input id="travelFrom" placeholder="From date" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:13px;outline:none">
+          <input id="travelTo" placeholder="To date" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:13px;outline:none">
+        </div>
+        <input id="travelWho" placeholder="Traveling with (solo, family, partner...)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:10px">
+        <input id="travelBudget" placeholder="Budget (e.g. $5,000)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:16px">
+        <div onclick="generateTravelPlan()" style="background:var(--blue);border-radius:var(--r-sm);padding:13px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;box-shadow:0 0 16px var(--blue-glow)">Generate Itinerary</div>
+      </div>
+      <div id="travelResult"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ME SCREEN -->
 <div class="screen" id="meScreen">
   <div class="screen-hdr">
@@ -1030,7 +1057,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
         </div>
         <div class="me-row-arrow">›</div>
       </div>
-      <div class="me-row" onclick="openSpec('travel')">
+      <div class="me-row" onclick="openTravelPlanner()">
         <div class="me-row-icon">✈️</div>
         <div class="me-row-info">
           <div class="me-row-title">Travel Planner</div>
@@ -1129,6 +1156,7 @@ let specSystems={
   fitness:'You are Shadow Fitness Coach for AJ who runs 5K and cycles. Give specific, science-based advice on workouts, nutrition and recovery.'
 };
 let chatHistory=[];
+let prevScreen='today';
 
 // ── UTILS ──
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -1489,6 +1517,9 @@ function renderBriefCardEmpty(){
 function openBrief(){
   if(!todayBriefData)return;
   renderBriefDetail();
+  // Track which screen we came from
+  const activeScreen=document.querySelector('.screen.active');
+  if(activeScreen)prevScreen=activeScreen.id.replace('Screen','');
   ['todayScreen','intelligenceScreen','shadowScreen','meScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
@@ -1498,8 +1529,8 @@ function openBrief(){
 
 function closeBrief(){
   document.getElementById('briefScreen').classList.remove('active');
-  document.getElementById('todayScreen').classList.add('active');
-  document.querySelector('[data-tab="today"]').classList.add('active');
+  const returnTab=prevScreen||'today';
+  switchNav(returnTab);
 }
 
 function renderBriefDetail(){
@@ -1576,6 +1607,13 @@ function openShadowChat(){
 
 function openSpec(spec){
   currentSpec=spec;
+  // Ensure shadowScreen is active
+  ['todayScreen','intelligenceScreen','meScreen','briefScreen'].forEach(id=>{
+    const s=document.getElementById(id);if(s)s.classList.remove('active');
+  });
+  document.getElementById('shadowScreen').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.querySelector('[data-tab="shadow"]');if(nb)nb.classList.add('active');
   const sel=document.getElementById('specialistSelector');
   const chat=document.getElementById('chatContainer');
   if(sel)sel.style.display='none';
@@ -1693,6 +1731,60 @@ async function saveToMemory(el){
     await db.from('shadow_memory').insert({user_id:UID,category:'conversation',key:'Chat insight',value:text.substring(0,200),specialist:currentSpec,importance:1});
     showToast('Saved to memory');
   }catch(e){showToast('Save failed');}
+}
+
+function openTravelPlanner(){
+  prevScreen='me';
+  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen'].forEach(id=>{
+    const s=document.getElementById(id);if(s)s.classList.remove('active');
+  });
+  document.getElementById('travelScreen').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.querySelector('[data-tab="me"]');if(nb)nb.classList.add('active');
+}
+
+function closeTravelScreen(){
+  document.getElementById('travelScreen').classList.remove('active');
+  switchNav('me');
+}
+
+async function generateTravelPlan(){
+  const dest=document.getElementById('travelDest').value.trim();
+  if(!dest){showToast('Please enter a destination');return;}
+  const from=document.getElementById('travelFrom').value.trim();
+  const to=document.getElementById('travelTo').value.trim();
+  const who=document.getElementById('travelWho').value.trim();
+  const budget=document.getElementById('travelBudget').value.trim();
+  const result=document.getElementById('travelResult');
+  if(result)result.innerHTML='<div class="loading-row">Shadow is planning your trip to '+dest+'...</div>';
+  try{
+    const prompt='Create a detailed travel itinerary for '+dest+(from?' from '+from:'')+(to?' to '+to:'')+(who?', traveling with: '+who:'')+(budget?', budget: '+budget:'')+'. Include: daily itinerary, top hotels, best restaurants, must-see experiences, estimated costs, local transport tips, and packing recommendations. Be specific and practical.';
+    const r=await fetch(PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:MODEL,max_tokens:2000,system:'You are Shadow Travel Concierge for AJ in Abu Dhabi. Create detailed, practical, luxury-aware travel plans. Format with clear sections.',messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    const reply=d.content&&d.content[0]?d.content[0].text:'Unable to generate itinerary.';
+    if(result){
+      const wrap=document.createElement('div');
+      wrap.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px';
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--amber);text-transform:uppercase;margin-bottom:14px';
+      lbl.textContent='Your Itinerary: '+dest;
+      const body=document.createElement('div');
+      body.style.cssText='font-size:13px;color:var(--t2);line-height:1.75';
+      body.innerHTML=fmtText(reply);
+      const speak=document.createElement('div');
+      speak.style.cssText='margin-top:16px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--blue);cursor:pointer';
+      speak.textContent='Listen to itinerary';
+      speak.onclick=function(){speakWithElevenLabs('Here is your travel itinerary for '+dest);};
+      wrap.appendChild(lbl);wrap.appendChild(body);wrap.appendChild(speak);
+      result.innerHTML='';result.appendChild(wrap);
+    }
+  }catch(e){
+    if(result)result.innerHTML='<div class="loading-row">Error generating plan. Please try again.</div>';
+  }
 }
 
 function clearChat(){
