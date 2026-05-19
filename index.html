@@ -1617,7 +1617,7 @@ function openSpec(spec){
   const sel=document.getElementById('specialistSelector');
   const chat=document.getElementById('chatContainer');
   if(sel)sel.style.display='none';
-  if(chat)chat.classList.add('active');
+  if(chat){chat.style.display='flex';chat.style.flex='1';chat.style.flexDirection='column';chat.style.overflow='hidden';}
   const names={master:'Shadow',investment:'Investment',productivity:'Productivity',tutor:'Tutor',travel:'Travel',fitness:'Fitness'};
   const el=document.getElementById('chatTitle');
   if(el)el.textContent=names[spec]||'Shadow';
@@ -1635,8 +1635,8 @@ function openSpec(spec){
 function closeChat(){
   const sel=document.getElementById('specialistSelector');
   const chat=document.getElementById('chatContainer');
-  if(sel)sel.style.display='';
-  if(chat)chat.classList.remove('active');
+  if(sel)sel.style.display='flex';
+  if(chat){chat.style.display='none';}
 }
 
 function addMsg(role,text,stream=false){
