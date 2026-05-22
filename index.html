@@ -2125,15 +2125,16 @@ async function init(){
   setInterval(updateClock,60000);
   setInterval(fetchAllMarketData,60000);
   setInterval(loadProactiveAlerts,300000);
-  // Welcome voice
-  setTimeout(()=>{
+  // Welcome voice - fires on first user interaction (browser autoplay policy)
+  document.addEventListener('click', function welcomeVoice(){
     const h=new Date().getHours();
     const gr=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
     const name=profile&&profile.name?profile.name.split(' ')[0]:'AJ';
     const p=tasks.filter(t=>t.status!=='done').length;
     const msg=gr+', '+name+'. Today is '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'. You have '+p+' pending tasks. Shadow is ready.';
-    speakWithElevenLabs(msg).catch(()=>console.log('Welcome voice skipped'));
-  },4000);
+    speakWithElevenLabs(msg).catch(()=>{});
+    document.removeEventListener('click', welcomeVoice);
+  }, {once:true});
 }
 
 init();
