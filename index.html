@@ -95,6 +95,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .screen{
   display:none;flex:1;
   flex-direction:column;overflow:hidden;
+  position:relative;
 }
 .screen.active{display:flex}
 
@@ -560,7 +561,12 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
 /* Chat UI */
 .chat-container{
-  display:none;flex:1;flex-direction:column;overflow:hidden;
+  display:none;
+  position:absolute;
+  top:0;left:0;right:0;bottom:60px;
+  flex-direction:column;overflow:hidden;
+  background:var(--bg0);
+  z-index:10;
 }
 .chat-container.active{display:flex}
 .chat-hdr{
