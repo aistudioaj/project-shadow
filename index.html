@@ -1209,8 +1209,7 @@ const MODEL='claude-sonnet-4-5';
 const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
 
-// ── ElevenLabs ──
-const EL_KEY='sk_3b9206d0523af87568f17af17181ca1ae76b601a6570637a';
+// ── ElevenLabs (proxied through Cloudflare Worker - no key in HTML) ──
 const EL_VOICE='MdeqL1TMyZWz86QOELK8';
 let elAudio=null;
 let curUtt=null;
@@ -2029,10 +2028,15 @@ async function speakWithElevenLabs(text){
   const clean=text.replace(/<[^>]*>/g,'').replace(/[*][*]/g,'').replace(/[*]/g,'').trim();
   if(!clean)return;
   try{
-    const resp=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+EL_VOICE,{
+    // Route through Cloudflare Worker - key never exposed in HTML
+    const resp=await fetch(PROXY+'?service=elevenlabs',{
       method:'POST',
-      headers:{'Accept':'audio/mpeg','Content-Type':'application/json','xi-api-key':EL_KEY},
-      body:JSON.stringify({text:clean.substring(0,1000),model_id:'eleven_monolingual_v1',voice_settings:{stability:0.5,similarity_boost:0.75,style:0.3,use_speaker_boost:true}})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        text:clean.substring(0,1000),
+        voice_id:EL_VOICE,
+        voice_settings:{stability:0.5,similarity_boost:0.75,style:0.3,use_speaker_boost:true}
+      })
     });
     if(!resp.ok){fallbackSpeak(clean);return;}
     const blob=await resp.blob();
