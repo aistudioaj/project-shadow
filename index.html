@@ -1210,7 +1210,7 @@ const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
 
 // ── ElevenLabs ──
-const EL_KEY='b533e53da4d0ba71e579468fec706b6bd7025a003c18c5a538b7a7404626ae2a';
+const EL_KEY='sk_3b9206d0523af87568f17af17181ca1ae76b601a6570637a';
 const EL_VOICE='MdeqL1TMyZWz86QOELK8';
 let elAudio=null;
 let curUtt=null;
@@ -2125,16 +2125,15 @@ async function init(){
   setInterval(updateClock,60000);
   setInterval(fetchAllMarketData,60000);
   setInterval(loadProactiveAlerts,300000);
-  // Welcome voice - fires on first user interaction (browser autoplay policy)
-  document.addEventListener('click', function welcomeVoice(){
+  // Welcome voice
+  setTimeout(()=>{
     const h=new Date().getHours();
     const gr=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
     const name=profile&&profile.name?profile.name.split(' ')[0]:'AJ';
     const p=tasks.filter(t=>t.status!=='done').length;
     const msg=gr+', '+name+'. Today is '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'. You have '+p+' pending tasks. Shadow is ready.';
-    speakWithElevenLabs(msg).catch(()=>{});
-    document.removeEventListener('click', welcomeVoice);
-  }, {once:true});
+    speakWithElevenLabs(msg).catch(()=>console.log('Welcome voice skipped'));
+  },2500);
 }
 
 init();
