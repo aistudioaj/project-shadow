@@ -929,6 +929,9 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
   <!-- Portfolio Panel -->
   <div id="portfolioPanel" class="scroll-body" style="display:none">
+    <div style="padding:12px 20px 0;display:flex;justify-content:flex-end">
+      <div onclick="openAddHolding()" style="background:var(--blue);border-radius:8px;padding:7px 14px;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;cursor:pointer;box-shadow:0 0 12px var(--blue-glow)">+ ADD HOLDING</div>
+    </div>
     <div class="port-hero">
       <div class="port-total-label">Total Portfolio Value</div>
       <div class="port-total" id="portTotal">$0.00</div>
@@ -1036,6 +1039,42 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
 </div>
 
+<!-- TASKS SCREEN -->
+<div class="screen" id="tasksScreen">
+  <div class="screen-hdr">
+    <div class="brief-back" onclick="closeTasksScreen()" style="font-size:24px;color:var(--t2);cursor:pointer;padding:4px;margin-right:12px">‹</div>
+    <div style="flex:1">
+      <div class="screen-title">Tasks</div>
+      <div class="screen-sub" id="tasksCount">Loading...</div>
+    </div>
+    <div onclick="showAddTask()" style="background:var(--blue);border-radius:8px;padding:8px 14px;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;cursor:pointer;box-shadow:0 0 12px var(--blue-glow)">+ ADD</div>
+  </div>
+  <!-- Add Task Form (hidden by default) -->
+  <div id="addTaskForm" style="display:none;padding:16px 20px;background:var(--bg2);border-bottom:1px solid var(--border)">
+    <input id="newTaskTitle" placeholder="Task title..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <select id="newTaskPriority" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:13px;outline:none">
+        <option value="low">Low Priority</option>
+        <option value="medium">Medium Priority</option>
+        <option value="high" selected>High Priority</option>
+      </select>
+      <input id="newTaskDue" type="date" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--t1);font-family:var(--font-body);font-size:13px;outline:none">
+    </div>
+    <div style="display:flex;gap:10px">
+      <div onclick="saveNewTask()" style="flex:1;background:var(--blue);border-radius:8px;padding:11px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:12px;letter-spacing:1px">SAVE TASK</div>
+      <div onclick="hideAddTask()" style="padding:11px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-family:var(--font-mono);font-size:12px;color:var(--t3)">CANCEL</div>
+    </div>
+  </div>
+  <!-- Filter tabs -->
+  <div style="display:flex;padding:12px 20px;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div class="intel-tab active" onclick="filterTasks('all',this)" id="filterAll">All</div>
+    <div class="intel-tab" onclick="filterTasks('high',this)" id="filterHigh">Urgent</div>
+    <div class="intel-tab" onclick="filterTasks('pending',this)" id="filterPending">Pending</div>
+    <div class="intel-tab" onclick="filterTasks('done',this)" id="filterDone">Done</div>
+  </div>
+  <div class="scroll-body" id="tasksFullList"></div>
+</div>
+
 <!-- ME SCREEN -->
 <div class="screen" id="meScreen">
   <div class="screen-hdr">
@@ -1052,6 +1091,14 @@ html,body{height:100%;overflow:hidden;background:#04060e}
         <div class="me-row-info">
           <div class="me-row-title">Portfolio</div>
           <div class="me-row-sub">Holdings & P&L</div>
+        </div>
+        <div class="me-row-arrow">›</div>
+      </div>
+      <div class="me-row" onclick="openAddHolding()">
+        <div class="me-row-icon">➕</div>
+        <div class="me-row-info">
+          <div class="me-row-title">Add Holding</div>
+          <div class="me-row-sub">Track a new position</div>
         </div>
         <div class="me-row-arrow">›</div>
       </div>
@@ -1073,7 +1120,10 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
     </div>
     <div class="me-section">
-      <div class="me-section-title">Tasks</div>
+      <div class="me-section-title" style="display:flex;justify-content:space-between;align-items:center">
+        Tasks
+        <div onclick="openTasksScreen()" style="font-family:var(--font-mono);font-size:10px;color:var(--blue);cursor:pointer;letter-spacing:1px">SEE ALL ›</div>
+      </div>
       <div id="meTasksList"><div class="loading-row">Loading tasks...</div></div>
     </div>
     <div class="me-section">
@@ -1096,6 +1146,29 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
   <div class="brief-body" id="briefBody">
     <div class="loading-row">Loading brief...</div>
+  </div>
+</div>
+
+<!-- ADD HOLDING SCREEN -->
+<div class="screen" id="addHoldingScreen">
+  <div class="screen-hdr">
+    <div class="brief-back" onclick="closeAddHolding()" style="font-size:24px;color:var(--t2);cursor:pointer;padding:4px;margin-right:12px">‹</div>
+    <div>
+      <div class="screen-title">Add Holding</div>
+      <div class="screen-sub">Track your position</div>
+    </div>
+  </div>
+  <div class="scroll-body" style="padding:20px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px">
+      <input id="holdingTicker" placeholder="Ticker symbol (e.g. AAPL)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-mono);font-size:14px;outline:none;margin-bottom:12px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      <input id="holdingShares" type="number" placeholder="Number of shares" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:12px">
+      <input id="holdingAvg" type="number" step="0.01" placeholder="Average buy price ($)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <input id="holdingAlertAbove" type="number" step="0.01" placeholder="Alert above ($)" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:13px;outline:none">
+        <input id="holdingAlertBelow" type="number" step="0.01" placeholder="Alert below ($)" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:13px;outline:none">
+      </div>
+      <div onclick="saveHolding()" style="background:var(--blue);border-radius:8px;padding:13px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:2px;box-shadow:0 0 16px var(--blue-glow)">ADD TO PORTFOLIO</div>
+    </div>
   </div>
 </div>
 
@@ -1791,6 +1864,155 @@ async function generateTravelPlan(){
   }catch(e){
     if(result)result.innerHTML='<div class="loading-row">Error generating plan. Please try again.</div>';
   }
+}
+
+// ── TASKS SCREEN ──
+function openTasksScreen(){
+  prevScreen='me';
+  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen'].forEach(id=>{
+    const s=document.getElementById(id);if(s)s.classList.remove('active');
+  });
+  document.getElementById('tasksScreen').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.querySelector('[data-tab="me"]');if(nb)nb.classList.add('active');
+  renderFullTasks('all');
+}
+
+function closeTasksScreen(){
+  document.getElementById('tasksScreen').classList.remove('active');
+  switchNav('me');
+}
+
+function showAddTask(){
+  const form=document.getElementById('addTaskForm');
+  if(form)form.style.display='block';
+  const input=document.getElementById('newTaskTitle');
+  if(input)input.focus();
+}
+
+function hideAddTask(){
+  const form=document.getElementById('addTaskForm');
+  if(form)form.style.display='none';
+  const title=document.getElementById('newTaskTitle');
+  if(title)title.value='';
+}
+
+async function saveNewTask(){
+  const title=document.getElementById('newTaskTitle').value.trim();
+  if(!title){showToast('Enter a task title');return;}
+  const priority=document.getElementById('newTaskPriority').value;
+  const due=document.getElementById('newTaskDue').value;
+  try{
+    const{data,error}=await db.from('shadow_tasks').insert({
+      user_id:UID,title,priority,status:'pending',
+      due_date:due||null,specialist:'productivity'
+    }).select();
+    if(error)throw error;
+    showToast('Task added');
+    hideAddTask();
+    await loadTasks();
+    renderFullTasks(currentTaskFilter);
+  }catch(e){showToast('Error saving task');console.log(e);}
+}
+
+let currentTaskFilter='all';
+function filterTasks(filter,el){
+  currentTaskFilter=filter;
+  document.querySelectorAll('#tasksScreen .intel-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderFullTasks(filter);
+}
+
+function renderFullTasks(filter){
+  const el=document.getElementById('tasksFullList');
+  if(!el)return;
+  let filtered=tasks;
+  if(filter==='high')filtered=tasks.filter(t=>t.priority==='high'&&t.status!=='done');
+  else if(filter==='pending')filtered=tasks.filter(t=>t.status!=='done');
+  else if(filter==='done')filtered=tasks.filter(t=>t.status==='done');
+  const countEl=document.getElementById('tasksCount');
+  if(countEl)countEl.textContent=filtered.length+' tasks';
+  if(!filtered.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">'+(filter==='done'?'No completed tasks':'All clear')+'</div><div class="empty-state-sub">'+(filter==='done'?'Complete tasks to see them here':'No pending tasks')+'. Tap + ADD to create one.</div></div>';
+    return;
+  }
+  el.innerHTML='';
+  filtered.forEach(t=>{
+    const isDone=t.status==='done';
+    const dueStr=t.due_date?'Due '+new Date(t.due_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+    const row=document.createElement('div');
+    row.className='task-item';
+    const chk=document.createElement('div');
+    chk.className='task-check'+(isDone?' done':'');
+    chk.onclick=(function(id,status){return function(){toggleFullTask(id,this,status);};})(t.id,t.status);
+    const info=document.createElement('div');
+    info.className='task-content';
+    const title=document.createElement('div');
+    title.className='task-title'+(isDone?' done':'');
+    title.textContent=t.title||'';
+    const meta=document.createElement('div');
+    meta.className='task-meta';
+    meta.textContent=dueStr||t.specialist||'general';
+    info.appendChild(title);info.appendChild(meta);
+    const pri=document.createElement('div');
+    pri.className='task-priority '+(t.priority||'low');
+    pri.textContent=t.priority||'low';
+    row.appendChild(chk);row.appendChild(info);row.appendChild(pri);
+    el.appendChild(row);
+  });
+}
+
+async function toggleFullTask(id,el,currentStatus){
+  const newStatus=currentStatus==='done'?'pending':'done';
+  el.classList.toggle('done');
+  const title=el.nextElementSibling.querySelector('.task-title');
+  if(title)title.classList.toggle('done');
+  try{
+    await db.from('shadow_tasks').update({status:newStatus}).eq('id',id);
+    showToast(newStatus==='done'?'Task complete ✓':'Task reopened');
+    await loadTasks();
+    setTimeout(()=>renderFullTasks(currentTaskFilter),500);
+  }catch(e){console.log('toggle error',e);}
+}
+
+// ── ADD HOLDING SCREEN ──
+function openAddHolding(){
+  prevScreen='me';
+  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','tasksScreen'].forEach(id=>{
+    const s=document.getElementById(id);if(s)s.classList.remove('active');
+  });
+  document.getElementById('addHoldingScreen').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+}
+
+function closeAddHolding(){
+  document.getElementById('addHoldingScreen').classList.remove('active');
+  switchNav(prevScreen||'me');
+}
+
+async function saveHolding(){
+  const ticker=document.getElementById('holdingTicker').value.trim().toUpperCase();
+  const shares=parseFloat(document.getElementById('holdingShares').value);
+  const avg=parseFloat(document.getElementById('holdingAvg').value);
+  if(!ticker||!shares||!avg){showToast('Fill in ticker, shares and price');return;}
+  const alertAbove=document.getElementById('holdingAlertAbove').value;
+  const alertBelow=document.getElementById('holdingAlertBelow').value;
+  try{
+    const{error}=await db.from('shadow_portfolio').insert({
+      user_id:UID,ticker,shares,avg_buy_price:avg,
+      alert_above:alertAbove?parseFloat(alertAbove):null,
+      alert_below:alertBelow?parseFloat(alertBelow):null
+    });
+    if(error)throw error;
+    showToast(ticker+' added to portfolio');
+    await loadPortfolio();
+    ['holdingTicker','holdingShares','holdingAvg','holdingAlertAbove','holdingAlertBelow'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.value='';
+    });
+    closeAddHolding();
+    switchIntelTab('portfolio',null);
+    switchNav('intelligence');
+  }catch(e){showToast('Error saving holding');console.log(e);}
 }
 
 function clearChat(){
