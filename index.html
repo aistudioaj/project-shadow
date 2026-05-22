@@ -1772,13 +1772,44 @@ async function sendMsg(){
   try{
     const statusEl=document.getElementById('chatStatus');
     if(statusEl)statusEl.textContent='THINKING...';
-    const memCtx=memories.slice(0,10).map(m=>m.key+': '+m.value).join('\n');
-    const mktCtx=Object.entries(mktData).slice(0,5).map(([s,d])=>s+': $'+d.price.toFixed(2)+' ('+d.pct.toFixed(2)+'%)').join(', ');
+    // Build rich context from all available data
+    const memCtx=memories.slice(0,15).map(m=>m.key+': '+m.value).join('\n');
+    const mktCtx=Object.entries(mktData).map(([s,d])=>s+': $'+d.price.toFixed(2)+' ('+d.pct.toFixed(2)+'%)').join(', ');
+    
+    // Portfolio context
+    let portCtx='';
+    if(portfolio.length>0){
+      let totalVal=0,totalCost=0;
+      const holdings=portfolio.map(h=>{
+        const q=mktData[h.ticker];
+        if(!q||!h.shares)return h.ticker+': '+h.shares+' shares';
+        const val=q.price*h.shares;
+        const cost=(h.avg_buy_price||0)*h.shares;
+        const pnl=val-cost;
+        const pct=cost>0?(pnl/cost*100):0;
+        totalVal+=val;totalCost+=cost;
+        return h.ticker+': '+h.shares+'sh @ $'+h.avg_buy_price+' | now $'+q.price.toFixed(2)+' | PnL '+(pnl>=0?'+':'')+pnl.toFixed(0)+' ('+(pct>=0?'+':'')+pct.toFixed(1)+'%)';
+      }).join('\n');
+      const totalPnl=totalVal-totalCost;
+      const totalPct=totalCost>0?(totalPnl/totalCost*100):0;
+      portCtx='Portfolio ('+portfolio.length+' holdings, total $'+totalVal.toFixed(0)+', PnL '+(totalPnl>=0?'+':'')+totalPnl.toFixed(0)+' ('+(totalPct>=0?'+':'')+totalPct.toFixed(1)+'%)):\n'+holdings;
+    }
+    
+    // Tasks context
+    const pendingTasks=tasks.filter(t=>t.status!=='done');
+    const taskCtx=pendingTasks.length>0?'Pending tasks ('+pendingTasks.length+'): '+pendingTasks.slice(0,5).map(t=>(t.priority==='high'?'[URGENT] ':'')+t.title).join(', '):'No pending tasks';
+    
+    // Brief verdict context
+    const verdictCtx=todayBriefData&&todayBriefData.verdict?'Today\'s Shadow verdict: '+todayBriefData.verdict.replace(/<[^>]*>/g,'').substring(0,200):'';
+    
     const sysPrompt=specSystems[currentSpec]
-      +'\n\nUser context: AJ, Abu Dhabi UAE, GMT+4.'
-      +(mktCtx?'\nLive markets: '+mktCtx:'')
-      +(memCtx?'\nMemory:\n'+memCtx:'')
-      +'\n\nBe concise, direct and actionable.';
+      +'\n\nUSER PROFILE: AJ, Abu Dhabi UAE, GMT+4. Personal AI OS user.'
+      +(mktCtx?'\n\nLIVE MARKETS: '+mktCtx:'')
+      +(portCtx?'\n\nPORTFOLIO:\n'+portCtx:'')
+      +(taskCtx?'\n\nTASKS: '+taskCtx:'')
+      +(memCtx?'\n\nMEMORY (know these facts about the user):\n'+memCtx:'')
+      +(verdictCtx?'\n\nTODAY\'S BRIEF: '+verdictCtx:'')
+      +'\n\nIMPORTANT: Use this context to give personalized, specific answers. Reference their actual holdings, tasks and memories. Be their knowledgeable personal advisor, not a generic assistant.';
     const r=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
