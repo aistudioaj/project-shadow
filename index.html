@@ -2133,7 +2133,7 @@ async function init(){
     const p=tasks.filter(t=>t.status!=='done').length;
     const msg=gr+', '+name+'. Today is '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'. You have '+p+' pending tasks. Shadow is ready.';
     speakWithElevenLabs(msg).catch(()=>console.log('Welcome voice skipped'));
-  },2500);
+  },4000);
 }
 
 init();
