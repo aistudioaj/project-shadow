@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
-import os, requests, json
+"""
+Project Shadow - Morning Intelligence Brief v4
+JPMorgan analyst quality + Garmin health data
+Runs daily at 7:00 AM Abu Dhabi time (03:00 UTC)
+"""
+
+import os
+import json
+import requests
 from datetime import datetime, timezone, timedelta
 
 ANTHROPIC_KEY = os.environ['ANTHROPIC_KEY']
@@ -10,6 +18,8 @@ FINNHUB_KEY   = os.environ['FINNHUB_KEY']
 EMAIL_FROM    = os.environ['EMAIL_FROM']
 EMAIL_TO      = os.environ['EMAIL_TO']
 RESEND_KEY    = os.environ['RESEND_KEY']
+GARMIN_EMAIL  = os.environ.get('GARMIN_EMAIL','')
+GARMIN_PASSWORD = os.environ.get('GARMIN_PASSWORD','')
 USER_ID       = os.environ.get('USER_ID', 'abdulrahman')
 USER_NAME     = os.environ.get('USER_NAME', 'AJ')
 
@@ -19,34 +29,181 @@ TODAY_STR = NOW.strftime('%A, %B %d, %Y')
 TIME_STR = NOW.strftime('%I:%M %p')
 DATE_SHORT = NOW.strftime('%a %b %d')
 
-print("Shadow Morning Brief v2: " + TODAY_STR)
+print("Shadow Morning Brief v4: " + TODAY_STR + " " + TIME_STR)
 
-def fetch_quote(sym):
+def fetch_quote(symbol):
     try:
-        r = requests.get("https://finnhub.io/api/v1/quote?symbol=" + sym + "&token=" + FINNHUB_KEY, timeout=10)
+        url = "https://finnhub.io/api/v1/quote?symbol=" + symbol + "&token=" + FINNHUB_KEY
+        r = requests.get(url, timeout=10)
         d = r.json()
         if d.get('c', 0) > 0:
             return d
-    except:
-        pass
+    except Exception as e:
+        print("Quote error " + symbol + ": " + str(e))
+    return None
+
+def fetch_yahoo(symbol):
+    import urllib.parse
+    encoded = urllib.parse.quote(symbol)
+    urls = [
+        "https://query1.finance.yahoo.com/v8/finance/chart/" + encoded + "?interval=1d&range=1d",
+        "https://query2.finance.yahoo.com/v8/finance/chart/" + encoded + "?interval=1d&range=1d",
+    ]
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    for url in urls:
+        try:
+            r = requests.get(url, headers=headers, timeout=12)
+            if r.status_code != 200:
+                continue
+            d = r.json()
+            if not d.get('chart',{}).get('result'):
+                continue
+            meta = d['chart']['result'][0]['meta']
+            price = meta.get('regularMarketPrice', 0)
+            prev = meta.get('previousClose', price)
+            if price <= 0:
+                continue
+            change = price - prev
+            pct = (change/prev*100) if prev > 0 else 0
+            return {'c': price, 'd': change, 'dp': pct, 'prev': prev}
+        except Exception as e:
+            continue
     return None
 
 def fetch_supabase(table, filters=""):
     try:
         url = SUPABASE_URL + "/rest/v1/" + table + "?user_id=eq." + USER_ID + filters + "&select=*"
         headers = {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY}
-        return requests.get(url, headers=headers, timeout=10).json()
-    except:
+        r = requests.get(url, headers=headers, timeout=10)
+        return r.json()
+    except Exception as e:
+        print("Supabase error " + table + ": " + str(e))
         return []
 
-print("Fetching markets...")
+# -- FETCH GARMIN DATA --
+def fetch_garmin_data():
+    if not GARMIN_EMAIL or not GARMIN_PASSWORD:
+        print("  Garmin credentials not configured")
+        return None
+    try:
+        from garminconnect import Garmin
+        client = Garmin(GARMIN_EMAIL, GARMIN_PASSWORD)
+        client.login()
+        print("  Garmin login successful")
+        today = NOW.strftime('%Y-%m-%d')
+        yesterday = (NOW - timedelta(days=1)).strftime('%Y-%m-%d')
+        data = {}
+
+        try:
+            sleep = client.get_sleep_data(yesterday)
+            if sleep and sleep.get('dailySleepDTO'):
+                dto = sleep['dailySleepDTO']
+                data['sleep_duration'] = round(dto.get('sleepTimeSeconds',0)/3600, 1)
+                data['sleep_score'] = dto.get('sleepScores',{}).get('overall',{}).get('value',0)
+                data['deep_sleep'] = round(dto.get('deepSleepSeconds',0)/3600, 1)
+                data['rem_sleep'] = round(dto.get('remSleepSeconds',0)/3600, 1)
+                data['light_sleep'] = round(dto.get('lightSleepSeconds',0)/3600, 1)
+                print("  Sleep: " + str(data['sleep_duration']) + "h | Score: " + str(data['sleep_score']))
+        except Exception as e:
+            print("  Sleep error: " + str(e))
+
+        try:
+            hrv = client.get_hrv_data(today)
+            if hrv and hrv.get('hrvSummary'):
+                s = hrv['hrvSummary']
+                data['hrv_weekly_avg'] = s.get('weeklyAvg', 0)
+                data['hrv_last_night'] = s.get('lastNight', 0)
+                data['hrv_status'] = s.get('status', 'UNKNOWN')
+                print("  HRV: " + str(data['hrv_weekly_avg']) + "ms | " + data['hrv_status'])
+        except Exception as e:
+            print("  HRV error: " + str(e))
+
+        try:
+            bb = client.get_body_battery(today)
+            if bb and len(bb) > 0:
+                data['body_battery'] = bb[-1].get('value', 0)
+                print("  Body battery: " + str(data['body_battery']))
+        except Exception as e:
+            print("  Body battery error: " + str(e))
+
+        try:
+            steps = client.get_steps_data(today)
+            if steps:
+                data['steps'] = sum(s.get('steps',0) for s in steps if s.get('steps'))
+                print("  Steps: " + str(data['steps']))
+        except Exception as e:
+            print("  Steps error: " + str(e))
+
+        try:
+            activities = client.get_activities(0, 1)
+            if activities and len(activities) > 0:
+                act = activities[0]
+                data['last_activity_name'] = act.get('activityName','')
+                data['last_activity_type'] = act.get('activityType',{}).get('typeKey','')
+                data['last_activity_distance'] = round(act.get('distance',0)/1000, 2)
+                data['last_activity_duration'] = round(act.get('duration',0)/60, 0)
+                data['last_activity_hr'] = act.get('averageHR', 0)
+                data['last_activity_calories'] = act.get('calories', 0)
+                data['last_activity_date'] = act.get('startTimeLocal','')[:10]
+                print("  Last activity: " + data['last_activity_name'])
+        except Exception as e:
+            print("  Activity error: " + str(e))
+
+        try:
+            training = client.get_training_status(today)
+            if training and training.get('trainingStatusDTO'):
+                dto = training['trainingStatusDTO']
+                data['training_status'] = dto.get('trainingStatus','UNKNOWN')
+                data['training_load'] = dto.get('trainingLoad7Day', 0)
+                print("  Training: " + str(data['training_status']))
+        except Exception as e:
+            print("  Training error: " + str(e))
+
+        return data
+
+    except Exception as e:
+        print("  Garmin connection error: " + str(e))
+        return None
+
+def build_garmin_context(garmin):
+    if not garmin:
+        return "Garmin health data unavailable today."
+    lines = []
+    sleep_score = garmin.get('sleep_score', 0)
+    body_battery = garmin.get('body_battery', 0)
+    hrv_status = garmin.get('hrv_status', 'UNKNOWN')
+    if sleep_score and body_battery:
+        if sleep_score >= 80 and body_battery >= 70:
+            readiness = "HIGH - excellent recovery"
+        elif sleep_score >= 60 and body_battery >= 50:
+            readiness = "MODERATE - good recovery"
+        else:
+            readiness = "LOW - poor recovery, consider rest"
+        lines.append("READINESS: " + readiness)
+    if garmin.get('sleep_duration'):
+        lines.append("SLEEP: " + str(garmin['sleep_duration']) + "h | Score: " + str(sleep_score) + "/100 | Deep: " + str(garmin.get('deep_sleep',0)) + "h | REM: " + str(garmin.get('rem_sleep',0)) + "h")
+    if garmin.get('hrv_weekly_avg'):
+        lines.append("HRV: " + str(garmin['hrv_weekly_avg']) + "ms avg | Last night: " + str(garmin.get('hrv_last_night',0)) + "ms | Status: " + hrv_status)
+    if garmin.get('body_battery'):
+        lines.append("BODY BATTERY: " + str(body_battery) + "/100")
+    if garmin.get('steps'):
+        lines.append("STEPS: " + str(garmin['steps']))
+    if garmin.get('last_activity_name'):
+        lines.append("LAST WORKOUT: " + garmin['last_activity_name'] + " | " + str(garmin.get('last_activity_duration',0)) + " min | " + str(garmin.get('last_activity_distance',0)) + " km | HR: " + str(garmin.get('last_activity_hr',0)) + "bpm | " + str(garmin.get('last_activity_calories',0)) + " cal | " + garmin.get('last_activity_date',''))
+    if garmin.get('training_status'):
+        lines.append("TRAINING STATUS: " + str(garmin['training_status']) + " | 7-day load: " + str(garmin.get('training_load',0)))
+    return "\n".join(lines) if lines else "Garmin connected but no data available."
+
+# -- FETCH ALL DATA --
+print("Fetching market data...")
 WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'JPM', 'SPUS', 'SPWO']
 market_data = {}
 for sym in WATCHLIST:
     q = fetch_quote(sym)
     if q:
         market_data[sym] = q
-        print("  " + sym + ": $" + str(round(q['c'],2)) + " (" + ("+" if q['dp']>=0 else "") + str(round(q['dp'],2)) + "%)")
+        arrow = "+" if q['dp'] >= 0 else ""
+        print("  " + sym + ": $" + str(round(q['c'],2)) + " (" + arrow + str(round(q['dp'],2)) + "%)")
 
 print("Fetching indices...")
 INDICES = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq', 'DIA': 'Dow Jones'}
@@ -55,44 +212,43 @@ for sym, name in INDICES.items():
     q = fetch_quote(sym)
     if q:
         indices[sym] = {**q, 'name': name}
-        print("  " + name + ": $" + str(round(q['c'],2)))
 
-print("Fetching macro...")
-MACRO = {'OANDA:XAU_USD': 'Gold', 'OANDA:USOIL': 'Oil WTI'}
+print("Fetching macro (VIX, Oil, Gold)...")
 macro = {}
-for sym, name in MACRO.items():
-    q = fetch_quote(sym)
-    if q:
+YAHOO_MACRO = {'^VIX': 'VIX Fear Index', 'CL=F': 'Oil WTI (USD/bbl)', 'GC=F': 'Gold (USD/oz)'}
+for sym, name in YAHOO_MACRO.items():
+    q = fetch_yahoo(sym)
+    if q and q['c'] > 0:
         macro[name] = q
         print("  " + name + ": " + str(round(q['c'],2)))
 
 print("Fetching earnings calendar...")
 earnings = []
 try:
-    today = NOW.strftime('%Y-%m-%d')
+    today_fmt = NOW.strftime('%Y-%m-%d')
     week_end = (NOW + timedelta(days=7)).strftime('%Y-%m-%d')
-    r = requests.get("https://finnhub.io/api/v1/calendar/earnings?from=" + today + "&to=" + week_end + "&token=" + FINNHUB_KEY, timeout=10)
+    r = requests.get("https://finnhub.io/api/v1/calendar/earnings?from=" + today_fmt + "&to=" + week_end + "&token=" + FINNHUB_KEY, timeout=10)
     data = r.json()
     if data and data.get('earningsCalendar'):
         my_tickers = set(WATCHLIST)
         for item in data['earningsCalendar']:
             if item.get('symbol') in my_tickers:
                 earnings.append({'symbol': item['symbol'], 'date': item['date'], 'hour': item.get('hour',''), 'eps': item.get('epsEstimate','N/A')})
-    print("  " + str(len(earnings)) + " earnings this week in your portfolio")
+    print("  " + str(len(earnings)) + " earnings this week")
 except Exception as e:
     print("  Earnings error: " + str(e))
 
 print("Fetching news...")
 all_news = []
 news_from = (NOW - timedelta(days=2)).strftime('%Y-%m-%d')
-today = NOW.strftime('%Y-%m-%d')
+today_fmt = NOW.strftime('%Y-%m-%d')
 for sym in ['AAPL', 'MSFT', 'NVDA', 'AMZN']:
     try:
-        r = requests.get("https://finnhub.io/api/v1/company-news?symbol=" + sym + "&from=" + news_from + "&to=" + today + "&token=" + FINNHUB_KEY, timeout=8)
+        r = requests.get("https://finnhub.io/api/v1/company-news?symbol=" + sym + "&from=" + news_from + "&to=" + today_fmt + "&token=" + FINNHUB_KEY, timeout=8)
         news = r.json()
         if news and isinstance(news, list):
-            for n in news[:2]:
-                all_news.append({'symbol': sym, 'headline': n.get('headline',''), 'source': n.get('source',''), 'url': n.get('url',''), 'dt': n.get('datetime',0)})
+            for n in news[:1]:
+                all_news.append({'symbol': sym, 'headline': n.get('headline',''), 'source': n.get('source',''), 'dt': n.get('datetime',0)})
     except:
         pass
 all_news.sort(key=lambda x: x['dt'], reverse=True)
@@ -101,7 +257,7 @@ print("  " + str(len(all_news)) + " news items")
 print("Fetching portfolio, tasks, memories...")
 portfolio = fetch_supabase('shadow_portfolio')
 tasks = fetch_supabase('shadow_tasks', '&status=neq.done')
-memories = fetch_supabase('shadow_memory', '&order=importance.desc&limit=30')
+memories = fetch_supabase('shadow_memory', '&order=importance.desc&limit=15')
 print("  " + str(len(portfolio)) + " holdings, " + str(len(tasks)) + " tasks, " + str(len(memories)) + " memories")
 
 print("Fetching weather...")
@@ -124,6 +280,12 @@ try:
 except Exception as e:
     print("  Weather error: " + str(e))
 
+print("Fetching Garmin health data...")
+garmin_data = fetch_garmin_data()
+garmin_context = build_garmin_context(garmin_data)
+print("  Garmin: " + garmin_context[:60])
+
+# -- CONTEXT BUILDERS --
 def mkt_ctx():
     lines = []
     for sym, q in market_data.items():
@@ -131,12 +293,16 @@ def mkt_ctx():
     if indices:
         lines.append("INDICES: " + " | ".join([d['name'] + " $" + str(round(d['c'],2)) + " " + str(round(d['dp'],2)) + "%" for d in indices.values()]))
     if macro:
-        lines.append("MACRO: " + " | ".join([n + " " + str(round(q['c'],2)) for n,q in macro.items()]))
+        lines.append("MACRO:")
+        for name, q in macro.items():
+            lines.append("  " + name + ": " + str(round(q['c'],2)) + " " + ("UP" if q['dp']>=0 else "DOWN") + " " + str(round(q['dp'],2)) + "%")
+    else:
+        lines.append("MACRO: Data unavailable - do NOT estimate commodity prices")
     return "\n".join(lines)
 
 def port_ctx():
     if not portfolio:
-        return "No holdings."
+        return "No portfolio holdings tracked."
     lines = []
     total_val = 0
     total_cost = 0
@@ -154,20 +320,17 @@ def port_ctx():
         pnl = total_val - total_cost
         pct = (pnl/total_cost*100) if total_cost > 0 else 0
         lines.append("TOTAL: $" + str(round(total_val,2)) + " PnL $" + str(round(pnl,2)) + " (" + str(round(pct,2)) + "%)")
-        tech = sum(1 for h in portfolio if h.get('ticker') in ['AAPL','MSFT','NVDA','GOOGL','META'])
-        if portfolio:
-            lines.append("TECH CONCENTRATION: " + str(round(tech/len(portfolio)*100)) + "% - " + ("HIGH RISK" if tech/len(portfolio) > 0.6 else "MODERATE"))
-    return "\n".join(lines)
+    return "\n".join(lines) if lines else "No holdings with market data."
 
 def earn_ctx():
     if not earnings:
         return "No earnings from your holdings this week."
-    return "EARNINGS THIS WEEK: " + " | ".join([e['symbol'] + " on " + e['date'] + " EPS est $" + str(e['eps']) for e in earnings])
+    return "EARNINGS: " + " | ".join([e['symbol'] + " on " + e['date'] + " EPS est $" + str(e['eps']) for e in earnings])
 
 def news_ctx():
     if not all_news:
         return "No recent news."
-    return "\n".join(["[" + n['symbol'] + "] " + n['headline'] for n in all_news[:8]])
+    return "\n".join(["[" + n['symbol'] + "] " + n['headline'] for n in all_news[:6]])
 
 def tasks_ctx():
     if not tasks:
@@ -177,7 +340,7 @@ def tasks_ctx():
 
 def mem_ctx():
     if not memories:
-        return "No memories."
+        return "No memories stored."
     trips = [m for m in memories if 'trip' in m.get('key','').lower()]
     exams = [m for m in memories if 'exam' in m.get('key','').lower() or 'assessment' in m.get('value','').lower()]
     key = [m for m in memories if m.get('importance',1) >= 2][:5]
@@ -188,7 +351,7 @@ def mem_ctx():
         lines.append("EXAMS: " + "; ".join([m['value'] for m in exams[:2]]))
     if key:
         lines.append("KEY: " + "; ".join([m['key'] + ": " + m['value'] for m in key]))
-    return "\n".join(lines) if lines else "General context stored."
+    return "\n".join(lines) if lines else "General memories stored."
 
 def weather_ctx():
     lines = [weather_info]
@@ -197,46 +360,106 @@ def weather_ctx():
         lines.append(d['day'] + ": " + d['condition'] + " " + str(d['max']) + "/" + str(d['min']) + "C" + rain)
     return "\n".join(lines)
 
+# -- CALL CLAUDE --
 print("Calling Claude...")
-system_prompt = (
-    "You are Shadow, personal AI intelligence system for " + USER_NAME + " in Abu Dhabi.\n"
-    "Write like a senior JPMorgan analyst briefing a VP of Investments.\n"
-    "Today: " + TODAY_STR + " at " + TIME_STR + " Abu Dhabi GMT+4.\n\n"
-    "RULES: Be specific with numbers. Be actionable. No hedging.\n"
-    "Each section ends with a clear implication or action.\n\n"
-    "Use these markers:\n"
-    "[MARKET_OPEN]\nWrite market analysis here\n[/MARKET_OPEN]\n"
-"[PORTFOLIO_PULSE]\nWrite portfolio analysis here\n[/PORTFOLIO_PULSE]\n"
-"[EARNINGS_WATCH]\nWrite earnings analysis here\n[/EARNINGS_WATCH]\n"
-"[STOCK_NEWS]\nWrite stock news here\n[/STOCK_NEWS]\n"
-"[AI_TECH]\nWrite AI tech news here\n[/AI_TECH]\n"
-"[GEOPOLITICAL]\nWrite geopolitical analysis here\n[/GEOPOLITICAL]\n"
-"[WEATHER]\nWrite weather here\n[/WEATHER]\n"
-"[TASKS]\nWrite task priorities here\n[/TASKS]\n"
-"[TRAVEL]\nWrite travel intelligence here\n[/TRAVEL]\n"
-"[SHADOW_VERDICT]\nWrite verdict here\n[/SHADOW_VERDICT]\n"
-    "DATA:\n"
-    "MARKETS:\n" + mkt_ctx() + "\n\n"
-    "PORTFOLIO:\n" + port_ctx() + "\n\n"
-    "EARNINGS:\n" + earn_ctx() + "\n\n"
-    "NEWS:\n" + news_ctx() + "\n\n"
-    "WEATHER:\n" + weather_ctx() + "\n\n"
-    "TASKS:\n" + tasks_ctx() + "\n\n"
-    "MEMORY:\n" + mem_ctx()
-)
+system_prompt = "\n".join([
+    "You are Shadow, personal AI intelligence system for " + USER_NAME + " in Abu Dhabi.",
+    "Write like a senior JPMorgan analyst briefing a VP of Investments.",
+    "Today: " + TODAY_STR + " at " + TIME_STR + " Abu Dhabi GMT+4.",
+    "",
+    "CRITICAL RULES:",
+    "- Use ONLY the exact section markers below.",
+    "- Be specific with numbers from the data provided.",
+    "- NEVER estimate or fabricate financial data not in the provided data.",
+    "- If oil/VIX data is unavailable, say Data unavailable.",
+    "- Be actionable. Each section ends with a clear implication or action.",
+    "- For health section: be specific about readiness and give ONE fitness recommendation.",
+    "",
+    "YOU MUST USE THESE EXACT MARKERS:",
+    "[MARKET_OPEN]",
+    "Your market analysis here",
+    "[/MARKET_OPEN]",
+    "",
+    "[PORTFOLIO_PULSE]",
+    "Your portfolio analysis here",
+    "[/PORTFOLIO_PULSE]",
+    "",
+    "[EARNINGS_WATCH]",
+    "Your earnings analysis here",
+    "[/EARNINGS_WATCH]",
+    "",
+    "[STOCK_NEWS]",
+    "Your stock news analysis here",
+    "[/STOCK_NEWS]",
+    "",
+    "[AI_TECH]",
+    "Your AI tech news here",
+    "[/AI_TECH]",
+    "",
+    "[GEOPOLITICAL]",
+    "Your geopolitical analysis here",
+    "[/GEOPOLITICAL]",
+    "",
+    "[WEATHER]",
+    "Your weather analysis here",
+    "[/WEATHER]",
+    "",
+    "[HEALTH_PERFORMANCE]",
+    "Your health and performance analysis here based on Garmin data",
+    "[/HEALTH_PERFORMANCE]",
+    "",
+    "[TASKS]",
+    "Your task priorities here",
+    "[/TASKS]",
+    "",
+    "[TRAVEL]",
+    "Your travel intelligence here",
+    "[/TRAVEL]",
+    "",
+    "[SHADOW_VERDICT]",
+    "Your verdict here",
+    "[/SHADOW_VERDICT]",
+    "",
+    "DATA:",
+    "",
+    "MARKETS:",
+    mkt_ctx(),
+    "",
+    "PORTFOLIO:",
+    port_ctx(),
+    "",
+    "EARNINGS:",
+    earn_ctx(),
+    "",
+    "NEWS:",
+    news_ctx(),
+    "",
+    "WEATHER:",
+    weather_ctx(),
+    "",
+    "GARMIN HEALTH DATA:",
+    garmin_context,
+    "",
+    "TASKS:",
+    tasks_ctx(),
+    "",
+    "MEMORY:",
+    mem_ctx(),
+])
 
 user_msg = (
-    "Generate my complete morning brief. Be specific and direct.\n"
-    "MARKET_OPEN: Index levels, key movers, VIX, what it means for today.\n"
-    "PORTFOLIO_PULSE: Each holding performance, biggest mover, concentration risk, alerts.\n"
-    "EARNINGS_WATCH: Holdings reporting this week - what to expect.\n"
+    "Generate my complete morning brief for " + TODAY_STR + ".\n\n"
+    "MARKET_OPEN: Index levels, key movers, what it means today.\n"
+    "PORTFOLIO_PULSE: Each holding performance, biggest mover, concentration risk.\n"
+    "EARNINGS_WATCH: Holdings reporting this week.\n"
     "STOCK_NEWS: Most important news for my specific holdings.\n"
-    "AI_TECH: Latest AI/tech news relevant to my NVDA, AAPL, MSFT, GOOGL positions.\n"
-    "GEOPOLITICAL: UAE region, US-China (affects AAPL/NVDA), oil, key macro events today.\n"
-    "WEATHER: Abu Dhabi 5-day forecast and any trip destinations from memory.\n"
+    "AI_TECH: Latest AI/tech news relevant to my positions.\n"
+    "GEOPOLITICAL: UAE region, US-China, oil, key macro events.\n"
+    "WEATHER: Abu Dhabi 5-day forecast.\n"
+    "HEALTH_PERFORMANCE: Based on Garmin data - my readiness score, sleep analysis, HRV status, body battery, last workout. Give ONE specific fitness recommendation for today.\n"
     "TASKS: Prioritized list for today.\n"
-    "TRAVEL: Upcoming trips - preparation needed.\n"
-    "SHADOW_VERDICT: One key insight. One action. One risk. Make it punchy."
+    "TRAVEL: Upcoming trips from memory.\n"
+    "SHADOW_VERDICT: One key insight. One action. One risk. Punchy and direct."
 )
 
 brief_raw = ""
@@ -244,8 +467,8 @@ try:
     resp = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={"Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
-        json={"model": "claude-sonnet-4-5", "max_tokens": 3000, "system": system_prompt, "messages": [{"role": "user", "content": user_msg}]},
-        timeout=90
+        json={"model": "claude-sonnet-4-5", "max_tokens": 3500, "system": system_prompt, "messages": [{"role": "user", "content": user_msg}]},
+        timeout=180
     )
     d = resp.json()
     if d.get('content'):
@@ -253,7 +476,7 @@ try:
         print("  Claude OK - " + str(len(brief_raw)) + " chars")
     else:
         print("  Claude error: " + str(d))
-        brief_raw = "[SHADOW_VERDICT]Morning " + USER_NAME + ". Claude error today - check API key.[/SHADOW_VERDICT]"
+        brief_raw = "[SHADOW_VERDICT]Morning " + USER_NAME + ". Claude error today.[/SHADOW_VERDICT]"
 except Exception as e:
     print("  Claude error: " + str(e))
     brief_raw = "[SHADOW_VERDICT]Morning " + USER_NAME + ". Connection error.[/SHADOW_VERDICT]"
@@ -266,24 +489,26 @@ def extract(text, tag):
     return ""
 
 S = {
-    'market': extract(brief_raw, 'MARKET_OPEN'),
+    'market':    extract(brief_raw, 'MARKET_OPEN'),
     'portfolio': extract(brief_raw, 'PORTFOLIO_PULSE'),
-    'earnings': extract(brief_raw, 'EARNINGS_WATCH'),
-    'news': extract(brief_raw, 'STOCK_NEWS'),
-    'ai': extract(brief_raw, 'AI_TECH'),
-    'geo': extract(brief_raw, 'GEOPOLITICAL'),
-    'weather': extract(brief_raw, 'WEATHER'),
-    'tasks': extract(brief_raw, 'TASKS'),
-    'travel': extract(brief_raw, 'TRAVEL'),
-    'verdict': extract(brief_raw, 'SHADOW_VERDICT'),
+    'earnings':  extract(brief_raw, 'EARNINGS_WATCH'),
+    'news':      extract(brief_raw, 'STOCK_NEWS'),
+    'ai_tech':   extract(brief_raw, 'AI_TECH'),
+    'geo':       extract(brief_raw, 'GEOPOLITICAL'),
+    'weather':   extract(brief_raw, 'WEATHER'),
+    'health':    extract(brief_raw, 'HEALTH_PERFORMANCE'),
+    'tasks':     extract(brief_raw, 'TASKS'),
+    'travel':    extract(brief_raw, 'TRAVEL'),
+    'verdict':   extract(brief_raw, 'SHADOW_VERDICT'),
 }
-print("  Sections: " + str(sum(1 for v in S.values() if v)) + "/10")
+filled = sum(1 for v in S.values() if v)
+print("  Sections: " + str(filled) + "/11")
 
 def fmt(t):
     import re
-    t = t.replace('\n','<br>')
-    t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
-    t = t.replace('*','')
+    t = t.replace('\n', '<br>')
+    t = re.sub(r'[*][*](.*?)[*][*]', r'<strong>\1</strong>', t)
+    t = t.replace('*', '')
     return t
 
 def sec(title, content, color):
@@ -301,149 +526,66 @@ def ticker_row():
     for sym, q in market_data.items():
         col = '#10d9a0' if q['dp']>=0 else '#f43f5e'
         bg = 'rgba(16,217,160,0.05)' if q['dp']>=0 else 'rgba(244,63,94,0.05)'
+        arrow = "+" if q['dp']>=0 else ""
         items += ('<td style="padding:11px 12px;border-right:1px solid #1e2840;text-align:center;background:' + bg + ';">'
                   '<div style="font-family:monospace;font-size:10px;color:#7889a8;margin-bottom:4px;font-weight:700;">' + sym + '</div>'
                   '<div style="font-family:monospace;font-size:15px;font-weight:700;color:#e2e8f8;margin-bottom:2px;">$' + str(round(q['c'],2)) + '</div>'
-                  '<div style="font-family:monospace;font-size:10px;color:' + col + ';">' + ("+" if q['dp']>=0 else "") + str(round(q['dp'],2)) + '%</div>'
+                  '<div style="font-family:monospace;font-size:10px;color:' + col + ';">' + arrow + str(round(q['dp'],2)) + '%</div>'
                   '</td>')
     return '<table style="width:100%;border-collapse:collapse;"><tr>' + items + '</tr></table>'
 
-def indices_row():
-    if not indices:
+def garmin_card():
+    if not garmin_data:
         return ""
+    bb = garmin_data.get('body_battery', 0)
+    sleep = garmin_data.get('sleep_duration', 0)
+    sleep_score = garmin_data.get('sleep_score', 0)
+    hrv = garmin_data.get('hrv_weekly_avg', 0)
+    hrv_status = garmin_data.get('hrv_status', '')
+    
+    bb_color = '#10d9a0' if bb >= 70 else '#f59e0b' if bb >= 40 else '#f43f5e'
+    sleep_color = '#10d9a0' if sleep_score >= 80 else '#f59e0b' if sleep_score >= 60 else '#f43f5e'
+    
     items = ""
-    for sym, d in indices.items():
-        col = '#10d9a0' if d['dp']>=0 else '#f43f5e'
-        items += ('<td style="padding:9px 12px;border-right:1px solid #1e2840;text-align:center;">'
-                  '<div style="font-size:10px;color:#6b7280;margin-bottom:2px;">' + d['name'] + '</div>'
-                  '<div style="font-family:monospace;font-size:13px;font-weight:700;color:#e2e8f8;">$' + str(round(d['c'],2)) + '</div>'
-                  '<div style="font-family:monospace;font-size:10px;color:' + col + ';">' + ("+" if d['dp']>=0 else "") + str(round(d['dp'],2)) + '%</div>'
+    if bb:
+        items += ('<td style="padding:12px;text-align:center;border-right:1px solid #1e2840;">'
+                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;margin-bottom:4px;">BODY BATTERY</div>'
+                  '<div style="font-family:monospace;font-size:22px;font-weight:700;color:' + bb_color + ';">' + str(bb) + '</div>'
+                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;">/100</div>'
                   '</td>')
-    return '<div style="border-top:1px solid #1e2840;"><table style="width:100%;border-collapse:collapse;"><tr>' + items + '</tr></table></div>'
-
-def macro_row():
-    if not macro:
+    if sleep:
+        items += ('<td style="padding:12px;text-align:center;border-right:1px solid #1e2840;">'
+                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;margin-bottom:4px;">SLEEP</div>'
+                  '<div style="font-family:monospace;font-size:22px;font-weight:700;color:' + sleep_color + ';">' + str(sleep) + 'h</div>'
+                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;">score ' + str(sleep_score) + '</div>'
+                  '</td>')
+    if hrv:
+        hrv_color = '#10d9a0' if hrv_status == 'BALANCED' else '#f59e0b'
+        items += ('<td style="padding:12px;text-align:center;">'
+                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;margin-bottom:4px;">HRV</div>'
+                  '<div style="font-family:monospace;font-size:22px;font-weight:700;color:' + hrv_color + ';">' + str(hrv) + '</div>'
+                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;">ms avg</div>'
+                  '</td>')
+    if not items:
         return ""
-    items = ""
-    for name, q in macro.items():
-        col = '#10d9a0' if q['dp']>=0 else '#f43f5e'
-        items += ('<td style="padding:9px 12px;border-right:1px solid #1e2840;text-align:center;">'
-                  '<div style="font-size:10px;color:#6b7280;margin-bottom:2px;">' + name + '</div>'
-                  '<div style="font-family:monospace;font-size:13px;font-weight:700;color:#e2e8f8;">' + str(round(q['c'],2)) + '</div>'
-                  '<div style="font-family:monospace;font-size:10px;color:' + col + ';">' + ("+" if q['dp']>=0 else "") + str(round(q['dp'],2)) + '%</div>'
-                  '</td>')
-    return '<div style="border-top:1px solid #1e2840;"><table style="width:100%;border-collapse:collapse;"><tr>' + items + '</tr></table></div>'
-
-def port_table():
-    if not portfolio or not market_data:
-        return '<p style="color:#6b7280;padding:16px;">No data.</p>'
-    rows = ""
-    total_val = 0
-    total_cost = 0
-    for h in portfolio:
-        q = market_data.get(h.get('ticker',''))
-        if not q or not h.get('shares'):
-            continue
-        val = q['c'] * h['shares']
-        cost = (h.get('avg_buy_price',0) or 0) * h['shares']
-        gain = val - cost
-        pct = (gain/cost*100) if cost > 0 else 0
-        day = q['d'] * h['shares']
-        total_val += val
-        total_cost += cost
-        gc = '#10d9a0' if gain>=0 else '#f43f5e'
-        dc = '#10d9a0' if day>=0 else '#f43f5e'
-        rows += ('<tr>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;font-weight:700;color:#e2e8f8;font-size:12px;">' + h['ticker'] + '<div style="font-size:10px;color:#6b7280;">' + str(h['shares']) + ' sh</div></td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#e2e8f8;font-size:12px;">$' + str(round(q['c'],2)) + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:' + dc + ';font-size:12px;">' + ('+' if day>=0 else '') + '$' + str(round(day,2)) + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#e2e8f8;font-size:12px;">$' + str(round(val,2)) + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:' + gc + ';font-size:12px;">' + ('+' if gain>=0 else '') + '$' + str(round(abs(gain),2)) + '<div style="font-size:10px;">' + ('+' if pct>=0 else '') + str(round(pct,2)) + '%</div></td>'
-                 '</tr>')
-    if not rows:
-        return '<p style="color:#6b7280;padding:16px;">No holdings data.</p>'
-    pnl = total_val - total_cost
-    pct = (pnl/total_cost*100) if total_cost > 0 else 0
-    pc = '#10d9a0' if pnl>=0 else '#f43f5e'
-    rows += ('<tr style="background:#141928;">'
-             '<td colspan="3" style="padding:10px 12px;font-family:monospace;font-weight:700;color:#e2e8f8;font-size:12px;">TOTAL</td>'
-             '<td style="padding:10px 12px;font-family:monospace;font-weight:700;color:#e2e8f8;font-size:13px;">$' + str(round(total_val,2)) + '</td>'
-             '<td style="padding:10px 12px;font-family:monospace;font-weight:700;color:' + pc + ';font-size:12px;">' + ('+' if pnl>=0 else '') + '$' + str(round(abs(pnl),2)) + '<div style="font-size:10px;">' + ('+' if pct>=0 else '') + str(round(pct,2)) + '%</div></td>'
-             '</tr>')
-    return ('<table style="width:100%;border-collapse:collapse;">'
-            '<thead><tr style="background:#141928;">'
-            '<th style="padding:8px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Position</th>'
-            '<th style="padding:8px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Price</th>'
-            '<th style="padding:8px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Today</th>'
-            '<th style="padding:8px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Value</th>'
-            '<th style="padding:8px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Total P&amp;L</th>'
-            '</tr></thead><tbody>' + rows + '</tbody></table>')
-
-def earn_table():
-    if not earnings:
-        return '<p style="color:#6b7280;font-size:13px;padding:14px 16px;">No earnings from your holdings this week.</p>'
-    rows = ""
-    for e in earnings:
-        rows += ('<tr><td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;font-weight:700;color:#f59e0b;">' + e['symbol'] + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#e2e8f8;">' + e['date'] + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#8892a8;">' + str(e['hour']).upper() + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#10d9a0;">$' + str(e['eps']) + '</td></tr>')
-    return ('<table style="width:100%;border-collapse:collapse;">'
-            '<thead><tr style="background:#141928;">'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Ticker</th>'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Date</th>'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Time</th>'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">EPS Est</th>'
-            '</tr></thead><tbody>' + rows + '</tbody></table>')
-
-def news_items():
-    if not all_news:
-        return '<p style="color:#6b7280;font-size:13px;padding:14px 16px;">No recent news.</p>'
-    items = ""
-    for n in all_news[:6]:
-        items += ('<div style="padding:11px 16px;border-bottom:1px solid #1e2840;">'
-                  '<div style="display:flex;gap:8px;align-items:flex-start;">'
-                  '<span style="font-family:monospace;font-size:10px;font-weight:700;color:#4f8ef7;background:rgba(79,142,247,0.1);padding:2px 7px;border-radius:4px;white-space:nowrap;margin-top:1px;">' + n['symbol'] + '</span>'
-                  '<div><div style="font-size:13px;color:#e2e8f8;line-height:1.5;margin-bottom:2px;">' + n['headline'] + '</div>'
-                  '<div style="font-family:monospace;font-size:10px;color:#6b7280;">' + n['source'] + '</div></div></div></div>')
-    return items
-
-def weather_table():
-    if not weather_forecast:
-        return '<p style="color:#6b7280;padding:14px 16px;">' + weather_info + '</p>'
-    rows = ""
-    for d in weather_forecast:
-        rain = str(d['rain']) + "mm" if d['rain'] > 0 else "Dry"
-        rows += ('<tr><td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#e2e8f8;font-size:12px;font-weight:600;">' + d['day'] + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;color:#8892a8;font-size:12px;">' + d['condition'] + '</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#f59e0b;font-size:12px;">' + str(d['max']) + 'C / ' + str(d['min']) + 'C</td>'
-                 '<td style="padding:9px 12px;border-bottom:1px solid #1e2840;font-family:monospace;color:#6b7280;font-size:11px;">' + rain + '</td></tr>')
-    return ('<table style="width:100%;border-collapse:collapse;">'
-            '<thead><tr style="background:#141928;">'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Day</th>'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Conditions</th>'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Temp</th>'
-            '<th style="padding:7px 12px;text-align:left;font-family:monospace;font-size:9px;color:#6b7280;text-transform:uppercase;">Rain</th>'
-            '</tr></thead><tbody>' + rows + '</tbody></table>')
+    return ('<tr><td style="padding-bottom:14px;">'
+            '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;">'
+            '<div style="padding:11px 18px;background:#141928;border-bottom:1px solid #1e2840;">'
+            '<span style="font-family:monospace;font-size:10px;letter-spacing:2px;color:#10d9a0;text-transform:uppercase;font-weight:700;">HEALTH & PERFORMANCE</span>'
+            '</div>'
+            '<table style="width:100%;border-collapse:collapse;"><tr>' + items + '</tr></table>'
+            '</div></td></tr>')
 
 h = NOW.hour
 greeting = "Good morning" if h < 12 else "Good afternoon" if h < 17 else "Good evening"
 
-verdict = ""
+verdict_block = ""
 if S.get('verdict'):
-    verdict = ('<tr><td style="padding-bottom:14px;">'
-               '<div style="background:linear-gradient(135deg,#1d4ed8,#2563eb);border-radius:12px;padding:22px;">'
-               '<div style="font-family:monospace;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:10px;">SHADOW VERDICT</div>'
-               '<div style="font-size:15px;color:#fff;line-height:1.75;font-weight:500;">' + fmt(S['verdict']) + '</div>'
-               '</div></td></tr>')
-
-earn_block = ""
-if earnings:
-    earn_block = ('<tr><td style="padding-bottom:14px;">'
-                  '<div style="background:#0e1220;border:1px solid #f59e0b;border-radius:12px;overflow:hidden;">'
-                  '<div style="padding:11px 18px;background:#141928;border-bottom:1px solid #1e2840;">'
-                  '<span style="font-family:monospace;font-size:11px;letter-spacing:2px;color:#f59e0b;text-transform:uppercase;font-weight:700;">EARNINGS THIS WEEK</span>'
-                  '</div>' + earn_table() + '</div></td></tr>')
+    verdict_block = ('<tr><td style="padding-bottom:14px;">'
+                     '<div style="background:linear-gradient(135deg,#1d4ed8,#2563eb);border-radius:12px;padding:22px;">'
+                     '<div style="font-family:monospace;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:10px;">SHADOW VERDICT</div>'
+                     '<div style="font-size:15px;color:#fff;line-height:1.75;font-weight:500;">' + fmt(S['verdict']) + '</div>'
+                     '</div></td></tr>')
 
 html = (
     '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">'
@@ -452,97 +594,91 @@ html = (
     '<table width="100%" cellpadding="0" cellspacing="0" style="background:#060810;">'
     '<tr><td align="center" style="padding:20px 12px;">'
     '<table width="700" cellpadding="0" cellspacing="0" style="max-width:700px;width:100%;">'
-
     '<tr><td style="padding-bottom:14px;">'
     '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:16px;padding:28px;text-align:center;">'
     '<div style="font-family:monospace;font-size:40px;font-weight:900;letter-spacing:10px;color:#4f8ef7;margin-bottom:6px;">SHADOW</div>'
     '<div style="font-family:monospace;font-size:10px;letter-spacing:3px;color:#454d60;text-transform:uppercase;margin-bottom:18px;">MORNING INTELLIGENCE BRIEF</div>'
-    '<div style="font-family:monospace;font-size:12px;color:#7889a8;">' + TODAY_STR + ' &nbsp;|&nbsp; ' + TIME_STR + ' &nbsp;|&nbsp; Abu Dhabi GMT+4</div>'
+    '<div style="font-family:monospace;font-size:12px;color:#7889a8;">' + TODAY_STR + ' - ' + TIME_STR + ' - Abu Dhabi GMT+4</div>'
     '</div></td></tr>'
-
     '<tr><td style="padding-bottom:14px;">'
     '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;padding:18px 22px;">'
     '<div style="font-size:20px;font-weight:700;color:#e2e8f8;margin-bottom:5px;">' + greeting + ', ' + USER_NAME + '.</div>'
-    '<div style="font-size:13px;color:#6b7280;line-height:1.6;">Your morning intelligence brief is ready. ' + str(len(portfolio)) + ' holdings tracked &nbsp;|&nbsp; ' + str(len(all_news)) + ' news items &nbsp;|&nbsp; ' + str(sum(1 for v in S.values() if v)) + '/10 sections</div>'
+    '<div style="font-size:13px;color:#6b7280;line-height:1.6;">Your morning intelligence brief is ready. ' + str(len(portfolio)) + ' holdings - ' + str(len(all_news)) + ' news items - ' + str(filled) + '/11 sections</div>'
     '</div></td></tr>'
-
-    + verdict +
-
-    '<tr><td style="padding-bottom:14px;">'
+    + verdict_block
+    + garmin_card()
+    + '<tr><td style="padding-bottom:14px;">'
     '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;">'
     '<div style="padding:11px 18px;background:#141928;border-bottom:1px solid #1e2840;">'
     '<span style="font-family:monospace;font-size:10px;letter-spacing:2px;color:#4f8ef7;text-transform:uppercase;font-weight:700;">US EQUITIES</span>'
-    '</div>' + ticker_row() + indices_row() + macro_row() + '</div></td></tr>'
-
-    '<tr><td style="padding-bottom:14px;">'
-    '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;">'
-    '<div style="padding:11px 18px;background:#141928;border-bottom:1px solid #1e2840;">'
-    '<span style="font-family:monospace;font-size:11px;letter-spacing:2px;color:#4f8ef7;text-transform:uppercase;font-weight:700;">YOUR PORTFOLIO</span>'
-    '</div>' + port_table() + '</div></td></tr>'
-
-    + earn_block +
-
-    '<tr><td style="padding-bottom:14px;">'
-    '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;">'
-    '<div style="padding:11px 18px;background:#141928;border-bottom:1px solid #1e2840;">'
-    '<span style="font-family:monospace;font-size:11px;letter-spacing:2px;color:#7889a8;text-transform:uppercase;font-weight:700;">STOCK NEWS</span>'
-    '</div>' + news_items() + '</div></td></tr>'
-
+    '</div>' + ticker_row() + '</div></td></tr>'
     '<tr><td>'
     + sec('MARKET OPEN ANALYSIS', S.get('market',''), '#4f8ef7')
     + sec('PORTFOLIO INTELLIGENCE', S.get('portfolio',''), '#10d9a0')
-    + sec('EARNINGS ANALYSIS', S.get('earnings',''), '#f59e0b')
-    + sec('AI & TECHNOLOGY', S.get('ai',''), '#a855f7')
+    + sec('EARNINGS WATCH', S.get('earnings',''), '#f59e0b')
+    + sec('STOCK NEWS', S.get('news',''), '#7889a8')
+    + sec('AI AND TECHNOLOGY', S.get('ai_tech',''), '#a855f7')
     + sec('GEOPOLITICAL INTELLIGENCE', S.get('geo',''), '#f59e0b')
-    + '</td></tr>'
-
-    '<tr><td style="padding-bottom:14px;">'
-    '<div style="background:#0e1220;border:1px solid #1e2840;border-radius:12px;overflow:hidden;">'
-    '<div style="padding:11px 18px;background:#141928;border-bottom:1px solid #1e2840;">'
-    '<span style="font-family:monospace;font-size:11px;letter-spacing:2px;color:#10d9a0;text-transform:uppercase;font-weight:700;">ABU DHABI WEATHER</span>'
-    '</div>' + weather_table() + '</div></td></tr>'
-
-    '<tr><td>'
-    + sec('TASKS & PRIORITIES', S.get('tasks',''), '#10d9a0')
+    + sec('ABU DHABI WEATHER', S.get('weather',''), '#10d9a0')
+    + sec('HEALTH AND PERFORMANCE', S.get('health',''), '#10d9a0')
+    + sec('TASKS AND PRIORITIES', S.get('tasks',''), '#4f8ef7')
     + sec('TRAVEL INTELLIGENCE', S.get('travel',''), '#f59e0b')
     + '</td></tr>'
-
     '<tr><td style="text-align:center;padding:20px 0;">'
     '<a href="https://aistudioaj.github.io/project-shadow/" style="display:inline-block;background:linear-gradient(135deg,#1d4ed8,#4f8ef7);color:#fff;text-decoration:none;padding:13px 32px;border-radius:10px;font-family:monospace;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">OPEN SHADOW</a>'
     '</td></tr>'
-
     '<tr><td style="padding:16px;text-align:center;border-top:1px solid #1e2840;">'
-    '<div style="font-family:monospace;font-size:10px;color:#3d4d6a;">PROJECT SHADOW &nbsp;|&nbsp; ' + TODAY_STR + ' &nbsp;|&nbsp; Abu Dhabi UAE</div>'
+    '<div style="font-family:monospace;font-size:10px;color:#3d4d6a;">PROJECT SHADOW - ' + TODAY_STR + ' - Abu Dhabi UAE</div>'
     '</td></tr>'
-
     '</table></td></tr></table></body></html>'
 )
+
+# -- SAVE TO SUPABASE --
 print("Saving brief to Supabase...")
 try:
-    brief_data = {"user_id": USER_ID, "brief_date": NOW.strftime('%Y-%m-%d'), "verdict": S.get('verdict',''), "market": S.get('market',''), "portfolio": S.get('portfolio',''), "earnings": S.get('earnings',''), "news": S.get('news',''), "ai_tech": S.get('ai',''), "geopolitical": S.get('geo',''), "weather": S.get('weather',''), "tasks": S.get('tasks',''), "travel": S.get('travel',''), "sections_count": sum(1 for v in S.values() if v)}
+    brief_data = {
+        "user_id": USER_ID,
+        "brief_date": NOW.strftime('%Y-%m-%d'),
+        "verdict": S.get('verdict',''),
+        "market": S.get('market',''),
+        "portfolio": S.get('portfolio',''),
+        "earnings": S.get('earnings',''),
+        "news": S.get('news',''),
+        "ai_tech": S.get('ai_tech',''),
+        "geopolitical": S.get('geo',''),
+        "weather": S.get('weather',''),
+        "tasks": S.get('tasks',''),
+        "travel": S.get('travel',''),
+        "sections_count": filled
+    }
     headers2 = {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json'}
     r2 = requests.post(SUPABASE_URL + "/rest/v1/shadow_briefs", headers=headers2, json=brief_data, timeout=10)
     print("  Brief saved: " + str(r2.status_code))
 except Exception as e:
     print("  Brief save error: " + str(e))
+
+# -- SEND EMAIL --
 print("Sending via Resend...")
-plain = "Shadow Morning Brief " + TODAY_STR + "\n\n" + "\n\n".join([k.upper() + ":\n" + v for k,v in S.items() if v])
-plain += "\n\nOpen Shadow: https://aistudioaj.github.io/project-shadow/"
+plain = "Shadow Morning Brief " + TODAY_STR + "\n\n"
+for key, val in S.items():
+    if val:
+        plain += key.upper() + ":\n" + val + "\n\n"
+plain += "Open Shadow: https://aistudioaj.github.io/project-shadow/"
 
 try:
     r = requests.post(
         "https://api.resend.com/emails",
         headers={"Authorization": "Bearer " + RESEND_KEY, "Content-Type": "application/json"},
-        json={"from": "Shadow AI <onboarding@resend.dev>", "to": [EMAIL_TO], "subject": "Shadow Brief " + DATE_SHORT + " | " + str(len(portfolio)) + " Holdings | " + str(len(all_news)) + " News", "text": plain, "html": html},
+        json={"from": "Shadow AI <onboarding@resend.dev>", "to": [EMAIL_TO], "subject": "Shadow Brief " + DATE_SHORT + " | " + str(filled) + "/11 sections | " + str(len(portfolio)) + " Holdings", "text": plain, "html": html},
         timeout=30
     )
     if r.status_code in [200,201]:
         print("Email sent to " + EMAIL_TO)
     else:
         print("Resend error: " + str(r.status_code) + " " + r.text)
-        raise Exception("Resend failed: " + r.text)
+        raise Exception("Resend failed")
 except Exception as e:
     print("Email error: " + str(e))
     raise
 
-print("Shadow Morning Brief v2 complete! " + TODAY_STR)
+print("Shadow Morning Brief v4 complete! " + TODAY_STR + " | " + str(filled) + "/11 sections")
