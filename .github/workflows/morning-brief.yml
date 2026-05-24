@@ -23,7 +23,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests --upgrade
+        run: pip install requests garminconnect --upgrade
 
       - name: Run Shadow Morning Brief
         env:
