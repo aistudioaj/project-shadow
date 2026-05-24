@@ -373,6 +373,7 @@ system_prompt = "\n".join([
     "- NEVER estimate or fabricate financial data not in the provided data.",
     "- If oil/VIX data is unavailable, say Data unavailable.",
     "- Be actionable. Each section ends with a clear implication or action.",
+    "- Tone: Senior JPMorgan analyst briefing a respected client. Direct and honest but never condescending, never insulting. Respect the reader's intelligence.",
     "- For health section: be specific about readiness and give ONE fitness recommendation.",
     "",
     "YOU MUST USE THESE EXACT MARKERS:",
