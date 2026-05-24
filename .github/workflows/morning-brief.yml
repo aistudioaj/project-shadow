@@ -35,6 +35,8 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           RESEND_KEY: ${{ secrets.RESEND_KEY }}
+          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
           USER_ID: abdulrahman
           USER_NAME: AJ
         run: python scripts/morning_brief.py
