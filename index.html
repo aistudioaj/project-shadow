@@ -803,6 +803,16 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .mem-key{font-size:13px;font-weight:500;color:var(--t1);margin-bottom:4px}
 .mem-value{font-size:13px;color:var(--t2);line-height:1.5}
 .mem-meta{font-family:var(--font-mono);font-size:10px;color:var(--t3);margin-top:4px}
+.mem-cat-btn{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:1px;
+  text-transform:uppercase;padding:6px 12px;border-radius:6px;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--t3);cursor:pointer;transition:all 0.15s;
+}
+.mem-cat-btn.active{
+  background:var(--blue-dim,rgba(59,130,246,0.15));
+  border-color:var(--blue);color:var(--blue);
+}
 
 /* ── TOAST ── */
 #toast{
@@ -1127,7 +1137,10 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       <div id="meTasksList"><div class="loading-row">Loading tasks...</div></div>
     </div>
     <div class="me-section">
-      <div class="me-section-title">Memory</div>
+      <div class="me-section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Memory</span>
+        <div onclick="openAddMemory()" style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);cursor:pointer;padding:4px 0;opacity:0.9">+ ADD</div>
+      </div>
       <div id="meMemoriesList"><div class="loading-row">Loading memories...</div></div>
     </div>
     <div class="section-gap"></div>
@@ -1169,6 +1182,38 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
       <div onclick="saveHolding()" style="background:var(--blue);border-radius:8px;padding:13px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:2px;box-shadow:0 0 16px var(--blue-glow)">ADD TO PORTFOLIO</div>
     </div>
+  </div>
+</div>
+
+<!-- ADD MEMORY SCREEN -->
+<div class="screen" id="addMemoryScreen">
+  <div class="screen-hdr">
+    <div class="brief-back" onclick="closeAddMemory()" style="font-size:24px;color:var(--t2);cursor:pointer;padding:4px;margin-right:12px">&lsaquo;</div>
+    <div>
+      <div class="screen-title">Add Memory</div>
+      <div class="screen-sub">Teach Shadow something about you</div>
+    </div>
+  </div>
+  <div class="scroll-body" style="padding:20px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Category</div>
+      <div id="memCategoryPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+        <div class="mem-cat-btn active" data-cat="personal" onclick="selectMemCat(this)">Personal</div>
+        <div class="mem-cat-btn" data-cat="financial" onclick="selectMemCat(this)">Financial</div>
+        <div class="mem-cat-btn" data-cat="health" onclick="selectMemCat(this)">Health</div>
+        <div class="mem-cat-btn" data-cat="professional" onclick="selectMemCat(this)">Professional</div>
+        <div class="mem-cat-btn" data-cat="travel" onclick="selectMemCat(this)">Travel</div>
+        <div class="mem-cat-btn" data-cat="preference" onclick="selectMemCat(this)">Preference</div>
+        <div class="mem-cat-btn" data-cat="goal" onclick="selectMemCat(this)">Goal</div>
+        <div class="mem-cat-btn" data-cat="family" onclick="selectMemCat(this)">Family</div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Key <span style="color:var(--t3);font-size:9px;text-transform:none;letter-spacing:0">(short label)</span></div>
+      <input id="memKeyInput" placeholder="e.g. Risk tolerance, Favourite restaurant, Goal weight" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:16px;box-sizing:border-box">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Value <span style="color:var(--t3);font-size:9px;text-transform:none;letter-spacing:0">(the detail)</span></div>
+      <textarea id="memValueInput" placeholder="e.g. Moderate - comfortable with 15% drawdowns but avoid leverage" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:20px;min-height:80px;resize:none;line-height:1.5;box-sizing:border-box"></textarea>
+      <div id="saveMemoryBtn" onclick="saveNewMemory()" style="background:var(--blue);border-radius:8px;padding:13px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:2px;box-shadow:0 0 16px var(--blue-glow)">SAVE TO MEMORY</div>
+    </div>
+    <div style="margin-top:12px;padding:0 4px;font-size:12px;color:var(--t3);line-height:1.6">Shadow uses these memories in every conversation and in your morning brief.</div>
   </div>
 </div>
 
@@ -1270,7 +1315,7 @@ function updateClock(){
 
 // ── NAV ──
 function switchNav(tab,el){
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen'].forEach(id=>{
+  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);
     if(s)s.classList.remove('active');
   });
@@ -1842,6 +1887,59 @@ async function saveToMemory(el){
   }catch(e){showToast('Save failed');}
 }
 
+function openAddMemory(){
+  prevScreen='me';
+  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','tasksScreen'].forEach(id=>{
+    const s=document.getElementById(id);if(s)s.classList.remove('active');
+  });
+  document.getElementById('addMemoryScreen').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.querySelector('[data-tab="me"]');if(nb)nb.classList.add('active');
+  document.getElementById('memKeyInput').value='';
+  document.getElementById('memValueInput').value='';
+  document.querySelectorAll('.mem-cat-btn').forEach(b=>b.classList.remove('active'));
+  const first=document.querySelector('.mem-cat-btn[data-cat="personal"]');if(first)first.classList.add('active');
+}
+
+function closeAddMemory(){
+  document.getElementById('addMemoryScreen').classList.remove('active');
+  switchNav('me');
+}
+
+function selectMemCat(el){
+  document.querySelectorAll('.mem-cat-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function saveNewMemory(){
+  const key=document.getElementById('memKeyInput').value.trim();
+  const value=document.getElementById('memValueInput').value.trim();
+  const catEl=document.querySelector('.mem-cat-btn.active');
+  const category=catEl?catEl.dataset.cat:'personal';
+  if(!key){showToast('Please enter a key');return;}
+  if(!value){showToast('Please enter a value');return;}
+  const btn=document.getElementById('saveMemoryBtn');
+  btn.textContent='SAVING...';btn.style.opacity='0.6';btn.style.pointerEvents='none';
+  try{
+    await db.from('shadow_memory').insert({
+      user_id:UID,
+      category:category,
+      key:key,
+      value:value,
+      importance:5,
+      source:'manual'
+    });
+    showToast('Memory saved');
+    closeAddMemory();
+    await loadMeMemories();
+  }catch(e){
+    console.log('save memory error',e);
+    showToast('Save failed — try again');
+  }finally{
+    btn.textContent='SAVE TO MEMORY';btn.style.opacity='1';btn.style.pointerEvents='auto';
+  }
+}
+
 function openTravelPlanner(){
   prevScreen='me';
   ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen'].forEach(id=>{
@@ -1899,7 +1997,7 @@ async function generateTravelPlan(){
 // ── TASKS SCREEN ──
 function openTasksScreen(){
   prevScreen='me';
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen'].forEach(id=>{
+  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('tasksScreen').classList.add('active');
