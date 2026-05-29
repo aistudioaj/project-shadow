@@ -1250,7 +1250,7 @@ const FINNHUB='https://finnhub.io/api/v1';
 const SB_URL='https://xqdnohqbimfrtalvdmyp.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZG5vaHFiaW1mcnRhbHZkbXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDE3NTYsImV4cCI6MjA5MzQ3Nzc1Nn0.vgvUa0fSaZ6zH-HbYxueth7cyiGJgK3mQtLwNnBivNc';
 const UID='abdulrahman';
-const MODEL='claude-sonnet-4-5';
+const MODEL='claude-sonnet-4-5-20251001';
 const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
 
@@ -1861,7 +1861,8 @@ async function sendMsg(){
       body:JSON.stringify({model:MODEL,max_tokens:1500,system:sysPrompt,messages:chatHistory})
     });
     const data=await r.json();
-    const reply=data.content&&data.content[0]?data.content[0].text:'Sorry, I encountered an error.';
+    if(data.error){console.log('API error:',JSON.stringify(data.error));showToast('API: '+data.error.message);}
+    const reply=data.content&&data.content[0]?data.content[0].text:'Sorry, I encountered an error. Check console for details.';
     if(thinking)thinking.remove();
     const bubble=addMsg('ai',reply);
     chatHistory.push({role:'assistant',content:reply});
