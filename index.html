@@ -1393,7 +1393,8 @@ async function loadMeMemories(){
   const el=document.getElementById('meMemoriesList');
   if(!el)return;
   try{
-    const{data}=await db.from('shadow_memory').select('*').eq('user_id',UID).order('importance',{ascending:false}).limit(20);
+    const{data,error}=await db.from('shadow_memory').select('*').eq('user_id',UID).order('created_at',{ascending:false}).limit(20);
+    if(error)throw error;(20);
     memories=data||[];
     if(!memories.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">🧠</div><div class="empty-state-title">Memory building</div><div class="empty-state-sub">Shadow learns from your conversations</div></div>';return;}
     el.innerHTML=memories.slice(0,10).map(m=>`
