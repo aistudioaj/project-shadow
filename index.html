@@ -1922,20 +1922,19 @@ async function saveNewMemory(){
   const btn=document.getElementById('saveMemoryBtn');
   btn.textContent='SAVING...';btn.style.opacity='0.6';btn.style.pointerEvents='none';
   try{
-    await db.from('shadow_memory').insert({
+    const{error}=await db.from('shadow_memory').insert({
       user_id:UID,
       category:category,
       key:key,
-      value:value,
-      importance:5,
-      source:'manual'
+      value:value
     });
+    if(error)throw error;
     showToast('Memory saved');
     closeAddMemory();
     await loadMeMemories();
   }catch(e){
-    console.log('save memory error',e);
-    showToast('Save failed — try again');
+    console.log('save memory error',JSON.stringify(e));
+    showToast('Save failed: '+(e.message||'check console'));
   }finally{
     btn.textContent='SAVE TO MEMORY';btn.style.opacity='1';btn.style.pointerEvents='auto';
   }
