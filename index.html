@@ -943,13 +943,14 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 <div class="screen" id="financialScreen">
   <div class="screen-hdr">
     <div>
-      <div class="screen-title">Intelligence</div>
-      <div class="screen-sub">Markets & Portfolio</div>
+      <div class="screen-title">Financial</div>
+      <div class="screen-sub">Markets, Portfolio & Budget</div>
     </div>
   </div>
   <div class="intel-tabs" id="intelTabs">
     <div class="intel-tab active" onclick="switchIntelTab('markets',this)">Markets</div>
     <div class="intel-tab" onclick="switchIntelTab('portfolio',this)">Portfolio</div>
+    <div class="intel-tab" onclick="switchIntelTab('budget',this)">Budget</div>
     <div class="intel-tab" onclick="switchIntelTab('briefs',this)">Briefs</div>
   </div>
   <!-- Markets Panel -->
@@ -974,6 +975,33 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   <!-- Briefs Panel -->
   <div id="briefsPanel" class="scroll-body" style="display:none">
     <div id="briefsHistoryList"><div class="loading-row">Loading briefs...</div></div>
+  </div>
+  <!-- Budget Panel -->
+  <div id="budgetPanel" class="scroll-body" style="display:none">
+    <div style="padding:12px 20px 0;display:flex;justify-content:flex-end">
+      <div onclick="openAddBudget()" style="background:var(--blue);border-radius:8px;padding:7px 14px;font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;cursor:pointer;box-shadow:0 0 12px var(--blue-glow)">+ ADD</div>
+    </div>
+    <!-- Monthly Summary -->
+    <div id="budgetSummary" style="margin:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:12px" id="budgetMonth">This Month</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--t3);margin-bottom:4px">INCOME</div>
+          <div id="budgetIncome" style="font-family:var(--font-display);font-size:18px;color:#4ade80">$0</div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--t3);margin-bottom:4px">EXPENSES</div>
+          <div id="budgetExpenses" style="font-family:var(--font-display);font-size:18px;color:#f87171">$0</div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--t3);margin-bottom:4px">NET</div>
+          <div id="budgetNet" style="font-family:var(--font-display);font-size:18px;color:var(--t1)">$0</div>
+        </div>
+      </div>
+    </div>
+    <!-- Transactions -->
+    <div id="budgetList"><div class="loading-row">Loading transactions...</div></div>
+    <div style="height:20px"></div>
   </div>
 </div>
 
@@ -1244,6 +1272,51 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
 </div>
 
+<!-- ADD BUDGET SCREEN -->
+<div class="screen" id="addBudgetScreen">
+  <div class="screen-hdr">
+    <div class="brief-back" onclick="closeAddBudget()" style="font-size:24px;color:var(--t2);cursor:pointer;padding:4px;margin-right:12px">&lsaquo;</div>
+    <div>
+      <div class="screen-title">Add Transaction</div>
+      <div class="screen-sub">Track your income and expenses</div>
+    </div>
+  </div>
+  <div class="scroll-body" style="padding:20px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px">
+      <!-- Income / Expense Toggle -->
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <div id="typeIncome" onclick="selectBudgetType('income')" style="flex:1;padding:10px;text-align:center;border-radius:8px;border:1px solid #4ade80;background:rgba(74,222,128,0.15);color:#4ade80;font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;cursor:pointer">INCOME</div>
+        <div id="typeExpense" onclick="selectBudgetType('expense')" style="flex:1;padding:10px;text-align:center;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--t3);font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;cursor:pointer">EXPENSE</div>
+      </div>
+      <!-- Category -->
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Category</div>
+      <div id="budgetCategoryPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+        <div class="mem-cat-btn active" data-cat="Salary" onclick="selectBudgetCat(this)">Salary</div>
+        <div class="mem-cat-btn" data-cat="Investment" onclick="selectBudgetCat(this)">Investment</div>
+        <div class="mem-cat-btn" data-cat="Food" onclick="selectBudgetCat(this)">Food</div>
+        <div class="mem-cat-btn" data-cat="Transport" onclick="selectBudgetCat(this)">Transport</div>
+        <div class="mem-cat-btn" data-cat="Housing" onclick="selectBudgetCat(this)">Housing</div>
+        <div class="mem-cat-btn" data-cat="Health" onclick="selectBudgetCat(this)">Health</div>
+        <div class="mem-cat-btn" data-cat="Shopping" onclick="selectBudgetCat(this)">Shopping</div>
+        <div class="mem-cat-btn" data-cat="Entertainment" onclick="selectBudgetCat(this)">Entertainment</div>
+        <div class="mem-cat-btn" data-cat="Travel" onclick="selectBudgetCat(this)">Travel</div>
+        <div class="mem-cat-btn" data-cat="Other" onclick="selectBudgetCat(this)">Other</div>
+      </div>
+      <!-- Amount -->
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Amount (AED)</div>
+      <input id="budgetAmount" type="number" placeholder="0.00" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-display);font-size:20px;outline:none;margin-bottom:16px;box-sizing:border-box">
+      <!-- Description -->
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Description</div>
+      <input id="budgetDesc" placeholder="e.g. Grocery run, Monthly rent, Salary deposit" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:16px;box-sizing:border-box">
+      <!-- Date -->
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Date</div>
+      <input id="budgetDate" type="date" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--t1);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:20px;box-sizing:border-box">
+      <!-- Save -->
+      <div id="saveBudgetBtn" onclick="saveTransaction()" style="background:var(--blue);border-radius:8px;padding:13px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:2px;box-shadow:0 0 16px var(--blue-glow)">SAVE TRANSACTION</div>
+    </div>
+  </div>
+</div>
+
 <!-- BOTTOM NAV -->
 <div id="nav">
   <div class="nav-btn active" data-tab="home" onclick="switchNav('home',this)">
@@ -1342,7 +1415,7 @@ function updateClock(){
 
 // ── NAV ──
 function switchNav(tab,el){
-  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);
     if(s)s.classList.remove('active');
   });
@@ -1361,7 +1434,7 @@ function switchTab(tab,el){switchNav(tab,el);}
 
 // ── INTEL TABS ──
 function switchIntelTab(tab,el){
-  ['marketsPanel','portfolioPanel','briefsPanel'].forEach(id=>{
+  ['marketsPanel','portfolioPanel','briefsPanel','budgetPanel'].forEach(id=>{
     const p=document.getElementById(id);
     if(p)p.style.display='none';
   });
@@ -1370,6 +1443,137 @@ function switchIntelTab(tab,el){
   if(el)el.classList.add('active');
   if(tab==='portfolio')renderPortfolio();
   if(tab==='briefs')loadBriefHistory();
+  if(tab==='budget')loadBudget();
+}
+
+let budgetType='income';
+let budgetTransactions=[];
+
+function selectBudgetType(type){
+  budgetType=type;
+  const inc=document.getElementById('typeIncome');
+  const exp=document.getElementById('typeExpense');
+  if(type==='income'){
+    inc.style.background='rgba(74,222,128,0.15)';inc.style.borderColor='#4ade80';inc.style.color='#4ade80';
+    exp.style.background='var(--bg3)';exp.style.borderColor='var(--border)';exp.style.color='var(--t3)';
+    // Update category pills for income
+    const cats=['Salary','Investment','Freelance','Rental','Dividend','Other'];
+    updateBudgetCats(cats);
+  } else {
+    exp.style.background='rgba(248,113,113,0.15)';exp.style.borderColor='#f87171';exp.style.color='#f87171';
+    inc.style.background='var(--bg3)';inc.style.borderColor='var(--border)';inc.style.color='var(--t3)';
+    // Update category pills for expense
+    const cats=['Food','Transport','Housing','Health','Shopping','Entertainment','Travel','Education','Utilities','Other'];
+    updateBudgetCats(cats);
+  }
+}
+
+function updateBudgetCats(cats){
+  const picker=document.getElementById('budgetCategoryPicker');
+  if(!picker)return;
+  picker.innerHTML=cats.map((c,i)=>
+    `<div class="mem-cat-btn${i===0?' active':''}" data-cat="${c}" onclick="selectBudgetCat(this)">${c}</div>`
+  ).join('');
+}
+
+function selectBudgetCat(el){
+  document.querySelectorAll('#budgetCategoryPicker .mem-cat-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openAddBudget(){
+  prevScreen='financial';
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
+    const s=document.getElementById(id);if(s)s.classList.remove('active');
+  });
+  document.getElementById('addBudgetScreen').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.querySelector('[data-tab="financial"]');if(nb)nb.classList.add('active');
+  // Reset form
+  document.getElementById('budgetAmount').value='';
+  document.getElementById('budgetDesc').value='';
+  document.getElementById('budgetDate').value=new Date().toISOString().split('T')[0];
+  selectBudgetType('income');
+}
+
+function closeAddBudget(){
+  document.getElementById('addBudgetScreen').classList.remove('active');
+  switchNav('financial');
+  setTimeout(()=>switchIntelTab('budget',document.querySelector('.intel-tab:nth-child(3)')),100);
+}
+
+async function saveTransaction(){
+  const amount=parseFloat(document.getElementById('budgetAmount').value);
+  const desc=document.getElementById('budgetDesc').value.trim();
+  const date=document.getElementById('budgetDate').value;
+  const catEl=document.querySelector('#budgetCategoryPicker .mem-cat-btn.active');
+  const category=catEl?catEl.dataset.cat:'Other';
+  if(!amount||amount<=0){showToast('Please enter an amount');return;}
+  if(!date){showToast('Please select a date');return;}
+  const btn=document.getElementById('saveBudgetBtn');
+  btn.textContent='SAVING...';btn.style.opacity='0.6';btn.style.pointerEvents='none';
+  try{
+    const{error}=await db.from('shadow_budget').insert({
+      user_id:UID,
+      type:budgetType,
+      category:category,
+      amount:amount,
+      description:desc||category,
+      date:date
+    });
+    if(error)throw error;
+    showToast('Transaction saved');
+    closeAddBudget();
+  }catch(e){
+    console.log('budget save error',JSON.stringify(e));
+    showToast('Save failed: '+(e.message||'check console'));
+  }finally{
+    btn.textContent='SAVE TRANSACTION';btn.style.opacity='1';btn.style.pointerEvents='auto';
+  }
+}
+
+async function loadBudget(){
+  const el=document.getElementById('budgetList');
+  const now=new Date();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().split('T')[0];
+  document.getElementById('budgetMonth').textContent=now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  try{
+    const{data,error}=await db.from('shadow_budget').select('*').eq('user_id',UID).gte('date',monthStart).lte('date',monthEnd).order('date',{ascending:false});
+    if(error)throw error;
+    budgetTransactions=data||[];
+    // Calculate totals
+    let income=0,expenses=0;
+    budgetTransactions.forEach(t=>{
+      if(t.type==='income')income+=parseFloat(t.amount)||0;
+      else expenses+=parseFloat(t.amount)||0;
+    });
+    const net=income-expenses;
+    document.getElementById('budgetIncome').textContent='AED '+income.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    document.getElementById('budgetExpenses').textContent='AED '+expenses.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    const netEl=document.getElementById('budgetNet');
+    netEl.textContent=(net>=0?'+':'')+'AED '+Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    netEl.style.color=net>=0?'#4ade80':'#f87171';
+    // Render list
+    if(!budgetTransactions.length){
+      el.innerHTML='<div class="empty-state"><div class="empty-state-icon">💰</div><div class="empty-state-title">No transactions yet</div><div class="empty-state-sub">Tap + ADD to track your first transaction</div></div>';
+      return;
+    }
+    el.innerHTML=budgetTransactions.map(t=>`
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:8px;background:${t.type==='income'?'rgba(74,222,128,0.1)':'rgba(248,113,113,0.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${t.type==='income'?'↑':'↓'}</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--t1)">${t.description||t.category}</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);margin-top:2px">${t.category} · ${new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+          </div>
+        </div>
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:${t.type==='income'?'#4ade80':'#f87171'}">${t.type==='income'?'+':'-'}AED ${parseFloat(t.amount).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+      </div>`).join('');
+  }catch(e){
+    console.log('load budget error',e);
+    if(el)el.innerHTML='<div class="loading-row">Error loading transactions</div>';
+  }
 }
 
 // ── SUPABASE ──
@@ -1759,7 +1963,7 @@ function openShadowChat(){
 function openSpec(spec){
   currentSpec=spec;
   // Ensure lifeScreen is active, hide all others
-  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('lifeScreen').classList.add('active');
@@ -1919,6 +2123,7 @@ async function sendMsg(){
       +(taskCtx?'\n\nTASKS: '+taskCtx:'')
       +(memCtx?'\n\nMEMORY (know these facts about the user):\n'+memCtx:'')
       +(verdictCtx?'\n\nTODAY\'S BRIEF: '+verdictCtx:'')
+      +(budgetTransactions&&budgetTransactions.length?'\n\nBUDGET (this month): Income AED '+budgetTransactions.filter(t=>t.type==='income').reduce((s,t)=>s+parseFloat(t.amount||0),0).toFixed(0)+' | Expenses AED '+budgetTransactions.filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount||0),0).toFixed(0):'')
       +(searchCtx?'\n\nWEB SEARCH RESULTS (today\'s live data, use this to answer):\n'+searchCtx:'')
       +'\n\nIMPORTANT: Use this context to give personalized, specific answers. Reference their actual holdings, tasks and memories. Be their knowledgeable personal advisor, not a generic assistant.';
     const r=await fetch(PROXY,{
@@ -1959,7 +2164,7 @@ function openAddMemory(){
   ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
-  document.getElementById('addMemoryScreen').classList.add('active');
+  document.getElementById('addMemoryScreen','addBudgetScreen').classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const nb=document.querySelector('[data-tab="me"]');if(nb)nb.classList.add('active');
   document.getElementById('memKeyInput').value='';
@@ -1969,7 +2174,7 @@ function openAddMemory(){
 }
 
 function closeAddMemory(){
-  document.getElementById('addMemoryScreen').classList.remove('active');
+  document.getElementById('addMemoryScreen','addBudgetScreen').classList.remove('active');
   switchNav('me');
 }
 
@@ -2063,7 +2268,7 @@ async function generateTravelPlan(){
 // ── TASKS SCREEN ──
 function openTasksScreen(){
   prevScreen='me';
-  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('tasksScreen').classList.add('active');
