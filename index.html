@@ -889,7 +889,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 </div>
 
 <!-- TODAY SCREEN -->
-<div class="screen" id="todayScreen">
+<div class="screen" id="homeScreen">
   <div class="home-hdr">
     <div class="home-greeting" id="homeGreeting">Good morning</div>
     <div class="home-date" id="homeDate"></div>
@@ -940,7 +940,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 </div>
 
 <!-- INTELLIGENCE SCREEN -->
-<div class="screen" id="intelligenceScreen">
+<div class="screen" id="financialScreen">
   <div class="screen-hdr">
     <div>
       <div class="screen-title">Intelligence</div>
@@ -978,7 +978,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 </div>
 
 <!-- SHADOW (CHAT) SCREEN -->
-<div class="screen" id="shadowScreen">
+<div class="screen" id="lifeScreen">
   <!-- Specialist Selector -->
   <div id="specialistSelector" style="display:flex;flex-direction:column;overflow:hidden;flex:1">
     <div class="screen-hdr">
@@ -1123,7 +1123,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   <div class="scroll-body">
     <div class="me-section" style="margin-top:16px">
       <div class="me-section-title">Quick Access</div>
-      <div class="me-row" onclick="switchIntelTab('portfolio',null);switchNav('intelligence')">
+      <div class="me-row" onclick="switchIntelTab('portfolio',null);switchNav('financial')">
         <div class="me-row-icon">📊</div>
         <div class="me-row-info">
           <div class="me-row-title">Portfolio</div>
@@ -1139,7 +1139,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
         </div>
         <div class="me-row-arrow">›</div>
       </div>
-      <div class="me-row" onclick="switchNav('today');setTimeout(()=>document.getElementById('todayScreen').scrollTop=0,100)">
+      <div class="me-row" onclick="switchNav('home');setTimeout(()=>document.getElementById('homeScreen').scrollTop=0,100)">
         <div class="me-row-icon">🌅</div>
         <div class="me-row-info">
           <div class="me-row-title">Morning Brief</div>
@@ -1246,18 +1246,18 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
 <!-- BOTTOM NAV -->
 <div id="nav">
-  <div class="nav-btn active" data-tab="today" onclick="switchNav('today',this)">
-    <div class="nav-icon">⚡</div>
-    <div class="nav-lbl">Today</div>
+  <div class="nav-btn active" data-tab="home" onclick="switchNav('today',this)">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-lbl">Home</div>
     <div class="nav-badge" id="alertBadge"></div>
   </div>
-  <div class="nav-btn" data-tab="intelligence" onclick="switchNav('intelligence',this)">
-    <div class="nav-icon">📊</div>
-    <div class="nav-lbl">Intel</div>
+  <div class="nav-btn" data-tab="financial" onclick="switchNav('intelligence',this)">
+    <div class="nav-icon">💰</div>
+    <div class="nav-lbl">Financial</div>
   </div>
-  <div class="nav-btn" data-tab="shadow" onclick="switchNav('shadow',this)">
-    <div class="nav-icon">💬</div>
-    <div class="nav-lbl">Shadow</div>
+  <div class="nav-btn" data-tab="life" onclick="switchNav('shadow',this)">
+    <div class="nav-icon">🌿</div>
+    <div class="nav-lbl">Life</div>
   </div>
   <div class="nav-btn" data-tab="me" onclick="switchNav('me',this)">
     <div class="nav-icon">👤</div>
@@ -1306,7 +1306,7 @@ let specSystems={
   fitness:'You are Shadow Fitness Coach for AJ who runs 5K and cycles. Give specific, science-based advice on workouts, nutrition and recovery.'
 };
 let chatHistory=[];
-let prevScreen='today';
+let prevScreen='home';
 
 // ── UTILS ──
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -1342,7 +1342,7 @@ function updateClock(){
 
 // ── NAV ──
 function switchNav(tab,el){
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);
     if(s)s.classList.remove('active');
   });
@@ -1351,9 +1351,9 @@ function switchNav(tab,el){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   else{const nb=document.querySelector('[data-tab="'+tab+'"]');if(nb)nb.classList.add('active');}
-  if(tab==='intelligence')fetchAllMarketData();
+  if(tab==='financial')fetchAllMarketData();
   if(tab==='me'){loadMeTasks();loadMeMemories();}
-  if(tab==='today')loadTodayBrief();
+  if(tab==='home')loadTodayBrief();
 }
 
 // Keep compatibility
@@ -1671,7 +1671,7 @@ function openBrief(){
   // Track which screen we came from
   const activeScreen=document.querySelector('.screen.active');
   if(activeScreen)prevScreen=activeScreen.id.replace('Screen','');
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('briefScreen').classList.add('active');
@@ -1680,7 +1680,7 @@ function openBrief(){
 
 function closeBrief(){
   document.getElementById('briefScreen').classList.remove('active');
-  const returnTab=prevScreen||'today';
+  const returnTab=prevScreen||'home';
   switchNav(returnTab);
 }
 
@@ -1748,7 +1748,7 @@ async function loadBriefById(id){
 
 // ── CHAT ──
 function openShadowChat(){
-  switchNav('shadow');
+  switchNav('life');
   setTimeout(()=>{
     openSpec('master');
     const input=document.getElementById('chatInput');
@@ -1759,12 +1759,12 @@ function openShadowChat(){
 function openSpec(spec){
   currentSpec=spec;
   // Ensure shadowScreen is active
-  ['todayScreen','intelligenceScreen','meScreen','briefScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','meScreen','briefScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
-  document.getElementById('shadowScreen').classList.add('active');
+  document.getElementById('lifeScreen').classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const nb=document.querySelector('[data-tab="shadow"]');if(nb)nb.classList.add('active');
+  const nb=document.querySelector('[data-tab="life"]');if(nb)nb.classList.add('active');
   const sel=document.getElementById('specialistSelector');
   const chat=document.getElementById('chatContainer');
   if(sel)sel.style.display='none';
@@ -1956,7 +1956,7 @@ async function saveToMemory(el){
 
 function openAddMemory(){
   prevScreen='me';
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('addMemoryScreen').classList.add('active');
@@ -2008,7 +2008,7 @@ async function saveNewMemory(){
 
 function openTravelPlanner(){
   prevScreen='me';
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('travelScreen').classList.add('active');
@@ -2063,7 +2063,7 @@ async function generateTravelPlan(){
 // ── TASKS SCREEN ──
 function openTasksScreen(){
   prevScreen='me';
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('tasksScreen').classList.add('active');
@@ -2172,7 +2172,7 @@ async function toggleFullTask(id,el,currentStatus){
 // ── ADD HOLDING SCREEN ──
 function openAddHolding(){
   prevScreen='me';
-  ['todayScreen','intelligenceScreen','shadowScreen','meScreen','briefScreen','travelScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('addHoldingScreen').classList.add('active');
@@ -2205,7 +2205,7 @@ async function saveHolding(){
     });
     closeAddHolding();
     switchIntelTab('portfolio',null);
-    switchNav('intelligence');
+    switchNav('financial');
   }catch(e){showToast('Error saving holding');console.log(e);}
 }
 
@@ -2319,7 +2319,7 @@ async function init(){
   if(splash)splash.classList.add('out');
   setTimeout(()=>{if(splash)splash.style.display='none';},700);
   // Activate home
-  document.getElementById('todayScreen').classList.add('active');
+  document.getElementById('homeScreen').classList.add('active');
   // Intervals
   setInterval(updateClock,60000);
   setInterval(fetchAllMarketData,60000);
