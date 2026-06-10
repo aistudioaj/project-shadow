@@ -658,6 +658,27 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   display:flex;gap:10px;align-items:flex-end;
   flex-shrink:0;
 }
+.chat-toolbar{
+  padding:6px 16px 0;
+  display:flex;align-items:center;gap:8px;
+  flex-shrink:0;
+}
+.search-toggle{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;padding:4px 10px;border-radius:6px;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--t3);cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;gap:5px;
+}
+.search-toggle.active{
+  background:rgba(59,130,246,0.12);border-color:var(--blue);
+  color:var(--blue);box-shadow:0 0 8px rgba(59,130,246,0.2);
+}
+.search-toggle-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--t3);transition:background 0.15s;
+}
+.search-toggle.active .search-toggle-dot{background:var(--blue);}
 .chat-input{
   flex:1;background:var(--bg2);
   border:1px solid var(--border);border-radius:var(--r);
@@ -1014,6 +1035,12 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
     </div>
     <div class="chat-msgs" id="chatMsgs"></div>
+    <div class="chat-toolbar">
+      <div class="search-toggle" id="searchToggle" onclick="toggleWebSearch()">
+        <div class="search-toggle-dot"></div>
+        WEB
+      </div>
+    </div>
     <div class="chat-input-wrap">
       <div class="mic-btn" onclick="toggleMic()" id="micBtn">🎙️</div>
       <textarea class="chat-input" id="chatInput" placeholder="Message Shadow..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
@@ -1804,6 +1831,35 @@ function handleKey(e){
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}
 }
 
+let webSearchOn=false;
+
+function toggleWebSearch(){
+  webSearchOn=!webSearchOn;
+  const btn=document.getElementById('searchToggle');
+  if(btn)btn.classList.toggle('active',webSearchOn);
+  showToast(webSearchOn?'Web search ON':'Web search OFF');
+}
+
+async function doTavilySearch(query){
+  try{
+    const r=await fetch(PROXY+'?service=tavily',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:query})
+    });
+    const data=await r.json();
+    if(!data.results||!data.results.length)return '';
+    const summary=data.answer?'Summary: '+data.answer+'\n\n':'';
+    const results=data.results.slice(0,5).map((r,i)=>
+      (i+1)+'. '+r.title+'\n'+r.content.substring(0,200)
+    ).join('\n\n');
+    return summary+'Recent web results:\n'+results;
+  }catch(e){
+    console.log('Tavily error',e);
+    return '';
+  }
+}
+
 async function sendMsg(){
   if(elAudio){elAudio.pause();elAudio=null;}
   if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
@@ -1818,6 +1874,14 @@ async function sendMsg(){
   try{
     const statusEl=document.getElementById('chatStatus');
     if(statusEl)statusEl.textContent='THINKING...';
+
+    // Web search if enabled
+    let searchCtx='';
+    if(webSearchOn){
+      if(statusEl)statusEl.textContent='SEARCHING...';
+      searchCtx=await doTavilySearch(txt);
+      if(statusEl)statusEl.textContent='THINKING...';
+    }
     // Build rich context from all available data
     const memCtx=memories.slice(0,15).map(m=>m.key+': '+m.value).join('\n');
     const mktCtx=Object.entries(mktData).map(([s,d])=>s+': $'+d.price.toFixed(2)+' ('+d.pct.toFixed(2)+'%)').join(', ');
@@ -1855,6 +1919,7 @@ async function sendMsg(){
       +(taskCtx?'\n\nTASKS: '+taskCtx:'')
       +(memCtx?'\n\nMEMORY (know these facts about the user):\n'+memCtx:'')
       +(verdictCtx?'\n\nTODAY\'S BRIEF: '+verdictCtx:'')
+      +(searchCtx?'\n\nWEB SEARCH RESULTS (today\'s live data, use this to answer):\n'+searchCtx:'')
       +'\n\nIMPORTANT: Use this context to give personalized, specific answers. Reference their actual holdings, tasks and memories. Be their knowledgeable personal advisor, not a generic assistant.';
     const r=await fetch(PROXY,{
       method:'POST',
