@@ -1705,21 +1705,21 @@ async function loadBudget(){
     netEl.style.color=net>=0?'#4ade80':'#f87171';
     // Render list
     if(!budgetTransactions.length){
-      el.innerHTML='<div class="empty-state"><div class="empty-state-icon">💰</div><div class="empty-state-title">No transactions yet</div><div class="empty-state-sub">Tap + ADD to track your first transaction</div></div>';
+      el.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x1F4B0;</div><div class="empty-state-title">No transactions yet</div><div class="empty-state-sub">Tap + ADD to track your first transaction</div></div>';
       return;
     }
     el.innerHTML=budgetTransactions.map(t=>`
       <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:36px;height:36px;border-radius:8px;background:${t.type==='income'?'rgba(74,222,128,0.1)':'rgba(248,113,113,0.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${t.type==='income'?'↑':'↓'}</div>
+          <div style="width:36px;height:36px;border-radius:8px;background:${t.type==='income'?'rgba(74,222,128,0.1)':'rgba(248,113,113,0.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${t.type==='income'?'&#x2191;':'&#x2193;'}</div>
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--t1)">${t.description||t.category}</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);margin-top:2px">${t.category} · ${new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);margin-top:2px">${t.category} &middot; ${new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
           <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:${t.type==='income'?'#4ade80':'#f87171'}">${t.type==='income'?'+':'-'}AED ${parseFloat(t.amount).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
-          <div onclick="deleteTransaction('${t.id}')" style="color:var(--t4);font-size:16px;cursor:pointer;padding:4px;transition:color 0.15s" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--t4)'">🗑</div>
+          <div onclick="deleteTransaction('${t.id}')" style="color:var(--t4);font-size:16px;cursor:pointer;padding:4px;transition:color 0.15s" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--t4)'">&#x1F5D1;</div>
         </div>
       </div>`).join('');
   }catch(e){
@@ -2030,7 +2030,7 @@ async function loadTasks(){
 async function loadMeTasks(){
   const el=document.getElementById('meTasksList');
   if(!el)return;
-  if(!tasks.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">All clear</div><div class="empty-state-sub">No pending tasks</div></div>';return;}
+  if(!tasks.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x2705;</div><div class="empty-state-title">All clear</div><div class="empty-state-sub">No pending tasks</div></div>';return;}
   el.innerHTML=tasks.slice(0,10).map(t=>`
     <div class="task-item">
       <div class="task-check ${t.status==='done'?'done':''}" onclick="toggleTask('${t.id}',this)"></div>
@@ -2049,12 +2049,12 @@ async function loadMeMemories(){
     const{data,error}=await db.from('shadow_memory').select('*').eq('user_id',UID).order('created_at',{ascending:false}).limit(20);
     if(error)throw error;
     memories=data||[];
-    if(!memories.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">🧠</div><div class="empty-state-title">Memory building</div><div class="empty-state-sub">Shadow learns from your conversations</div></div>';return;}
+    if(!memories.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x1F9E0;</div><div class="empty-state-title">Memory building</div><div class="empty-state-sub">Shadow learns from your conversations</div></div>';return;}
     el.innerHTML=memories.slice(0,10).map(m=>`
       <div class="mem-item">
         <div class="mem-key">${m.key||''}</div>
         <div class="mem-value">${m.value||''}</div>
-        <div class="mem-meta">${m.category||''} · ${new Date(m.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+        <div class="mem-meta">${m.category||''} &middot; ${new Date(m.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
       </div>`).join('');
   }catch(e){console.log('memories error',e);}
 }
@@ -2174,7 +2174,7 @@ function renderPortfolio(){
   const el=document.getElementById('holdingsList');
   if(!el)return;
   if(!portfolio.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No holdings yet</div><div class="empty-state-sub">Add holdings to track your P&L in real time</div></div>';
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x1F4CA;</div><div class="empty-state-title">No holdings yet</div><div class="empty-state-sub">Add holdings to track your P&L in real time</div></div>';
     return;
   }
   let totalVal=0,totalCost=0;
@@ -2241,7 +2241,7 @@ async function loadProactiveAlerts(){
           <div class="alert-title">${a.title||''}</div>
           <div class="alert-time">${new Date(a.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
-        <div style="color:var(--t3);font-size:18px">›</div>
+        <div style="color:var(--t3);font-size:18px">&#x203A;</div>
       </div>`).join('');
   }catch(e){console.log('alerts error',e);}
 }
@@ -2280,7 +2280,7 @@ function renderBriefCard(){
   card.onclick=openBrief;
   card.innerHTML='<div class="hero-card-top"><div class="hero-card-label">Daily Intelligence Brief</div><div class="hero-card-time">'+timeStr+'</div></div>'
     +'<div class="hero-card-verdict">'+preview+'</div>'
-    +'<div class="hero-card-footer"><div class="hero-card-stats"><div class="hero-stat"><span>'+sections+'/10</span> sections</div><div class="hero-stat"><span>'+dateStr+'</span></div></div><div class="hero-card-cta">Read full brief ›</div></div>';
+    +'<div class="hero-card-footer"><div class="hero-card-stats"><div class="hero-stat"><span>'+sections+'/10</span> sections</div><div class="hero-stat"><span>'+dateStr+'</span></div></div><div class="hero-card-cta">Read full brief &#x203A;</div></div>';
   el.innerHTML='';
   el.appendChild(card);
 }
@@ -2317,7 +2317,7 @@ function renderBriefDetail(){
   const date=new Date(todayBriefData.created_at);
   const dateStr=date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const timeStr=date.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-  if(dateEl)dateEl.textContent=dateStr+' · '+timeStr;
+  if(dateEl)dateEl.textContent=dateStr+' &middot; '+timeStr;
   let html='';
   if(todayBriefData.verdict){
     html+='<div class="brief-verdict"><div class="brief-verdict-label">Shadow Verdict</div><div class="brief-verdict-text">'+fmtText(todayBriefData.verdict)+'</div></div>';
@@ -2347,16 +2347,16 @@ async function loadBriefHistory(){
   if(!el)return;
   try{
     const{data}=await db.from('shadow_briefs').select('id,brief_date,sections_count,verdict,created_at').eq('user_id',UID).order('created_at',{ascending:false}).limit(10);
-    if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No briefs yet</div><div class="empty-state-sub">Briefs arrive daily at 7AM</div></div>';return;}
+    if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x1F4CB;</div><div class="empty-state-title">No briefs yet</div><div class="empty-state-sub">Briefs arrive daily at 7AM</div></div>';return;}
     el.innerHTML=data.map(b=>{
       const preview=b.verdict?b.verdict.replace(/<[^>]*>/g,'').replace(/[*][*]/g,'').substring(0,80)+'...':'No verdict';
       return `<div class="alert-card" style="margin:0 20px 10px;cursor:pointer" onclick="loadBriefById('${b.id}')">
         <div class="alert-dot normal"></div>
         <div class="alert-content">
           <div class="alert-title">${new Date(b.brief_date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
-          <div class="alert-time">${b.sections_count||0}/10 sections · ${preview}</div>
+          <div class="alert-time">${b.sections_count||0}/10 sections &middot; ${preview}</div>
         </div>
-        <div style="color:var(--t3);font-size:18px">›</div>
+        <div style="color:var(--t3);font-size:18px">&#x203A;</div>
       </div>`;
     }).join('');
   }catch(e){console.log('briefs history error',e);}
@@ -2401,7 +2401,7 @@ function openSpec(spec){
   const el=document.getElementById('chatTitle');
   if(el)el.textContent=names[spec]||'Shadow';
   const statusEl=document.getElementById('chatStatus');
-  if(statusEl)statusEl.textContent='READY · ARTHUR VOICE';
+  if(statusEl)statusEl.textContent='READY &middot; ARTHUR VOICE';
   chatHistory=[];
   const msgs=document.getElementById('chatMsgs');
   if(msgs)msgs.innerHTML='';
@@ -2423,13 +2423,13 @@ function addMsg(role,text,stream=false){
   div.className='msg '+role;
   const bubble=document.createElement('div');
   bubble.className='msg-bubble';
-  if(stream)bubble.innerHTML='<span class="thinking-cursor">▋</span>';
+  if(stream)bubble.innerHTML='<span class="thinking-cursor">&#x258B;</span>';
   else bubble.innerHTML=fmtText(text);
   div.appendChild(bubble);
   if(role==='ai'){
     const actions=document.createElement('div');
     actions.className='msg-actions';
-    actions.innerHTML='<div class="msg-act" onclick="speakText(this.closest(\'.msg\').querySelector(\'.msg-bubble\').innerText)">🔊 Speak</div><div class="msg-act" onclick="saveToMemory(this)">💾 Save</div>';
+    actions.innerHTML='<div class="msg-act" onclick="speakText(this.closest(\'.msg\').querySelector(\'.msg-bubble\').innerText)">&#x1F50A; Speak</div><div class="msg-act" onclick="saveToMemory(this)">&#x1F4BE; Save</div>';
     div.appendChild(actions);
   }
   msgs.appendChild(div);
@@ -2560,7 +2560,7 @@ async function sendMsg(){
     const bubble=addMsg('ai',reply);
     chatHistory.push({role:'assistant',content:reply});
     if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
-    if(statusEl)statusEl.textContent='READY · ARTHUR VOICE';
+    if(statusEl)statusEl.textContent='READY &middot; ARTHUR VOICE';
     if(shadowVoiceOn)speakWithElevenLabs(reply.substring(0,600));
     // Save memory if meaningful
     if(reply.length>100){
@@ -2754,7 +2754,7 @@ function renderFullTasks(filter){
   const countEl=document.getElementById('tasksCount');
   if(countEl)countEl.textContent=filtered.length+' tasks';
   if(!filtered.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">'+(filter==='done'?'No completed tasks':'All clear')+'</div><div class="empty-state-sub">'+(filter==='done'?'Complete tasks to see them here':'No pending tasks')+'. Tap + ADD to create one.</div></div>';
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x2705;</div><div class="empty-state-title">'+(filter==='done'?'No completed tasks':'All clear')+'</div><div class="empty-state-sub">'+(filter==='done'?'Complete tasks to see them here':'No pending tasks')+'. Tap + ADD to create one.</div></div>';
     return;
   }
   el.innerHTML='';
@@ -2790,7 +2790,7 @@ async function toggleFullTask(id,el,currentStatus){
   if(title)title.classList.toggle('done');
   try{
     await db.from('shadow_tasks').update({status:newStatus}).eq('id',id);
-    showToast(newStatus==='done'?'Task complete ✓':'Task reopened');
+    showToast(newStatus==='done'?'Task complete &#x2713;':'Task reopened');
     await loadTasks();
     setTimeout(()=>renderFullTasks(currentTaskFilter),500);
   }catch(e){console.log('toggle error',e);}
@@ -2894,7 +2894,7 @@ function toggleShadowVoice(){
     if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
   }
   const btns=document.querySelectorAll('#voiceBtn,#voiceToggleBtn');
-  btns.forEach(b=>{if(b)b.textContent=shadowVoiceOn?'🔊':'🔇';});
+  btns.forEach(b=>{if(b)b.textContent=shadowVoiceOn?'&#x1F50A;':'&#x1F507;';});
   showToast(shadowVoiceOn?'Arthur voice on':'Voice off');
 }
 
