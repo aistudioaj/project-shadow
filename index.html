@@ -817,6 +817,22 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .task-priority.medium{background:var(--amber-dim);color:var(--amber)}
 .task-priority.low{background:var(--bg3);color:var(--t3)}
 
+/* ── PIN ── */
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--border);transition:all 0.15s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
+.pin-key{width:72px;height:52px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:20px;cursor:pointer;transition:all 0.15s;color:var(--t1)}
+.pin-key:active{background:var(--blue);border-color:var(--blue);color:#fff}
+/* ── MOOD ── */
+.mood-btn{font-size:22px;cursor:pointer;padding:4px;border-radius:8px;transition:all 0.15s;opacity:0.4}
+.mood-btn.active{opacity:1;transform:scale(1.2)}
+/* ── READS ── */
+.read-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;border-left:3px solid var(--blue)}
+.read-type{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
+.read-title{font-family:var(--font-display);font-size:15px;color:var(--t1);margin-bottom:4px;font-weight:500}
+.read-author{font-family:var(--font-mono);font-size:10px;color:var(--t3);margin-bottom:8px}
+.read-summary{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px}
+.read-link{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--blue);cursor:pointer;text-decoration:none;display:inline-block}
+
 /* ── MEMORY ── */
 .mem-item{
   padding:14px 20px;border-bottom:1px solid var(--border);
@@ -1007,59 +1023,147 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
 <!-- SHADOW (CHAT) SCREEN -->
 <div class="screen" id="lifeScreen">
-  <!-- Specialist Selector -->
-  <div id="specialistSelector" style="display:flex;flex-direction:column;overflow:hidden;flex:1">
-    <div class="screen-hdr">
-      <div>
-        <div class="screen-title">Shadow</div>
-        <div class="screen-sub">Choose a specialist</div>
-      </div>
-      <div class="chat-action-btn" onclick="toggleShadowVoice()" id="voiceToggleBtn">🔊</div>
+  <div class="screen-hdr">
+    <div>
+      <div class="screen-title">Life</div>
+      <div class="screen-sub">Your personal operating system</div>
     </div>
-    <div class="specialist-grid">
+  </div>
+  <div class="intel-tabs" id="lifeTabs">
+    <div class="intel-tab active" onclick="switchLifeTab('reads',this)">Reads</div>
+    <div class="intel-tab" onclick="switchLifeTab('journal',this)">Journal</div>
+    <div class="intel-tab" onclick="switchLifeTab('specialists',this)">Specialists</div>
+  </div>
+
+  <!-- READS PANEL -->
+  <div id="lifeReadsPanel" class="scroll-body">
+    <div style="padding:16px 20px 8px">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Your Topics</div>
+      <div id="topicPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div class="mem-cat-btn active" data-topic="Investing" onclick="toggleTopic(this)">Investing</div>
+        <div class="mem-cat-btn" data-topic="Leadership" onclick="toggleTopic(this)">Leadership</div>
+        <div class="mem-cat-btn" data-topic="Stoicism" onclick="toggleTopic(this)">Stoicism</div>
+        <div class="mem-cat-btn" data-topic="Health" onclick="toggleTopic(this)">Health</div>
+        <div class="mem-cat-btn" data-topic="Philosophy" onclick="toggleTopic(this)">Philosophy</div>
+        <div class="mem-cat-btn" data-topic="Psychology" onclick="toggleTopic(this)">Psychology</div>
+        <div class="mem-cat-btn" data-topic="Entrepreneurship" onclick="toggleTopic(this)">Entrepreneurship</div>
+        <div class="mem-cat-btn" data-topic="Technology" onclick="toggleTopic(this)">Technology</div>
+        <div class="mem-cat-btn" data-topic="History" onclick="toggleTopic(this)">History</div>
+        <div class="mem-cat-btn" data-topic="Mindfulness" onclick="toggleTopic(this)">Mindfulness</div>
+        <div class="mem-cat-btn" data-topic="Productivity" onclick="toggleTopic(this)">Productivity</div>
+        <div class="mem-cat-btn" data-topic="Science" onclick="toggleTopic(this)">Science</div>
+      </div>
+      <div onclick="generateReads()" id="generateReadsBtn" style="background:var(--blue);border-radius:8px;padding:10px 16px;text-align:center;cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;box-shadow:0 0 12px var(--blue-glow);display:inline-block">&#10227; GENERATE READS</div>
+    </div>
+    <div id="readsList" style="padding:0 20px 20px">
+      <div class="empty-state" style="margin-top:20px">
+        <div class="empty-state-icon">&#128218;</div>
+        <div class="empty-state-title">No reads yet</div>
+        <div class="empty-state-sub">Select your topics and tap Generate Reads</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOURNAL PANEL -->
+  <div id="lifeJournalPanel" class="scroll-body" style="display:none">
+    <div id="journalPinGate" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:24px">
+      <div style="font-family:var(--font-display);font-size:22px;color:var(--t1)">Journal</div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--t3)" id="pinGateLabel">ENTER PIN</div>
+      <div style="display:flex;gap:16px" id="pinDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,72px);gap:12px">
+        <div class="pin-key" onclick="pinInput('1')">1</div>
+        <div class="pin-key" onclick="pinInput('2')">2</div>
+        <div class="pin-key" onclick="pinInput('3')">3</div>
+        <div class="pin-key" onclick="pinInput('4')">4</div>
+        <div class="pin-key" onclick="pinInput('5')">5</div>
+        <div class="pin-key" onclick="pinInput('6')">6</div>
+        <div class="pin-key" onclick="pinInput('7')">7</div>
+        <div class="pin-key" onclick="pinInput('8')">8</div>
+        <div class="pin-key" onclick="pinInput('9')">9</div>
+        <div class="pin-key" onclick="pinReset()" style="font-size:11px;letter-spacing:1px">RESET</div>
+        <div class="pin-key" onclick="pinInput('0')">0</div>
+        <div class="pin-key" onclick="pinBackspace()">&#9003;</div>
+      </div>
+    </div>
+    <div id="journalContent" style="display:none;flex-direction:column">
+      <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div onclick="journalPrevDay()" style="color:var(--blue);cursor:pointer;font-size:20px;padding:4px">&lsaquo;</div>
+          <div id="journalDateLabel" style="font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;color:var(--t1);cursor:pointer" onclick="journalGoToday()">TODAY</div>
+          <div onclick="journalNextDay()" id="journalNextBtn" style="cursor:pointer;font-size:20px;padding:4px">&rsaquo;</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="journalStreak" style="font-family:var(--font-mono);font-size:10px;color:var(--t3)"></div>
+          <div onclick="lockJournal()" style="font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--t3);cursor:pointer">LOCK</div>
+        </div>
+      </div>
+      <div style="padding:12px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border)">
+        <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;color:var(--t3)">MOOD</div>
+        <div style="display:flex;gap:8px" id="moodSelector">
+          <div class="mood-btn active" data-mood="great" onclick="selectMood(this)">&#128522;</div>
+          <div class="mood-btn" data-mood="good" onclick="selectMood(this)">&#128578;</div>
+          <div class="mood-btn" data-mood="neutral" onclick="selectMood(this)">&#128528;</div>
+          <div class="mood-btn" data-mood="low" onclick="selectMood(this)">&#128532;</div>
+          <div class="mood-btn" data-mood="stressed" onclick="selectMood(this)">&#128548;</div>
+        </div>
+      </div>
+      <textarea id="journalEntry" placeholder="Write freely..." style="flex:1;background:transparent;border:none;outline:none;padding:20px;color:var(--t1);font-family:var(--font-body);font-size:15px;line-height:1.8;resize:none;min-height:300px;width:100%;box-sizing:border-box"></textarea>
+      <div style="padding:12px 20px calc(12px + var(--safe-bottom));border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div id="journalSaveStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--t3)">NOT SAVED</div>
+        <div onclick="saveJournalEntry()" style="background:var(--blue);border-radius:8px;padding:8px 16px;font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;cursor:pointer;box-shadow:0 0 8px var(--blue-glow)">SAVE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPECIALISTS PANEL -->
+  <div id="lifeSpecialistsPanel" class="scroll-body" style="display:none">
+    <div class="specialist-grid" style="padding:16px 0">
       <div class="spec-card" data-spec="investment" onclick="openSpec('investment')">
-        <div class="spec-icon">📈</div>
+        <div class="spec-icon">&#128200;</div>
         <div class="spec-name">Investment</div>
         <div class="spec-desc">Portfolio analysis, market insights, stock research</div>
       </div>
       <div class="spec-card" data-spec="productivity" onclick="openSpec('productivity')">
-        <div class="spec-icon">⚡</div>
+        <div class="spec-icon">&#9889;</div>
         <div class="spec-name">Productivity</div>
         <div class="spec-desc">Tasks, planning, focus and time management</div>
       </div>
       <div class="spec-card" data-spec="tutor" onclick="openSpec('tutor')">
-        <div class="spec-icon">🎓</div>
+        <div class="spec-icon">&#127891;</div>
         <div class="spec-name">Tutor</div>
         <div class="spec-desc">Learning, exam prep, knowledge on demand</div>
       </div>
       <div class="spec-card" data-spec="travel" onclick="openSpec('travel')">
-        <div class="spec-icon">✈️</div>
+        <div class="spec-icon">&#9992;</div>
         <div class="spec-name">Travel</div>
         <div class="spec-desc">Itineraries, hotels, concierge and local intel</div>
       </div>
       <div class="spec-card" data-spec="fitness" onclick="openSpec('fitness')">
-        <div class="spec-icon">💪</div>
+        <div class="spec-icon">&#128170;</div>
         <div class="spec-name">Fitness</div>
         <div class="spec-desc">Workouts, nutrition, recovery and health</div>
       </div>
       <div class="spec-card" data-spec="master" onclick="openSpec('master')">
-        <div class="spec-icon">🌐</div>
+        <div class="spec-icon">&#127758;</div>
         <div class="spec-name">Ask Shadow</div>
         <div class="spec-desc">General intelligence, anything and everything</div>
       </div>
     </div>
   </div>
+
   <!-- Chat Interface -->
   <div class="chat-container" id="chatContainer">
     <div class="chat-hdr">
-      <div class="chat-back" onclick="closeChat()">‹</div>
+      <div class="chat-back" onclick="closeChat()">&#8249;</div>
       <div class="chat-hdr-info">
         <div class="chat-hdr-name" id="chatTitle">Shadow</div>
         <div class="chat-hdr-status" id="chatStatus">READY</div>
       </div>
       <div class="chat-hdr-actions">
-        <div class="chat-action-btn" onclick="toggleShadowVoice()" id="voiceBtn">🔊</div>
-        <div class="chat-action-btn" onclick="clearChat()">🗑</div>
+        <div class="chat-action-btn" onclick="toggleShadowVoice()" id="voiceBtn">&#128266;</div>
+        <div class="chat-action-btn" onclick="clearChat()">&#128465;</div>
       </div>
     </div>
     <div class="chat-msgs" id="chatMsgs"></div>
@@ -1070,9 +1174,9 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
     </div>
     <div class="chat-input-wrap">
-      <div class="mic-btn" onclick="toggleMic()" id="micBtn">🎙️</div>
+      <div class="mic-btn" onclick="toggleMic()" id="micBtn">&#127897;</div>
       <textarea class="chat-input" id="chatInput" placeholder="Message Shadow..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-      <div class="chat-send-btn" onclick="sendMsg()">↑</div>
+      <div class="chat-send-btn" onclick="sendMsg()">&#8593;</div>
     </div>
   </div>
 </div>
@@ -1427,7 +1531,17 @@ function switchNav(tab,el){
   if(tab==='financial')fetchAllMarketData();
   if(tab==='me'){loadMeTasks();loadMeMemories();}
   if(tab==='home')loadTodayBrief();
-}
+  if(tab==='life'){
+    ['lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(id=>{
+      const p=document.getElementById(id);if(p)p.style.display='none';
+    });
+    const readsPanel=document.getElementById('lifeReadsPanel');
+    if(readsPanel)readsPanel.style.display='block';
+    document.querySelectorAll('#lifeTabs .intel-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    loadSavedReads();
+    const chat=document.getElementById('chatContainer');
+    if(chat)chat.style.display='none';
+  }
 
 // Keep compatibility
 function switchTab(tab,el){switchNav(tab,el);}
@@ -1614,7 +1728,277 @@ async function loadBudget(){
   }
 }
 
-// ── SUPABASE ──
+// ── LIFE TAB ──
+function switchLifeTab(tab,el){
+  ['lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(id=>{
+    const p=document.getElementById(id);if(p)p.style.display='none';
+  });
+  document.getElementById('life'+tab.charAt(0).toUpperCase()+tab.slice(1)+'Panel').style.display='block';
+  document.querySelectorAll('#lifeTabs .intel-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  if(tab==='journal')openJournalPanel();
+  if(tab==='reads')loadSavedReads();
+}
+
+// ── READS ──
+let selectedTopics=['Investing'];
+
+function toggleTopic(el){
+  el.classList.toggle('active');
+  selectedTopics=Array.from(document.querySelectorAll('#topicPicker .mem-cat-btn.active')).map(b=>b.dataset.topic);
+}
+
+async function loadSavedReads(){
+  const el=document.getElementById('readsList');
+  try{
+    const{data,error}=await db.from('shadow_reads').select('*').eq('user_id',UID).order('generated_at',{ascending:false}).limit(20);
+    if(error||!data||!data.length){
+      el.innerHTML='<div class="empty-state" style="margin-top:20px"><div class="empty-state-icon">&#128218;</div><div class="empty-state-title">No reads yet</div><div class="empty-state-sub">Select your topics and tap Generate Reads</div></div>';
+      return;
+    }
+    renderReads(data);
+  }catch(e){console.log('load reads error',e);}
+}
+
+function renderReads(reads){
+  const el=document.getElementById('readsList');
+  el.innerHTML=reads.map(r=>`
+    <div class="read-card">
+      <div class="read-type">${r.type||'read'}</div>
+      <div class="read-title">${r.title||''}</div>
+      <div class="read-author">${r.author||''}</div>
+      <div class="read-summary">${r.summary||''}</div>
+      ${r.link?`<a class="read-link" href="${r.link}" target="_blank">&#8594; Read / Buy &rarr;</a>`:''}
+    </div>`).join('');
+}
+
+async function generateReads(){
+  if(!selectedTopics.length){showToast('Select at least one topic');return;}
+  const btn=document.getElementById('generateReadsBtn');
+  btn.textContent='GENERATING...';btn.style.opacity='0.6';btn.style.pointerEvents='none';
+  const el=document.getElementById('readsList');
+  el.innerHTML='<div class="loading-row">Shadow is curating reads for you...</div>';
+  try{
+    const topics=selectedTopics.join(', ');
+    const prompt=`You are Shadow, a personal AI for AJ in Abu Dhabi. Generate exactly 3 personalised reading recommendations based on these interest topics: ${topics}.
+
+Return ONLY a valid JSON array with exactly 3 objects. Each object must have these exact keys:
+{"type":"book","title":"...","author":"...","summary":"...","link":"..."}
+
+Types must be one of: book, article, quote.
+For books: link should be an Amazon or Goodreads URL.
+For articles: link should be a real article URL.
+For quotes: author is the person quoted, link can be empty string.
+Summary should be 2-3 sentences explaining why this is valuable for someone interested in ${topics}.
+
+Return ONLY the JSON array, no other text.`;
+
+    const r=await fetch(PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:MODEL,max_tokens:1000,system:'You generate JSON only. No markdown, no explanation, just valid JSON.',messages:[{role:'user',content:prompt}]})
+    });
+    const data=await r.json();
+    const text=data.content&&data.content[0]?data.content[0].text:'';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const reads=JSON.parse(clean);
+    // Save to Supabase
+    const today=new Date().toISOString().split('T')[0];
+    for(const read of reads){
+      await db.from('shadow_reads').insert({user_id:UID,type:read.type,title:read.title,author:read.author,summary:read.summary,link:read.link,generated_at:today});
+    }
+    renderReads(reads);
+    showToast('Reads generated');
+  }catch(e){
+    console.log('generate reads error',e);
+    el.innerHTML='<div class="loading-row">Error generating reads. Try again.</div>';
+  }finally{
+    btn.innerHTML='&#10227; GENERATE READS';btn.style.opacity='1';btn.style.pointerEvents='auto';
+  }
+}
+
+// ── JOURNAL ──
+let journalUnlocked=false;
+let journalPinEntry='';
+let journalDateOffset=0;
+let currentMood='great';
+
+function getJournalDate(){
+  const d=new Date();
+  d.setDate(d.getDate()+journalDateOffset);
+  return d.toISOString().split('T')[0];
+}
+
+function openJournalPanel(){
+  if(journalUnlocked){
+    showJournalContent();
+  } else {
+    document.getElementById('journalPinGate').style.display='flex';
+    document.getElementById('journalContent').style.display='none';
+    journalPinEntry='';
+    updatePinDots();
+    // Check if PIN is set
+    const stored=profile&&profile.journal_pin;
+    document.getElementById('pinGateLabel').textContent=stored?'ENTER PIN':'SET NEW PIN';
+  }
+}
+
+function updatePinDots(){
+  document.querySelectorAll('.pin-dot').forEach((d,i)=>{
+    d.classList.toggle('filled',i<journalPinEntry.length);
+  });
+}
+
+function pinInput(digit){
+  if(journalPinEntry.length>=4)return;
+  journalPinEntry+=digit;
+  updatePinDots();
+  if(journalPinEntry.length===4)setTimeout(processPinEntry,150);
+}
+
+function pinBackspace(){
+  journalPinEntry=journalPinEntry.slice(0,-1);
+  updatePinDots();
+}
+
+async function processPinEntry(){
+  const stored=profile&&profile.journal_pin;
+  if(!stored){
+    // First time - set PIN
+    await db.from('shadow_profile').update({journal_pin:btoa(journalPinEntry)}).eq('user_id',UID);
+    if(profile)profile.journal_pin=btoa(journalPinEntry);
+    showToast('PIN set');
+    journalUnlocked=true;
+    showJournalContent();
+  } else {
+    if(btoa(journalPinEntry)===stored){
+      journalUnlocked=true;
+      showJournalContent();
+    } else {
+      showToast('Wrong PIN');
+      journalPinEntry='';
+      updatePinDots();
+    }
+  }
+}
+
+async function pinReset(){
+  const word=prompt('Enter your reset word to clear PIN:');
+  if(!word)return;
+  if(word.toLowerCase()==='shadow'){
+    await db.from('shadow_profile').update({journal_pin:null}).eq('user_id',UID);
+    if(profile)profile.journal_pin=null;
+    journalPinEntry='';
+    updatePinDots();
+    document.getElementById('pinGateLabel').textContent='SET NEW PIN';
+    showToast('PIN cleared - set a new one');
+  } else {
+    showToast('Wrong reset word');
+  }
+}
+
+function lockJournal(){
+  journalUnlocked=false;
+  journalPinEntry='';
+  document.getElementById('journalPinGate').style.display='flex';
+  document.getElementById('journalContent').style.display='none';
+  updatePinDots();
+}
+
+async function showJournalContent(){
+  document.getElementById('journalPinGate').style.display='none';
+  document.getElementById('journalContent').style.display='flex';
+  await loadJournalEntry();
+  await loadJournalStreak();
+}
+
+async function loadJournalEntry(){
+  const date=getJournalDate();
+  const isToday=journalDateOffset===0;
+  document.getElementById('journalDateLabel').textContent=isToday?'TODAY':new Date(date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('journalNextBtn').style.color=journalDateOffset>=0?'var(--t4)':'var(--blue)';
+  document.getElementById('journalSaveStatus').textContent='';
+  try{
+    const{data}=await db.from('shadow_journal').select('*').eq('user_id',UID).eq('date',date).limit(1);
+    if(data&&data.length){
+      document.getElementById('journalEntry').value=data[0].entry||'';
+      const mood=data[0].mood||'great';
+      document.querySelectorAll('.mood-btn').forEach(b=>{
+        b.classList.toggle('active',b.dataset.mood===mood);
+      });
+      currentMood=mood;
+      document.getElementById('journalSaveStatus').textContent='SAVED';
+    } else {
+      document.getElementById('journalEntry').value='';
+      currentMood='great';
+      document.querySelectorAll('.mood-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    }
+  }catch(e){console.log('load journal error',e);}
+}
+
+async function loadJournalStreak(){
+  try{
+    const{data}=await db.from('shadow_journal').select('date').eq('user_id',UID).order('date',{ascending:false}).limit(90);
+    if(!data||!data.length){document.getElementById('journalStreak').textContent='';return;}
+    let streak=0;
+    const today=new Date();
+    for(let i=0;i<90;i++){
+      const d=new Date(today);d.setDate(d.getDate()-i);
+      const ds=d.toISOString().split('T')[0];
+      if(data.find(r=>r.date===ds))streak++;
+      else if(i>0)break;
+    }
+    document.getElementById('journalStreak').textContent=streak>0?streak+' DAY STREAK &#128293;':'';
+  }catch(e){}
+}
+
+function selectMood(el){
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  currentMood=el.dataset.mood;
+}
+
+async function saveJournalEntry(){
+  const entry=document.getElementById('journalEntry').value.trim();
+  const date=getJournalDate();
+  const statusEl=document.getElementById('journalSaveStatus');
+  statusEl.textContent='SAVING...';
+  try{
+    const{data:existing}=await db.from('shadow_journal').select('id').eq('user_id',UID).eq('date',date).limit(1);
+    if(existing&&existing.length){
+      const{error}=await db.from('shadow_journal').update({entry:entry,mood:currentMood}).eq('id',existing[0].id);
+      if(error)throw error;
+    } else {
+      const{error}=await db.from('shadow_journal').insert({user_id:UID,entry:entry,mood:currentMood,date:date});
+      if(error)throw error;
+    }
+    statusEl.textContent='SAVED';
+    showToast('Journal saved');
+    await loadJournalStreak();
+  }catch(e){
+    statusEl.textContent='ERROR';
+    showToast('Save failed: '+(e.message||'check console'));
+    console.log('journal save error',e);
+  }
+}
+
+function journalPrevDay(){
+  journalDateOffset--;
+  loadJournalEntry();
+}
+
+function journalNextDay(){
+  if(journalDateOffset>=0)return;
+  journalDateOffset++;
+  loadJournalEntry();
+}
+
+function journalGoToday(){
+  journalDateOffset=0;
+  loadJournalEntry();
+}
+
+// ── OPENSPEC (updated for new life structure) ──
 async function sbGet(table,filters={}){
   try{
     let q=db.from(table).select('*').eq('user_id',UID);
@@ -2000,16 +2384,18 @@ function openShadowChat(){
 
 function openSpec(spec){
   currentSpec=spec;
-  // Ensure lifeScreen is active, hide all others
+  // Hide all screens, show lifeScreen
   ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('lifeScreen').classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const nb=document.querySelector('[data-tab="life"]');if(nb)nb.classList.add('active');
-  const sel=document.getElementById('specialistSelector');
+  // Hide life panels, show chat
+  ['lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(id=>{
+    const p=document.getElementById(id);if(p)p.style.display='none';
+  });
   const chat=document.getElementById('chatContainer');
-  if(sel)sel.style.display='none';
   if(chat){chat.style.display='flex';chat.style.flex='1';chat.style.flexDirection='column';chat.style.overflow='hidden';}
   const names={master:'Shadow',investment:'Investment',productivity:'Productivity',tutor:'Tutor',travel:'Travel',fitness:'Fitness'};
   const el=document.getElementById('chatTitle');
@@ -2024,14 +2410,12 @@ function openSpec(spec){
     if(input)input.focus();
   },300);
 }
-
 function closeChat(){
-  const sel=document.getElementById('specialistSelector');
   const chat=document.getElementById('chatContainer');
-  if(sel)sel.style.display='flex';
-  if(chat){chat.style.display='none';}
+  if(chat)chat.style.display='none';
+  // Return to specialists panel
+  switchLifeTab('specialists',document.querySelector('#lifeTabs .intel-tab:nth-child(3)'));
 }
-
 function addMsg(role,text,stream=false){
   const msgs=document.getElementById('chatMsgs');
   if(!msgs)return null;
