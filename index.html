@@ -1447,7 +1447,37 @@ function switchIntelTab(tab,el){
 }
 
 let budgetType='income';
+let budgetMonthOffset=0;
 let budgetTransactions=[];
+
+function getBudgetMonth(){
+  const now=new Date();
+  return new Date(now.getFullYear(),now.getMonth()+budgetMonthOffset,1);
+}
+
+function prevBudgetMonth(){
+  budgetMonthOffset--;
+  loadBudget();
+}
+
+function nextBudgetMonth(){
+  if(budgetMonthOffset>=0)return;
+  budgetMonthOffset++;
+  loadBudget();
+}
+
+async function deleteTransaction(id){
+  if(!confirm('Delete this transaction?'))return;
+  try{
+    const{error}=await db.from('shadow_budget').delete().eq('id',id).eq('user_id',UID);
+    if(error)throw error;
+    showToast('Transaction deleted');
+    loadBudget();
+  }catch(e){
+    showToast('Delete failed');
+    console.log('delete budget error',e);
+  }
+}
 
 function selectBudgetType(type){
   budgetType=type;
@@ -1534,10 +1564,15 @@ async function saveTransaction(){
 
 async function loadBudget(){
   const el=document.getElementById('budgetList');
-  const now=new Date();
-  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
-  const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().split('T')[0];
-  document.getElementById('budgetMonth').textContent=now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const d=getBudgetMonth();
+  const monthStart=new Date(d.getFullYear(),d.getMonth(),1).toISOString().split('T')[0];
+  const monthEnd=new Date(d.getFullYear(),d.getMonth()+1,0).toISOString().split('T')[0];
+  // Update month navigator
+  const monthLabel=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('budgetMonth').innerHTML=
+    `<span onclick="prevBudgetMonth()" style="cursor:pointer;padding:0 8px;color:var(--blue)">&lsaquo;</span>`+
+    monthLabel+
+    `<span onclick="nextBudgetMonth()" style="cursor:pointer;padding:0 8px;color:${budgetMonthOffset>=0?'var(--t4)':'var(--blue)'};">&rsaquo;</span>`;
   try{
     const{data,error}=await db.from('shadow_budget').select('*').eq('user_id',UID).gte('date',monthStart).lte('date',monthEnd).order('date',{ascending:false});
     if(error)throw error;
@@ -1568,7 +1603,10 @@ async function loadBudget(){
             <div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);margin-top:2px">${t.category} · ${new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
           </div>
         </div>
-        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:${t.type==='income'?'#4ade80':'#f87171'}">${t.type==='income'?'+':'-'}AED ${parseFloat(t.amount).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:${t.type==='income'?'#4ade80':'#f87171'}">${t.type==='income'?'+':'-'}AED ${parseFloat(t.amount).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+          <div onclick="deleteTransaction('${t.id}')" style="color:var(--t4);font-size:16px;cursor:pointer;padding:4px;transition:color 0.15s" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--t4)'">🗑</div>
+        </div>
       </div>`).join('');
   }catch(e){
     console.log('load budget error',e);
