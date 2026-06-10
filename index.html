@@ -1246,16 +1246,16 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
 <!-- BOTTOM NAV -->
 <div id="nav">
-  <div class="nav-btn active" data-tab="home" onclick="switchNav('today',this)">
+  <div class="nav-btn active" data-tab="home" onclick="switchNav('home',this)">
     <div class="nav-icon">🏠</div>
     <div class="nav-lbl">Home</div>
     <div class="nav-badge" id="alertBadge"></div>
   </div>
-  <div class="nav-btn" data-tab="financial" onclick="switchNav('intelligence',this)">
+  <div class="nav-btn" data-tab="financial" onclick="switchNav('financial',this)">
     <div class="nav-icon">💰</div>
     <div class="nav-lbl">Financial</div>
   </div>
-  <div class="nav-btn" data-tab="life" onclick="switchNav('shadow',this)">
+  <div class="nav-btn" data-tab="life" onclick="switchNav('life',this)">
     <div class="nav-icon">🌿</div>
     <div class="nav-lbl">Life</div>
   </div>
@@ -1758,8 +1758,8 @@ function openShadowChat(){
 
 function openSpec(spec){
   currentSpec=spec;
-  // Ensure shadowScreen is active
-  ['homeScreen','financialScreen','meScreen','briefScreen'].forEach(id=>{
+  // Ensure lifeScreen is active, hide all others
+  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('lifeScreen').classList.add('active');
@@ -2018,7 +2018,7 @@ function openTravelPlanner(){
 
 function closeTravelScreen(){
   document.getElementById('travelScreen').classList.remove('active');
-  switchNav('me');
+  switchNav('life');
 }
 
 async function generateTravelPlan(){
