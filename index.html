@@ -553,7 +553,6 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   font-size:12px;color:var(--t3);
   line-height:1.5;
 }
-.spec-card[data-spec="investment"]{border-color:rgba(59,130,246,0.2)}
 .spec-card[data-spec="travel"]{border-color:rgba(245,158,11,0.2)}
 .spec-card[data-spec="fitness"]{border-color:rgba(34,197,94,0.2)}
 .spec-card[data-spec="tutor"]{border-color:rgba(168,85,247,0.2)}
@@ -1019,19 +1018,59 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
 <!-- SHADOW (CHAT) SCREEN -->
 <div class="screen" id="lifeScreen">
-  <div class="screen-hdr">
-    <div>
-      <div class="screen-title">Life</div>
-      <div class="screen-sub">Your personal operating system</div>
+  <div class="screen-hdr" id="lifeHdr">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div id="lifeBackBtn" onclick="lifeGoHome()" style="display:none;font-size:24px;color:var(--t2);cursor:pointer;padding:4px;line-height:1">&#8249;</div>
+      <div>
+        <div class="screen-title" id="lifeTitle">Life</div>
+        <div class="screen-sub" id="lifeSub">Your personal operating system</div>
+      </div>
     </div>
   </div>
-  <div class="intel-tabs" id="lifeTabs">
-    <div class="intel-tab active" onclick="switchLifeTab('reads',this)">Reads</div>
-    <div class="intel-tab" onclick="switchLifeTab('journal',this)">Journal</div>
-    <div class="intel-tab" onclick="switchLifeTab('specialists',this)">Specialists</div>
+
+  <!-- LIFE HOME / LANDING PANEL -->
+  <div id="lifeHomePanel" class="scroll-body">
+    <div style="padding:16px 20px 0">
+      <!-- Journal Card -->
+      <div class="life-card" onclick="switchLifeTab('journal',null)">
+        <div class="life-card-icon">&#128214;</div>
+        <div class="life-card-body">
+          <div class="life-card-title">Journal</div>
+          <div class="life-card-sub" id="lifeJournalPreview">Loading...</div>
+        </div>
+        <div class="life-card-arrow">&#8250;</div>
+      </div>
+      <!-- Reads Card -->
+      <div class="life-card" onclick="switchLifeTab('reads',null)">
+        <div class="life-card-icon">&#128218;</div>
+        <div class="life-card-body">
+          <div class="life-card-title">Reads</div>
+          <div class="life-card-sub" id="lifeReadsPreview">Tap to discover today's recommendations</div>
+        </div>
+        <div class="life-card-arrow">&#8250;</div>
+      </div>
+      <!-- Specialists Card -->
+      <div class="life-card" onclick="switchLifeTab('specialists',null)" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;align-items:center;width:100%">
+          <div class="life-card-icon">&#129517;</div>
+          <div class="life-card-body">
+            <div class="life-card-title">Specialists</div>
+            <div class="life-card-sub">Chat with Shadow's expert modes</div>
+          </div>
+          <div class="life-card-arrow">&#8250;</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;padding-left:2px">
+          <div class="life-spec-mini">&#9889;</div>
+          <div class="life-spec-mini">&#9992;</div>
+          <div class="life-spec-mini">&#128170;</div>
+          <div class="life-spec-mini">&#127758;</div>
+        </div>
+      </div>
+    </div>
   </div>
+
   <!-- READS PANEL -->
-  <div id="lifeReadsPanel" class="scroll-body">
+  <div id="lifeReadsPanel" class="scroll-body" style="display:none">
     <div style="padding:16px 20px 8px">
       <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Your Topics</div>
       <div id="topicPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
@@ -1113,11 +1152,6 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   <!-- SPECIALISTS PANEL -->
   <div id="lifeSpecialistsPanel" class="scroll-body" style="display:none">
     <div class="specialist-grid" style="padding:16px 0">
-      <div class="spec-card" data-spec="investment" onclick="openSpec('investment')">
-        <div class="spec-icon">&#128200;</div>
-        <div class="spec-name">Investment</div>
-        <div class="spec-desc">Portfolio analysis, market insights, stock research</div>
-      </div>
       <div class="spec-card" data-spec="productivity" onclick="openSpec('productivity')">
         <div class="spec-icon">&#9889;</div>
         <div class="spec-name">Productivity</div>
@@ -1525,13 +1559,7 @@ function switchNav(tab,el){
   if(tab==='me'){loadMeTasks();loadMeMemories();}
   if(tab==='home')loadTodayBrief();
   if(tab==='life'){
-    ['lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id){
-      var p=document.getElementById(id);if(p)p.style.display='none';
-    });
-    var rp=document.getElementById('lifeReadsPanel');if(rp)rp.style.display='block';
-    var chat=document.getElementById('chatContainer');if(chat)chat.style.display='none';
-    document.querySelectorAll('#lifeTabs .intel-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
-    loadSavedReads();
+    lifeGoHome();
   }
 }
 
@@ -1720,17 +1748,70 @@ async function loadBudget(){
   }
 }
 
+// ── LIFE LANDING / NAV ──
+function lifeGoHome() {
+  if (journalUnlocked) { lockJournal(); }
+  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id) {
+    var p = document.getElementById(id);
+    if (p) p.style.display = (id === 'lifeHomePanel') ? 'block' : 'none';
+  });
+  var back = document.getElementById('lifeBackBtn');
+  if (back) back.style.display = 'none';
+  var title = document.getElementById('lifeTitle');
+  var sub = document.getElementById('lifeSub');
+  if (title) title.textContent = 'Life';
+  if (sub) sub.textContent = 'Your personal operating system';
+  var chat = document.getElementById('chatContainer');
+  if (chat) chat.style.display = 'none';
+  loadLifeHomePreviews();
+}
+
+async function loadLifeHomePreviews() {
+  // Journal preview
+  var jEl = document.getElementById('lifeJournalPreview');
+  if (jEl) {
+    try {
+      var today = new Date().toISOString().split('T')[0];
+      var result = await db.from('shadow_journal').select('date').eq('user_id', UID).eq('date', today).limit(1);
+      var written = result.data && result.data.length;
+      var streakResult = await db.from('shadow_journal').select('date').eq('user_id', UID).order('date', {ascending: false}).limit(90);
+      var streak = 0;
+      if (streakResult.data && streakResult.data.length) {
+        var now = new Date();
+        for (var i = 0; i < 90; i++) {
+          var d = new Date(now);
+          d.setDate(d.getDate() - i);
+          var ds = d.toISOString().split('T')[0];
+          if (streakResult.data.find(function(r) { return r.date === ds; })) streak++;
+          else if (i > 0) break;
+        }
+      }
+      var parts = [];
+      parts.push(written ? 'Written today' : 'Not written yet');
+      if (streak > 0) parts.push(streak + ' day streak');
+      jEl.textContent = parts.join(' | ');
+    } catch(e) { jEl.textContent = 'Tap to open your journal'; }
+  }
+}
+
 // ── LIFE TAB ──
 function switchLifeTab(tab, el) {
-  ['lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id) {
+  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id) {
     var p = document.getElementById(id);
     if (p) p.style.display = 'none';
   });
   var panel = document.getElementById('life' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Panel');
   if (panel) panel.style.display = 'block';
-  document.querySelectorAll('#lifeTabs .intel-tab').forEach(function(t) { t.classList.remove('active'); });
-  if (el) el.classList.add('active');
+  var back = document.getElementById('lifeBackBtn');
+  if (back) back.style.display = 'flex';
+  var titles = {reads:'Reads', journal:'Journal', specialists:'Specialists'};
+  var subs = {reads:'Curated for you', journal:'Your private space', specialists:"Chat with Shadow's expert modes"};
+  var title = document.getElementById('lifeTitle');
+  var sub = document.getElementById('lifeSub');
+  if (title) title.textContent = titles[tab] || 'Life';
+  if (sub) sub.textContent = subs[tab] || '';
   if (tab === 'journal') openJournalPanel();
+  else if (journalUnlocked) { lockJournal(); }
   if (tab === 'reads') loadSavedReads();
 }
 
@@ -2378,9 +2459,10 @@ function openSpec(spec){
   document.getElementById('lifeScreen').classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   var nb=document.querySelector('[data-tab="life"]');if(nb)nb.classList.add('active');
-  ['lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id){
+  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id){
     var p=document.getElementById(id);if(p)p.style.display='none';
   });
+  var back=document.getElementById('lifeBackBtn');if(back)back.style.display='flex';
   var chat=document.getElementById('chatContainer');
   if(chat){chat.style.display='flex';chat.style.flex='1';chat.style.flexDirection='column';chat.style.overflow='hidden';}
   var names={master:'Shadow',investment:'Investment',productivity:'Productivity',tutor:'Tutor',travel:'Travel',fitness:'Fitness'};
@@ -2394,8 +2476,7 @@ function openSpec(spec){
 function closeChat(){
   var chat=document.getElementById('chatContainer');
   if(chat)chat.style.display='none';
-  var rp=document.getElementById('lifeReadsPanel');if(rp)rp.style.display='block';
-  document.querySelectorAll('#lifeTabs .intel-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+  switchLifeTab('specialists',null);
 }
 
 function addMsg(role,text,stream=false){
