@@ -2837,6 +2837,13 @@ var conciergeItems = [];
 var conciergeItems = [];
 var selectedConCat = 'travel';
 
+function linkifyText(text) {
+  return text.replace(/(https?:\/\/[^\s<>"]+)/g, function(url) {
+    var label = url.replace(/https?:\/\/(www\.)?/, '').split('/')[0];
+    return '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:underline;word-break:break-all">' + label + '</a>';
+  });
+}
+
 var conciergeAllItems = [];
 
 async function loadConcierge() {
@@ -2972,7 +2979,7 @@ function expandConciergeItem(id) {
       '<div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px" onclick="this.closest(\'div[style*=fixed]\').remove()">Close</div>' +
     '</div>' +
     '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:12px">Shadow Research Brief</div>' +
-    '<div style="font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap">' + (item.notes || '') + '</div>' +
+    '<div style="font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap">' + linkifyText(item.notes || '') + '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px">' +
       '<div class="con-action-btn con-action-done" style="flex:1;text-align:center;padding:10px" onclick="markConciergeDone(\'' + item.id + '\');this.closest(\'div[style*=fixed]\').remove()">Mark done</div>' +
       '<div class="con-action-btn" style="flex:1;text-align:center;padding:10px" onclick="this.closest(\'div[style*=fixed]\').remove()">Keep open</div>' +
@@ -3113,10 +3120,12 @@ async function submitConciergeRequest() {
       '\n\nYour role: research requests thoroughly and deliver a concise, actionable briefing. Not a chat response - a structured brief.' +
       '\n\nFormat your response as a clean brief with these sections as relevant:' +
       '\nOVERVIEW: 1-2 sentences on what you found' +
-      '\nOPTIONS: 2-3 specific options with names, costs, and key details' +
-      '\nRECOMMENDATION: Your single best recommendation and why' +
-      '\nNEXT STEPS: 2-3 concrete actions AJ should take' +
-      '\n\nBe specific - real names, real prices, real dates. No filler. No generic advice.' +
+      '\nOPTIONS: 2-3 specific options with names, real costs in AED/USD, and key details. For each option include the direct booking URL or website.' +
+      '\nRECOMMENDATION: Your single best recommendation and why. Include the direct link.' +
+      '\nLINKS: List all relevant direct URLs - booking sites, official websites, comparison tools. Format as: Label: https://...' +
+      '\nNEXT STEPS: 2-3 concrete actions AJ should take, each with a direct link where applicable' +
+      '\n\nCRITICAL: Always include real, working URLs. For travel: emirates.com, booking.com, airbnb.com. For vehicles: dealer websites. For restaurants: the venue website or OpenTable. Never say "visit website" without giving the actual URL.' +
+      '\nBe specific - real names, real prices, real dates. No filler. No generic advice.' +
       '\nAJ is based in Abu Dhabi. Consider UAE context, AED pricing where relevant, and his premium lifestyle.' +
       (memCtx ? '\n\nWhat Shadow knows about AJ:\n' + memCtx : '') +
       (searchCtx ? '\n\nLive research results:\n' + searchCtx : '');
