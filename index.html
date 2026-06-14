@@ -3083,15 +3083,24 @@ async function sendConciergeChat(id) {
       body: JSON.stringify({model: MODEL, max_tokens: 1500, system: sysPmt, messages: messages})
     });
     var data = await r.json();
-    var reply = data.content && data.content[0] ? data.content[0].text : 'Sorry, something went wrong.';
+    console.log('concierge chat response:', JSON.stringify(data).substring(0, 200));
+    var reply = '';
+    if (data.content && data.content[0] && data.content[0].text) {
+      reply = data.content[0].text;
+    } else if (data.error) {
+      reply = 'Shadow error: ' + (data.error.message || JSON.stringify(data.error));
+    } else {
+      reply = 'No response received. Please try again.';
+    }
     conTaskChats[id].push({role: 'assistant', content: reply});
     var think = document.getElementById('conThink_' + id);
     if (think) think.remove();
     appendConMessage(id, 'assistant', reply);
   } catch(e) {
+    console.log('concierge chat error:', e.message, e);
     var think = document.getElementById('conThink_' + id);
     if (think) think.remove();
-    appendConMessage(id, 'assistant', 'Error reaching Shadow. Please try again.');
+    appendConMessage(id, 'assistant', 'Connection error: ' + e.message);
   }
 }
 
