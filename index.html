@@ -1088,6 +1088,77 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .pill.green{background:var(--green-dim);color:var(--green)}
 .pill.red{background:var(--red-dim);color:var(--red)}
 .pill.amber{background:var(--amber-dim);color:var(--amber)}
+/* ── CONCIERGE ── */
+.con-panel-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.con-panel-title{font-family:var(--font-display);font-size:20px;font-style:italic;color:var(--t1)}
+.con-panel-sub{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-top:4px;display:flex;align-items:center;gap:6px}
+.con-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:cpulse 2s infinite}
+.con-filter-row{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;flex-shrink:0}
+.con-filter-row::-webkit-scrollbar{display:none}
+.con-chip{font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:20px;cursor:pointer;white-space:nowrap;border:1px solid var(--border);color:var(--t3);transition:all 0.15s;background:var(--bg2)}
+.con-chip.active{background:var(--blue-dim);border-color:var(--border2);color:var(--blue)}
+.con-sec{font-family:var(--font-mono);font-size:8px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;padding:12px 20px 8px}
+.con-urgent{margin:0 16px 10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:var(--r-lg);overflow:hidden;position:relative;cursor:pointer}
+.con-urgent::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.con-urgent-top{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 6px}
+.con-urgent-badge{font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.con-urgent-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:cpulse 1.5s infinite}
+.con-urgent-due{font-family:var(--font-mono);font-size:9px;color:var(--t3)}
+.con-urgent-title{padding:0 14px 5px;font-size:14px;font-weight:500;color:var(--t1)}
+.con-urgent-body{padding:0 14px 10px;font-size:12px;color:var(--t2);line-height:1.55}
+.con-urgent-footer{display:flex;gap:8px;padding:9px 14px;border-top:1px solid rgba(239,68,68,0.12)}
+.con-btn-primary{flex:1;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:8px;font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--red);text-align:center;cursor:pointer}
+.con-btn-secondary{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--t3);text-align:center;cursor:pointer}
+.con-amber{background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.2)}
+.con-amber::before{background:linear-gradient(90deg,transparent,var(--amber),transparent)}
+.con-amber .con-urgent-badge{color:var(--amber)}
+.con-amber .con-urgent-dot{background:var(--amber);box-shadow:none}
+.con-amber .con-urgent-footer{border-color:rgba(245,158,11,0.12)}
+.con-amber .con-btn-primary{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.25);color:var(--amber)}
+.con-req{margin:0 16px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color 0.15s}
+.con-req:active{background:var(--bg3)}
+.con-req-main{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.con-req-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.con-req-body{flex:1;min-width:0}
+.con-req-title{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.con-req-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.con-req-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.con-status{font-family:var(--font-mono);font-size:8px;padding:3px 8px;border-radius:10px;letter-spacing:0.5px;white-space:nowrap}
+.cs-pending{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.cs-done{background:rgba(34,197,94,0.08);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.cs-handling{background:var(--blue-dim);color:var(--blue);border:1px solid var(--border2)}
+.con-req-date{font-family:var(--font-mono);font-size:9px;color:var(--t3)}
+.con-progress{height:2px;background:var(--bg4);margin:0 14px 12px;border-radius:2px;overflow:hidden}
+.con-progress-bar{height:2px;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))}
+.con-proactive{margin:0 16px 10px;background:linear-gradient(135deg,rgba(168,85,247,0.07),rgba(59,130,246,0.05));border:1px solid rgba(168,85,247,0.18);border-radius:var(--r);overflow:hidden;position:relative;cursor:pointer}
+.con-proactive::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--purple),transparent)}
+.con-pro-top{display:flex;align-items:center;gap:7px;padding:10px 14px 5px}
+.con-pro-label{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--purple);text-transform:uppercase}
+.con-pro-title{padding:0 14px 4px;font-size:13px;font-weight:500;color:var(--t1)}
+.con-pro-body{padding:0 14px 10px;font-size:11.5px;color:var(--t2);line-height:1.55}
+.con-pro-action{margin:0 14px 12px;display:inline-block;font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--purple);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:5px 10px;cursor:pointer}
+.con-compose{margin:0 16px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden}
+.con-compose-lbl{padding:10px 14px 6px;font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);text-transform:uppercase}
+.con-compose-chips{display:flex;gap:6px;padding:0 14px 10px;flex-wrap:wrap}
+.con-cc{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-family:var(--font-mono);font-size:9px;color:var(--t2);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.con-cc:active{border-color:var(--border2);color:var(--blue)}
+.con-compose-input{display:flex;align-items:center;gap:8px;margin:0 14px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.con-input-text{font-size:12px;color:var(--t3);flex:1}
+.con-send{width:28px;height:28px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 0 10px var(--blue-glow)}
+.con-send-arrow{border-top:1.5px solid white;border-right:1.5px solid white;width:8px;height:8px;transform:rotate(45deg);margin-left:-2px}
+.con-new-btn{background:var(--blue);border-radius:8px;padding:7px 13px;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;cursor:pointer;box-shadow:0 0 12px var(--blue-glow);white-space:nowrap;color:var(--t1)}
+/* ── HOME CONCIERGE SNAPSHOT ── */
+.home-con-snap{margin:0 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.hcs-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s}
+.hcs-item:last-child{border-bottom:none}
+.hcs-item:active{background:var(--bg3)}
+.hcs-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.hcs-body{flex:1;min-width:0}
+.hcs-title{font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcs-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.hcs-tag{font-family:var(--font-mono);font-size:8px;padding:2px 7px;border-radius:8px;flex-shrink:0}
+.hcs-empty{padding:16px;text-align:center;font-size:12px;color:var(--t3)}
+
 </style>
 </head>
 <body>
@@ -1157,35 +1228,18 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
     </div>
     <div class="home-sec">
-      <div class="home-sec-title">Markets</div>
-      <div class="home-sec-action" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">Treasury &rsaquo;</div>
+      <div class="home-sec-title">Concierge</div>
+      <div class="home-sec-action" onclick="switchLifeTab('concierge',null);switchNav('life',document.querySelector('[data-tab=life]'))">View all &rsaquo;</div>
     </div>
-    <div class="market-strip">
-      <div class="market-chip">
-        <div class="mc-label">S&amp;P 500</div>
-        <div class="mc-value" id="mcSPY">--</div>
-        <div class="mc-change" id="mcSPYchg">--</div>
-      </div>
-      <div class="market-chip">
-        <div class="mc-label">NVDA</div>
-        <div class="mc-value" id="mcNVDA">--</div>
-        <div class="mc-change" id="mcNVDAchg">--</div>
-      </div>
-      <div class="market-chip">
-        <div class="mc-label">Portfolio</div>
-        <div class="mc-value" id="mcPort">--</div>
-        <div class="mc-change" id="mcPortchg">--</div>
-      </div>
-      <div class="market-chip">
-        <div class="mc-label">Gold</div>
-        <div class="mc-value" id="mcGold">--</div>
-        <div class="mc-change" id="mcGoldchg">--</div>
-      </div>
-      <div class="market-chip">
-        <div class="mc-label">Oil</div>
-        <div class="mc-value" id="mcOil">--</div>
-        <div class="mc-change" id="mcOilchg">--</div>
-      </div>
+    <div class="home-con-snap" id="homeConciergeSnap">
+      <div class="hcs-empty">Loading...</div>
+    </div>
+    <div style="display:none">
+      <div id="mcSPY"></div><div id="mcSPYchg"></div>
+      <div id="mcNVDA"></div><div id="mcNVDAchg"></div>
+      <div id="mcPort"></div><div id="mcPortchg"></div>
+      <div id="mcGold"></div><div id="mcGoldchg"></div>
+      <div id="mcOil"></div><div id="mcOilchg"></div>
     </div>
     <div id="alertsSection" class="alerts-section">
       <div class="home-sec" style="padding-bottom:0">
@@ -1328,7 +1382,40 @@ html,body{height:100%;overflow:hidden;background:#04060e}
           <div class="life-spec-mini">&#127758;</div>
         </div>
       </div>
+      <!-- Concierge Card -->
+      <div class="life-card" onclick="switchLifeTab('concierge',null)">
+        <div class="life-card-icon">&#127914;</div>
+        <div class="life-card-body">
+          <div class="life-card-title">Concierge</div>
+          <div class="life-card-sub" id="lifeConciergePreview">Your affairs, handled</div>
+        </div>
+        <div class="life-card-arrow">&#8250;</div>
+      </div>
     </div>
+  </div>
+
+
+  <!-- CONCIERGE PANEL -->
+  <div id="lifeConciergePanel" class="scroll-body" style="display:none">
+    <div id="conciergeUrgentSection"></div>
+    <div id="conciergeHandlingSection"></div>
+    <div id="conciergeProactiveSection"></div>
+    <div class="con-compose">
+      <div class="con-compose-lbl">New request</div>
+      <div class="con-compose-chips">
+        <div class="con-cc" onclick="openConciergeRequest('Book a restaurant')">Book a restaurant</div>
+        <div class="con-cc" onclick="openConciergeRequest('Arrange transport')">Arrange transport</div>
+        <div class="con-cc" onclick="openConciergeRequest('Research something')">Research something</div>
+        <div class="con-cc" onclick="openConciergeRequest('Pay a bill')">Pay a bill</div>
+        <div class="con-cc" onclick="openConciergeRequest('Plan a trip')">Plan a trip</div>
+        <div class="con-cc" onclick="openConciergeRequest('Send a gift')">Send a gift</div>
+      </div>
+      <div class="con-compose-input" onclick="openConciergeRequest('')">
+        <div class="con-input-text">Describe what you need...</div>
+        <div class="con-send"><div class="con-send-arrow"></div></div>
+      </div>
+    </div>
+    <div class="section-gap"></div>
   </div>
 
   <!-- READS PANEL -->
@@ -2058,7 +2145,7 @@ async function loadLifeHomePreviews() {
 
 // ── LIFE TAB ──
 function switchLifeTab(tab, el) {
-  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id) {
+  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel','lifeConciergePanel'].forEach(function(id) {
     var p = document.getElementById(id);
     if (p) p.style.display = 'none';
   });
@@ -2066,8 +2153,8 @@ function switchLifeTab(tab, el) {
   if (panel) panel.style.display = 'block';
   var back = document.getElementById('lifeBackBtn');
   if (back) back.style.display = 'flex';
-  var titles = {reads:'Reads', journal:'Journal', specialists:'Specialists'};
-  var subs = {reads:'Curated for you', journal:'Your private space', specialists:"Chat with Shadow's expert modes"};
+  var titles = {reads:'Reads', journal:'Journal', specialists:'Specialists', concierge:'Concierge'};
+  var subs = {reads:'Curated for you', journal:'Your private space', specialists:"Chat with Shadow's expert modes", concierge:'Your affairs, handled'};
   var title = document.getElementById('lifeTitle');
   var sub = document.getElementById('lifeSub');
   if (title) title.textContent = titles[tab] || 'Life';
@@ -2075,6 +2162,7 @@ function switchLifeTab(tab, el) {
   if (tab === 'journal') openJournalPanel();
   else if (journalUnlocked) { lockJournal(); }
   if (tab === 'reads') loadSavedReads();
+  if (tab === 'concierge') loadConcierge();
 }
 
 // ── READS ──
@@ -2587,6 +2675,169 @@ async function dismissAlert(id,el){
   }catch(e){console.log('dismiss error',e);}
 }
 
+// ── CONCIERGE ──
+var conciergeItems = [];
+
+async function loadConcierge() {
+  try {
+    var res = await db.from('shadow_concierge').select('*').eq('user_id', UID).neq('status', 'done').order('created_at', {ascending: false});
+    conciergeItems = res.data || [];
+    renderConciergePanel();
+    renderConciergeSnapshot();
+    updateConciergePreview();
+  } catch(e) {
+    console.log('concierge load error', e);
+  }
+}
+
+function renderConciergePanel() {
+  var urgent = conciergeItems.filter(function(i) { return i.status === 'urgent'; });
+  var handling = conciergeItems.filter(function(i) { return i.status === 'handling' || i.status === 'pending'; });
+
+  var urgentEl = document.getElementById('conciergeUrgentSection');
+  var handlingEl = document.getElementById('conciergeHandlingSection');
+
+  if (urgentEl) {
+    if (urgent.length) {
+      urgentEl.innerHTML = '<div class="con-sec">Needs your attention</div>' +
+        urgent.map(function(item) {
+          var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+          var isAmber = item.category === 'payment';
+          return '<div class="con-urgent ' + (isAmber ? 'con-amber' : '') + '">' +
+            '<div class="con-urgent-top">' +
+              '<div class="con-urgent-badge"><div class="con-urgent-dot"></div>Action required</div>' +
+              '<div class="con-urgent-due">' + dueStr + '</div>' +
+            '</div>' +
+            '<div class="con-urgent-title">' + (item.title || '') + '</div>' +
+            '<div class="con-urgent-body">' + (item.notes || '') + '</div>' +
+            '<div class="con-urgent-footer">' +
+              '<div class="con-btn-primary" onclick="markConciergeHandling(\'' + item.id + '\')">Mark handling</div>' +
+              '<div class="con-btn-secondary" onclick="snoozeConcierge(\'' + item.id + '\')">Snooze</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+    } else {
+      urgentEl.innerHTML = '';
+    }
+  }
+
+  if (handlingEl) {
+    if (handling.length) {
+      handlingEl.innerHTML = '<div class="con-sec">In progress</div>' +
+        handling.map(function(item) {
+          var statusClass = item.status === 'handling' ? 'cs-handling' : 'cs-pending';
+          var statusLabel = item.status === 'handling' ? 'Shadow active' : 'Pending';
+          return '<div class="con-req">' +
+            '<div class="con-req-main">' +
+              '<div class="con-req-icon" style="background:var(--blue-dim)">&#127914;</div>' +
+              '<div class="con-req-body">' +
+                '<div class="con-req-title">' + (item.title || '') + '</div>' +
+                '<div class="con-req-sub">' + (item.notes || '').substring(0, 50) + '</div>' +
+              '</div>' +
+              '<div class="con-req-right">' +
+                '<div class="con-status ' + statusClass + '">' + statusLabel + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+    } else {
+      handlingEl.innerHTML = '';
+    }
+  }
+
+  var proEl = document.getElementById('conciergeProactiveSection');
+  if (proEl && !conciergeItems.length) {
+    proEl.innerHTML = '<div class="con-sec">Get started</div>' +
+      '<div style="margin:0 16px 12px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);text-align:center">' +
+        '<div style="font-size:28px;margin-bottom:10px">&#127914;</div>' +
+        '<div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--t3);margin-bottom:6px">CONCIERGE READY</div>' +
+        '<div style="font-size:13px;color:var(--t2);line-height:1.5">Shadow is standing by to handle anything you need. Use the quick actions below or describe a request.</div>' +
+      '</div>';
+  } else if (proEl) {
+    proEl.innerHTML = '';
+  }
+}
+
+function renderConciergeSnapshot() {
+  var el = document.getElementById('homeConciergeSnap');
+  if (!el) return;
+  var top = conciergeItems.slice(0, 3);
+  if (!top.length) {
+    el.innerHTML = '<div class="hcs-empty">No active requests &mdash; tap to add one</div>';
+    return;
+  }
+  el.innerHTML = top.map(function(item) {
+    var dotColor = item.status === 'urgent' ? 'var(--red)' : item.status === 'handling' ? 'var(--blue)' : 'var(--amber)';
+    var tagClass = item.status === 'urgent' ? 'tag-high' : item.status === 'handling' ? '' : '';
+    var tagStyle = item.status === 'urgent' ? 'background:var(--red-dim);color:var(--red)' : item.status === 'handling' ? 'background:var(--blue-dim);color:var(--blue)' : 'background:var(--amber-dim);color:var(--amber)';
+    var tagLabel = item.status === 'urgent' ? 'Urgent' : item.status === 'handling' ? 'Active' : 'Pending';
+    var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : item.category || '';
+    return '<div class="hcs-item" onclick="switchLifeTab(\'concierge\',null);switchNav(\'life\',document.querySelector(\'[data-tab=life]\'))">' +
+      '<div class="hcs-dot" style="background:' + dotColor + '"></div>' +
+      '<div class="hcs-body">' +
+        '<div class="hcs-title">' + (item.title || '') + '</div>' +
+        '<div class="hcs-sub">' + dueStr + '</div>' +
+      '</div>' +
+      '<div class="hcs-tag" style="' + tagStyle + '">' + tagLabel + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function updateConciergePreview() {
+  var el = document.getElementById('lifeConciergePreview');
+  if (!el) return;
+  var urgent = conciergeItems.filter(function(i) { return i.status === 'urgent'; }).length;
+  var total = conciergeItems.length;
+  if (urgent > 0) {
+    el.textContent = urgent + ' item' + (urgent > 1 ? 's' : '') + ' need your attention';
+  } else if (total > 0) {
+    el.textContent = total + ' active request' + (total > 1 ? 's' : '');
+  } else {
+    el.textContent = 'Your affairs, handled';
+  }
+}
+
+async function markConciergeHandling(id) {
+  try {
+    await db.from('shadow_concierge').update({status: 'handling'}).eq('id', id);
+    showToast('Marked as in progress');
+    await loadConcierge();
+  } catch(e) { showToast('Error updating item'); }
+}
+
+async function snoozeConcierge(id) {
+  showToast('Snoozed until tomorrow');
+}
+
+async function markConciergeDone(id) {
+  try {
+    await db.from('shadow_concierge').update({status: 'done'}).eq('id', id);
+    showToast('Marked complete');
+    await loadConcierge();
+  } catch(e) { showToast('Error updating item'); }
+}
+
+function openConciergeRequest(prefill) {
+  var title = prefill || prompt('What do you need handled?');
+  if (!title || !title.trim()) return;
+  saveConciergeRequest(title.trim());
+}
+
+async function saveConciergeRequest(title) {
+  try {
+    await db.from('shadow_concierge').insert({
+      user_id: UID,
+      title: title,
+      status: 'pending',
+      category: 'other',
+      notes: ''
+    });
+    showToast('Request added');
+    await loadConcierge();
+  } catch(e) { showToast('Error saving request'); }
+}
+
+
 // ── HOME INTEL GRID ──
 function updateIntelGrid() {
   // Wealth — from portTotal already calculated in loadPortfolio
@@ -2838,7 +3089,7 @@ function openSpec(spec){
   document.getElementById('lifeScreen').classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   var nb=document.querySelector('[data-tab="life"]');if(nb)nb.classList.add('active');
-  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel'].forEach(function(id){
+  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel','lifeConciergePanel'].forEach(function(id){
     var p=document.getElementById(id);if(p)p.style.display='none';
   });
   var back=document.getElementById('lifeBackBtn');if(back)back.style.display='flex';
@@ -3379,7 +3630,7 @@ async function init(){
     await sleep(200);
   }
   // Load data
-  await Promise.all([loadProfile(),loadTasks(),loadPortfolio(),loadTodayBrief(),loadProactiveAlerts()]);
+  await Promise.all([loadProfile(),loadTasks(),loadPortfolio(),loadTodayBrief(),loadProactiveAlerts(),loadConcierge()]);
   fetchAllMarketData();
   updateClock();
   // Hide splash
