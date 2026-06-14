@@ -3292,19 +3292,11 @@ async function submitConciergeRequest() {
 
     var memCtx = memories.slice(0, 10).map(function(m) { return m.key + ': ' + m.value; }).join('\n');
 
-    var sysPrompt = 'You are Shadow Concierge, a personal chief of staff for AJ, a high-net-worth executive based in Abu Dhabi, UAE.' +
-      '\n\nYour role: research requests thoroughly and deliver a concise, actionable briefing. Not a chat response - a structured brief.' +
-      '\n\nFormat your response as a clean brief with these sections as relevant:' +
-      '\nOVERVIEW: 1-2 sentences on what you found' +
-      '\nOPTIONS: 2-3 specific options with names, real costs in AED/USD, and key details. For each option include the direct booking URL or website.' +
-      '\nRECOMMENDATION: Your single best recommendation and why. Include the direct link.' +
-      '\nLINKS: List all relevant direct URLs - booking sites, official websites, comparison tools. Format as: Label: https://...' +
-      '\nNEXT STEPS: 2-3 concrete actions AJ should take, each with a direct link where applicable' +
-      '\n\nCRITICAL: Always include real, working URLs. For travel: emirates.com, booking.com, airbnb.com. For vehicles: dealer websites. For restaurants: the venue website or OpenTable. Never say "visit website" without giving the actual URL.' +
-      '\nBe specific - real names, real prices, real dates. No filler. No generic advice.' +
-      '\nAJ is based in Abu Dhabi. Consider UAE context, AED pricing where relevant, and his premium lifestyle.' +
-      (memCtx ? '\n\nWhat Shadow knows about AJ:\n' + memCtx : '') +
-      (searchCtx ? '\n\nLive research results:\n' + searchCtx : '');
+    var sysPrompt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE. UHNW executive, premium lifestyle.' +
+      ' Deliver a structured research brief with: OVERVIEW (2 sentences), OPTIONS (2-3 with real prices in AED/USD and direct URLs), RECOMMENDATION (best option with link), LINKS (all relevant URLs), NEXT STEPS (3 actions with links).' +
+      ' Always include real working URLs. Be specific - real names, real prices. No filler.' +
+      (memCtx ? ' AJ profile: ' + memCtx.substring(0, 200) : '') +
+      (searchCtx ? ' Live research: ' + searchCtx.substring(0, 500) : '');
 
     var userMsg = 'Please research and brief me on this concierge request:\n\nRequest: ' + title +
       (details ? '\nAdditional details: ' + details : '') +
@@ -3695,9 +3687,9 @@ async function doTavilySearch(query){
     });
     const data=await r.json();
     if(!data.results||!data.results.length)return '';
-    const summary=data.answer?'Summary: '+data.answer+'\n\n':'';
-    const results=data.results.slice(0,5).map((r,i)=>
-      (i+1)+'. '+r.title+'\n'+r.content.substring(0,200)
+    const summary=data.answer?'Summary: '+data.answer.substring(0,300)+'\n\n':'';
+    const results=data.results.slice(0,3).map((r,i)=>
+      (i+1)+'. '+r.title+'\n'+r.content.substring(0,150)
     ).join('\n\n');
     return summary+'Recent web results:\n'+results;
   }catch(e){
