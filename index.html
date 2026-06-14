@@ -3067,12 +3067,13 @@ async function sendConciergeChat(id) {
   appendConThinking(id);
 
   var memCtx = memories.slice(0, 8).map(function(m) { return m.key + ': ' + m.value; }).join('\n');
+  var briefSnippet = (item.notes || '').substring(0, 500).replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ');
   var sysPmt = 'You are Shadow Concierge, a personal chief of staff for AJ based in Abu Dhabi.' +
     ' You are continuing a conversation about this concierge request: "' + (item.title || '') + '".' +
-    ' The original research brief was:\n\n' + (item.notes || '') +
-    '\n\nAJ is now following up. Respond concisely and helpfully. Include direct URLs whenever relevant.' +
+    ' Context from original research: ' + briefSnippet +
+    ' Respond concisely and helpfully. Include direct URLs whenever relevant.' +
     ' Be specific - real prices, real options, real links. No filler.' +
-    (memCtx ? '\n\nWhat Shadow knows about AJ:\n' + memCtx : '');
+    (memCtx ? ' What Shadow knows about AJ: ' + memCtx : '');
 
   var messages = conTaskChats[id].slice();
 
