@@ -3117,19 +3117,9 @@ async function sendConciergeChat(id) {
   appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Send only last 2 exchanges to API — full history stored in Supabase
+  // Send last 8 messages with full content — Cloudflare Worker now on paid plan
   var fullHistory = conTaskChats[id];
-  var recentHistory = fullHistory.slice(-4);
-  var messages = recentHistory.map(function(m) {
-    return {
-      role: m.role,
-      content: m.content.substring(0, 150)
-    };
-  });
-  // Always ensure last message is current user message
-  if (!messages.length || messages[messages.length-1].role !== 'user') {
-    messages = [{role: 'user', content: msg.substring(0, 150)}];
-  }
+  var messages = fullHistory.slice(-8);
 
   // Compact system prompt with brief context
   var briefCtx = (item.notes || '').replace(/[\r\n]+/g, ' ').substring(0, 200);
