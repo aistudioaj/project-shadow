@@ -1159,6 +1159,159 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .hcs-tag{font-family:var(--font-mono);font-size:8px;padding:2px 7px;border-radius:8px;flex-shrink:0}
 .hcs-empty{padding:16px;text-align:center;font-size:12px;color:var(--t3)}
 
+/* ── CONCIERGE REQUEST FORM OVERLAY ── */
+#conciergeFormOverlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.7);
+  align-items:flex-end;justify-content:center;
+}
+#conciergeFormOverlay.show{display:flex}
+.con-form{
+  background:var(--bg1);
+  border:1px solid var(--border2);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+  width:100%;max-width:430px;
+  padding:20px 20px calc(20px + var(--safe-bottom));
+  max-height:85vh;overflow-y:auto;
+}
+.con-form::-webkit-scrollbar{display:none}
+.con-form-title{
+  font-family:var(--font-display);
+  font-size:20px;font-style:italic;
+  color:var(--t1);margin-bottom:4px;
+}
+.con-form-sub{
+  font-family:var(--font-mono);font-size:9px;
+  letter-spacing:2px;color:var(--t3);
+  text-transform:uppercase;margin-bottom:18px;
+}
+.con-form-label{
+  font-family:var(--font-mono);font-size:9px;
+  letter-spacing:2px;color:var(--t3);
+  text-transform:uppercase;margin-bottom:6px;
+}
+.con-form-input{
+  width:100%;background:var(--bg2);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:11px 14px;font-family:var(--font-body);
+  font-size:14px;color:var(--t1);
+  outline:none;margin-bottom:14px;
+  transition:border-color 0.15s;
+  -webkit-appearance:none;
+}
+.con-form-input:focus{border-color:var(--border2)}
+.con-form-textarea{
+  width:100%;background:var(--bg2);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:11px 14px;font-family:var(--font-body);
+  font-size:13px;color:var(--t1);
+  outline:none;margin-bottom:14px;
+  resize:none;min-height:80px;line-height:1.5;
+  transition:border-color 0.15s;
+  -webkit-appearance:none;
+}
+.con-form-textarea:focus{border-color:var(--border2)}
+.con-form-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.con-form-cat{
+  font-family:var(--font-mono);font-size:9px;
+  letter-spacing:1px;padding:5px 12px;
+  border-radius:20px;border:1px solid var(--border);
+  color:var(--t3);cursor:pointer;transition:all 0.15s;
+  background:var(--bg2);
+}
+.con-form-cat.active{
+  background:var(--blue-dim);
+  border-color:var(--border2);color:var(--blue);
+}
+.con-form-row{display:flex;gap:10px;margin-bottom:14px}
+.con-form-row .con-form-input{margin-bottom:0;flex:1}
+.con-form-btns{display:flex;gap:8px;margin-top:4px}
+.con-submit-btn{
+  flex:1;background:var(--blue);
+  border-radius:var(--r);padding:13px;
+  font-family:var(--font-mono);font-size:10px;
+  letter-spacing:1.5px;color:var(--t1);
+  text-align:center;cursor:pointer;
+  box-shadow:0 0 16px var(--blue-glow);
+  transition:opacity 0.15s;
+}
+.con-submit-btn:active{opacity:0.8}
+.con-cancel-btn{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:13px 18px;
+  font-family:var(--font-mono);font-size:10px;
+  letter-spacing:1px;color:var(--t3);
+  text-align:center;cursor:pointer;
+}
+/* ── CONCIERGE RESEARCH CARD ── */
+.con-research{
+  margin:0 16px 10px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden;
+  cursor:pointer;transition:border-color 0.15s;
+}
+.con-research:active{background:var(--bg3)}
+.con-research-top{
+  display:flex;align-items:center;
+  justify-content:space-between;
+  padding:12px 14px 8px;
+}
+.con-research-badge{
+  font-family:var(--font-mono);font-size:8px;
+  letter-spacing:2px;text-transform:uppercase;
+}
+.con-research-date{font-family:var(--font-mono);font-size:9px;color:var(--t3)}
+.con-research-title{
+  padding:0 14px 6px;font-size:14px;
+  font-weight:500;color:var(--t1);
+}
+.con-research-brief{
+  padding:0 14px 12px;font-size:12.5px;
+  color:var(--t2);line-height:1.65;
+}
+.con-research-footer{
+  display:flex;align-items:center;
+  justify-content:space-between;
+  padding:9px 14px;
+  border-top:1px solid var(--border);
+  background:rgba(0,0,0,0.2);
+}
+.con-research-cat{
+  font-family:var(--font-mono);font-size:8px;
+  letter-spacing:1px;padding:3px 8px;
+  border-radius:8px;text-transform:uppercase;
+}
+.con-research-actions{display:flex;gap:6px}
+.con-action-btn{
+  font-family:var(--font-mono);font-size:8px;
+  letter-spacing:1px;padding:5px 10px;
+  border-radius:8px;cursor:pointer;
+  border:1px solid var(--border);
+  color:var(--t3);transition:all 0.15s;
+}
+.con-action-done{
+  background:rgba(34,197,94,0.1);
+  border-color:rgba(34,197,94,0.25);
+  color:var(--green);
+}
+/* ── CONCIERGE THINKING STATE ── */
+.con-thinking{
+  margin:0 16px 10px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:16px 14px;
+  display:flex;align-items:center;gap:12px;
+}
+.con-thinking-dots{display:flex;gap:4px}
+.con-thinking-dots span{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--blue);
+  animation:conthink 1.2s ease-in-out infinite;
+}
+.con-thinking-dots span:nth-child(2){animation-delay:0.2s}
+.con-thinking-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes conthink{0%,80%,100%{opacity:0.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
+.con-thinking-text{font-size:13px;color:var(--t2)}
+
 </style>
 </head>
 <body>
@@ -1403,14 +1556,14 @@ html,body{height:100%;overflow:hidden;background:#04060e}
     <div class="con-compose">
       <div class="con-compose-lbl">New request</div>
       <div class="con-compose-chips">
-        <div class="con-cc" onclick="openConciergeRequest('Book a restaurant')">Book a restaurant</div>
-        <div class="con-cc" onclick="openConciergeRequest('Arrange transport')">Arrange transport</div>
-        <div class="con-cc" onclick="openConciergeRequest('Research something')">Research something</div>
-        <div class="con-cc" onclick="openConciergeRequest('Pay a bill')">Pay a bill</div>
-        <div class="con-cc" onclick="openConciergeRequest('Plan a trip')">Plan a trip</div>
-        <div class="con-cc" onclick="openConciergeRequest('Send a gift')">Send a gift</div>
+        <div class="con-cc" onclick="openConciergeForm('Book a restaurant')">Book a restaurant</div>
+        <div class="con-cc" onclick="openConciergeForm('Arrange transport')">Arrange transport</div>
+        <div class="con-cc" onclick="openConciergeForm('Research something')">Research something</div>
+        <div class="con-cc" onclick="openConciergeForm('Pay a bill')">Pay a bill</div>
+        <div class="con-cc" onclick="openConciergeForm('Plan a trip')">Plan a trip</div>
+        <div class="con-cc" onclick="openConciergeForm('Send a gift')">Send a gift</div>
       </div>
-      <div class="con-compose-input" onclick="openConciergeRequest('')">
+      <div class="con-compose-input" onclick="openConciergeForm('')">
         <div class="con-input-text">Describe what you need...</div>
         <div class="con-send"><div class="con-send-arrow"></div></div>
       </div>
@@ -2678,6 +2831,10 @@ async function dismissAlert(id,el){
 // ── CONCIERGE ──
 var conciergeItems = [];
 
+// ── CONCIERGE AGENT ──
+var conciergeItems = [];
+var selectedConCat = 'travel';
+
 async function loadConcierge() {
   try {
     var res = await db.from('shadow_concierge').select('*').eq('user_id', UID).neq('status', 'done').order('created_at', {ascending: false});
@@ -2692,70 +2849,112 @@ async function loadConcierge() {
 
 function renderConciergePanel() {
   var urgent = conciergeItems.filter(function(i) { return i.status === 'urgent'; });
-  var handling = conciergeItems.filter(function(i) { return i.status === 'handling' || i.status === 'pending'; });
+  var active = conciergeItems.filter(function(i) { return i.status === 'handling'; });
+  var pending = conciergeItems.filter(function(i) { return i.status === 'pending'; });
 
   var urgentEl = document.getElementById('conciergeUrgentSection');
   var handlingEl = document.getElementById('conciergeHandlingSection');
+  var proEl = document.getElementById('conciergeProactiveSection');
 
   if (urgentEl) {
     if (urgent.length) {
       urgentEl.innerHTML = '<div class="con-sec">Needs your attention</div>' +
-        urgent.map(function(item) {
-          var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
-          var isAmber = item.category === 'payment';
-          return '<div class="con-urgent ' + (isAmber ? 'con-amber' : '') + '">' +
-            '<div class="con-urgent-top">' +
-              '<div class="con-urgent-badge"><div class="con-urgent-dot"></div>Action required</div>' +
-              '<div class="con-urgent-due">' + dueStr + '</div>' +
-            '</div>' +
-            '<div class="con-urgent-title">' + (item.title || '') + '</div>' +
-            '<div class="con-urgent-body">' + (item.notes || '') + '</div>' +
-            '<div class="con-urgent-footer">' +
-              '<div class="con-btn-primary" onclick="markConciergeHandling(\'' + item.id + '\')">Mark handling</div>' +
-              '<div class="con-btn-secondary" onclick="snoozeConcierge(\'' + item.id + '\')">Snooze</div>' +
-            '</div>' +
-          '</div>';
-        }).join('');
+        urgent.map(function(item) { return renderUrgentCard(item); }).join('');
     } else {
       urgentEl.innerHTML = '';
     }
   }
 
   if (handlingEl) {
-    if (handling.length) {
-      handlingEl.innerHTML = '<div class="con-sec">In progress</div>' +
-        handling.map(function(item) {
-          var statusClass = item.status === 'handling' ? 'cs-handling' : 'cs-pending';
-          var statusLabel = item.status === 'handling' ? 'Shadow active' : 'Pending';
-          return '<div class="con-req">' +
-            '<div class="con-req-main">' +
-              '<div class="con-req-icon" style="background:var(--blue-dim)">&#127914;</div>' +
-              '<div class="con-req-body">' +
-                '<div class="con-req-title">' + (item.title || '') + '</div>' +
-                '<div class="con-req-sub">' + (item.notes || '').substring(0, 50) + '</div>' +
-              '</div>' +
-              '<div class="con-req-right">' +
-                '<div class="con-status ' + statusClass + '">' + statusLabel + '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('');
+    var combined = active.concat(pending);
+    if (combined.length) {
+      handlingEl.innerHTML = '<div class="con-sec">Your requests</div>' +
+        combined.map(function(item) { return renderResearchCard(item); }).join('');
     } else {
       handlingEl.innerHTML = '';
     }
   }
 
-  var proEl = document.getElementById('conciergeProactiveSection');
-  if (proEl && !conciergeItems.length) {
-    proEl.innerHTML = '<div class="con-sec">Get started</div>' +
-      '<div style="margin:0 16px 12px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);text-align:center">' +
-        '<div style="font-size:28px;margin-bottom:10px">&#127914;</div>' +
-        '<div style="font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--t3);margin-bottom:6px">CONCIERGE READY</div>' +
-        '<div style="font-size:13px;color:var(--t2);line-height:1.5">Shadow is standing by to handle anything you need. Use the quick actions below or describe a request.</div>' +
-      '</div>';
-  } else if (proEl) {
-    proEl.innerHTML = '';
+  if (proEl) {
+    if (!conciergeItems.length) {
+      proEl.innerHTML = '<div class="con-sec">Get started</div>' +
+        '<div style="margin:0 16px 12px;padding:24px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);text-align:center">' +
+          '<div style="font-size:32px;margin-bottom:12px">&#127914;</div>' +
+          '<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:8px">CONCIERGE READY</div>' +
+          '<div style="font-size:13px;color:var(--t2);line-height:1.6">Shadow will research any request and brief you with options, costs and recommendations. Use the quick actions below.</div>' +
+        '</div>';
+    } else {
+      proEl.innerHTML = '';
+    }
   }
+}
+
+function renderUrgentCard(item) {
+  var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+  var isAmber = item.category === 'payment';
+  return '<div class="con-urgent ' + (isAmber ? 'con-amber' : '') + '">' +
+    '<div class="con-urgent-top">' +
+      '<div class="con-urgent-badge"><div class="con-urgent-dot"></div>Action required</div>' +
+      '<div class="con-urgent-due">' + dueStr + '</div>' +
+    '</div>' +
+    '<div class="con-urgent-title">' + (item.title || '') + '</div>' +
+    '<div class="con-urgent-body">' + (item.notes || '') + '</div>' +
+    '<div class="con-urgent-footer">' +
+      '<div class="con-btn-primary" onclick="markConciergeHandling(\'' + item.id + '\')">Mark handling</div>' +
+      '<div class="con-btn-secondary" onclick="markConciergeDone(\'' + item.id + '\')">Done</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderResearchCard(item) {
+  var statusClass = item.status === 'handling' ? 'cs-handling' : 'cs-pending';
+  var statusLabel = item.status === 'handling' ? 'Researched' : 'Researching...';
+  var catColors = {travel:'var(--blue)',booking:'var(--purple)',payment:'var(--amber)',research:'var(--teal)',vehicle:'var(--green)',other:'var(--t3)'};
+  var catColor = catColors[item.category] || 'var(--t3)';
+  var dateStr = new Date(item.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  var hasResearch = item.notes && item.notes.length > 50;
+
+  return '<div class="con-research">' +
+    '<div class="con-research-top">' +
+      '<div class="con-research-badge ' + statusClass + '" style="padding:3px 8px;border-radius:8px">' + statusLabel + '</div>' +
+      '<div class="con-research-date">' + dateStr + '</div>' +
+    '</div>' +
+    '<div class="con-research-title">' + (item.title || '') + '</div>' +
+    (hasResearch ?
+      '<div class="con-research-brief">' + (item.notes || '').substring(0, 300) + (item.notes.length > 300 ? '...' : '') + '</div>' :
+      '<div class="con-research-brief" style="color:var(--t3);font-style:italic">Shadow is researching this request...</div>'
+    ) +
+    '<div class="con-research-footer">' +
+      '<div class="con-research-cat" style="background:rgba(255,255,255,0.05);color:' + catColor + '">' + (item.category || 'other') + '</div>' +
+      '<div class="con-research-actions">' +
+        (hasResearch ? '<div class="con-action-btn" onclick="expandConciergeItem(\'' + item.id + '\')">Full brief</div>' : '') +
+        '<div class="con-action-btn con-action-done" onclick="markConciergeDone(\'' + item.id + '\')">Done</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function expandConciergeItem(id) {
+  var item = conciergeItems.find(function(i) { return i.id === id; });
+  if (!item) return;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.8);display:flex;align-items:flex-end;justify-content:center';
+  var panel = document.createElement('div');
+  panel.style.cssText = 'background:var(--bg1);border:1px solid var(--border2);border-radius:20px 20px 0 0;width:100%;max-width:430px;padding:20px;max-height:80vh;overflow-y:auto';
+  panel.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+      '<div style="font-family:var(--font-display);font-size:18px;font-style:italic;color:var(--t1)">' + (item.title || '') + '</div>' +
+      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px" onclick="this.closest(\'div[style*=fixed]\').remove()">Close</div>' +
+    '</div>' +
+    '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:12px">Shadow Research Brief</div>' +
+    '<div style="font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap">' + (item.notes || '') + '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:16px">' +
+      '<div class="con-action-btn con-action-done" style="flex:1;text-align:center;padding:10px" onclick="markConciergeDone(\'' + item.id + '\');this.closest(\'div[style*=fixed]\').remove()">Mark done</div>' +
+      '<div class="con-action-btn" style="flex:1;text-align:center;padding:10px" onclick="this.closest(\'div[style*=fixed]\').remove()">Keep open</div>' +
+    '</div>';
+  overlay.appendChild(panel);
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
 }
 
 function renderConciergeSnapshot() {
@@ -2768,9 +2967,8 @@ function renderConciergeSnapshot() {
   }
   el.innerHTML = top.map(function(item) {
     var dotColor = item.status === 'urgent' ? 'var(--red)' : item.status === 'handling' ? 'var(--blue)' : 'var(--amber)';
-    var tagClass = item.status === 'urgent' ? 'tag-high' : item.status === 'handling' ? '' : '';
     var tagStyle = item.status === 'urgent' ? 'background:var(--red-dim);color:var(--red)' : item.status === 'handling' ? 'background:var(--blue-dim);color:var(--blue)' : 'background:var(--amber-dim);color:var(--amber)';
-    var tagLabel = item.status === 'urgent' ? 'Urgent' : item.status === 'handling' ? 'Active' : 'Pending';
+    var tagLabel = item.status === 'urgent' ? 'Urgent' : item.status === 'handling' ? 'Researched' : 'Pending';
     var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : item.category || '';
     return '<div class="hcs-item" onclick="switchLifeTab(\'concierge\',null);switchNav(\'life\',document.querySelector(\'[data-tab=life]\'))">' +
       '<div class="hcs-dot" style="background:' + dotColor + '"></div>' +
@@ -2805,37 +3003,143 @@ async function markConciergeHandling(id) {
   } catch(e) { showToast('Error updating item'); }
 }
 
-async function snoozeConcierge(id) {
-  showToast('Snoozed until tomorrow');
-}
-
 async function markConciergeDone(id) {
   try {
     await db.from('shadow_concierge').update({status: 'done'}).eq('id', id);
-    showToast('Marked complete');
+    showToast('Done');
     await loadConcierge();
   } catch(e) { showToast('Error updating item'); }
 }
 
-function openConciergeRequest(prefill) {
-  var title = prefill || prompt('What do you need handled?');
-  if (!title || !title.trim()) return;
-  saveConciergeRequest(title.trim());
+function openConciergeForm(prefill) {
+  var overlay = document.getElementById('conciergeFormOverlay');
+  var titleEl = document.getElementById('conFormTitle');
+  var detailsEl = document.getElementById('conFormDetails');
+  var dueEl = document.getElementById('conFormDue');
+  if (titleEl) titleEl.value = prefill || '';
+  if (detailsEl) detailsEl.value = '';
+  if (dueEl) dueEl.value = '';
+  selectedConCat = 'travel';
+  document.querySelectorAll('.con-form-cat').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.cat === 'travel');
+  });
+  if (overlay) overlay.classList.add('show');
+  if (titleEl) setTimeout(function() { titleEl.focus(); }, 100);
 }
 
-async function saveConciergeRequest(title) {
-  try {
-    await db.from('shadow_concierge').insert({
-      user_id: UID,
-      title: title,
-      status: 'pending',
-      category: 'other',
-      notes: ''
-    });
-    showToast('Request added');
-    await loadConcierge();
-  } catch(e) { showToast('Error saving request'); }
+function openConciergeRequest(prefill) {
+  openConciergeForm(prefill);
 }
+
+function closeConciergeForm() {
+  var overlay = document.getElementById('conciergeFormOverlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+function selectConCat(el) {
+  document.querySelectorAll('.con-form-cat').forEach(function(c) { c.classList.remove('active'); });
+  el.classList.add('active');
+  selectedConCat = el.dataset.cat;
+}
+
+async function submitConciergeRequest() {
+  var titleEl = document.getElementById('conFormTitle');
+  var detailsEl = document.getElementById('conFormDetails');
+  var dueEl = document.getElementById('conFormDue');
+  var btn = document.getElementById('conSubmitBtn');
+  var title = titleEl ? titleEl.value.trim() : '';
+  var details = detailsEl ? detailsEl.value.trim() : '';
+  var due = dueEl ? dueEl.value : '';
+  if (!title) { showToast('Please describe what you need'); return; }
+
+  closeConciergeForm();
+
+  // Save immediately as pending
+  var insertRes = await db.from('shadow_concierge').insert({
+    user_id: UID,
+    title: title,
+    status: 'pending',
+    category: selectedConCat,
+    due_date: due || null,
+    notes: details ? 'Details: ' + details : ''
+  }).select();
+  var newId = insertRes.data && insertRes.data[0] ? insertRes.data[0].id : null;
+  await loadConcierge();
+
+  // Show thinking state in panel
+  var handlingEl = document.getElementById('conciergeHandlingSection');
+  if (handlingEl) {
+    var thinkDiv = document.createElement('div');
+    thinkDiv.className = 'con-thinking';
+    thinkDiv.id = 'conThinking';
+    thinkDiv.innerHTML = '<div class="con-thinking-dots"><span></span><span></span><span></span></div>' +
+      '<div class="con-thinking-text">Shadow is researching: ' + title + '</div>';
+    handlingEl.insertBefore(thinkDiv, handlingEl.firstChild);
+  }
+
+  // Research via Tavily + Claude
+  try {
+    var searchQuery = buildConciergeSearchQuery(title, details, selectedConCat);
+    var searchCtx = await doTavilySearch(searchQuery);
+
+    var memCtx = memories.slice(0, 10).map(function(m) { return m.key + ': ' + m.value; }).join('\n');
+
+    var sysPrompt = 'You are Shadow Concierge, a personal chief of staff for AJ, a high-net-worth executive based in Abu Dhabi, UAE.' +
+      '\n\nYour role: research requests thoroughly and deliver a concise, actionable briefing. Not a chat response - a structured brief.' +
+      '\n\nFormat your response as a clean brief with these sections as relevant:' +
+      '\nOVERVIEW: 1-2 sentences on what you found' +
+      '\nOPTIONS: 2-3 specific options with names, costs, and key details' +
+      '\nRECOMMENDATION: Your single best recommendation and why' +
+      '\nNEXT STEPS: 2-3 concrete actions AJ should take' +
+      '\n\nBe specific - real names, real prices, real dates. No filler. No generic advice.' +
+      '\nAJ is based in Abu Dhabi. Consider UAE context, AED pricing where relevant, and his premium lifestyle.' +
+      (memCtx ? '\n\nWhat Shadow knows about AJ:\n' + memCtx : '') +
+      (searchCtx ? '\n\nLive research results:\n' + searchCtx : '');
+
+    var userMsg = 'Please research and brief me on this concierge request:\n\nRequest: ' + title +
+      (details ? '\nAdditional details: ' + details : '') +
+      '\nCategory: ' + selectedConCat;
+
+    var r = await fetch(PROXY, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1000,
+        system: sysPrompt,
+        messages: [{role: 'user', content: userMsg}]
+      })
+    });
+    var data = await r.json();
+    var brief = data.content && data.content[0] ? data.content[0].text : 'Research complete. Please check back shortly.';
+
+    // Update Supabase with research
+    if (newId) {
+      await db.from('shadow_concierge').update({
+        status: 'handling',
+        notes: brief
+      }).eq('id', newId);
+    }
+    showToast('Research complete');
+  } catch(e) {
+    console.log('concierge research error', e);
+    showToast('Research saved - will retry');
+  }
+
+  var think = document.getElementById('conThinking');
+  if (think) think.remove();
+  await loadConcierge();
+}
+
+function buildConciergeSearchQuery(title, details, category) {
+  var base = title;
+  if (category === 'travel') return base + ' from Abu Dhabi UAE 2025 prices flights hotels';
+  if (category === 'vehicle') return base + ' UAE price options 2025';
+  if (category === 'booking') return base + ' Abu Dhabi Dubai reservation';
+  if (category === 'payment') return base + ' UAE cost options';
+  return base + ' Abu Dhabi UAE 2025';
+}
+
 
 
 // ── HOME INTEL GRID ──
@@ -3657,5 +3961,33 @@ async function init(){
 
 init();
 </script>
+
+<!-- CONCIERGE REQUEST FORM OVERLAY -->
+<div id="conciergeFormOverlay">
+  <div class="con-form">
+    <div class="con-form-title">New request</div>
+    <div class="con-form-sub">Shadow will research and brief you</div>
+    <div class="con-form-label">What do you need?</div>
+    <input class="con-form-input" id="conFormTitle" type="text" placeholder="e.g. Book summer trip to Gold Coast for August">
+    <div class="con-form-label">More details (optional)</div>
+    <textarea class="con-form-textarea" id="conFormDetails" placeholder="Dates, preferences, budget, who's involved..."></textarea>
+    <div class="con-form-label">Category</div>
+    <div class="con-form-cats">
+      <div class="con-form-cat active" data-cat="travel" onclick="selectConCat(this)">Travel</div>
+      <div class="con-form-cat" data-cat="booking" onclick="selectConCat(this)">Booking</div>
+      <div class="con-form-cat" data-cat="payment" onclick="selectConCat(this)">Payment</div>
+      <div class="con-form-cat" data-cat="research" onclick="selectConCat(this)">Research</div>
+      <div class="con-form-cat" data-cat="vehicle" onclick="selectConCat(this)">Vehicle</div>
+      <div class="con-form-cat" data-cat="other" onclick="selectConCat(this)">Other</div>
+    </div>
+    <div class="con-form-label">Due date (optional)</div>
+    <input class="con-form-input" id="conFormDue" type="date">
+    <div class="con-form-btns">
+      <div class="con-cancel-btn" onclick="closeConciergeForm()">Cancel</div>
+      <div class="con-submit-btn" id="conSubmitBtn" onclick="submitConciergeRequest()">RESEARCH &amp; BRIEF ME</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
