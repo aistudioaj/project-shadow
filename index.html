@@ -174,93 +174,286 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
 /* ── HOME SCREEN ── */
 .home-hdr{
-  padding:calc(20px + var(--safe-top)) 20px 12px;
+  padding:calc(16px + var(--safe-top)) 20px 12px;
   flex-shrink:0;
+  display:flex;align-items:flex-start;justify-content:space-between;
 }
+.home-hdr-left{flex:1}
 .home-greeting{
   font-family:var(--font-display);
-  font-size:28px;font-style:italic;
-  color:var(--t1);margin-bottom:4px;
+  font-size:26px;font-style:italic;
+  color:var(--t1);margin-bottom:4px;line-height:1.2;
 }
 .home-date{
   font-family:var(--font-mono);
-  font-size:11px;letter-spacing:2px;
+  font-size:9px;letter-spacing:2px;
   color:var(--t3);text-transform:uppercase;
+}
+.concierge-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--blue-dim);
+  border:1px solid var(--border2);
+  border-radius:20px;padding:7px 12px;
+  cursor:pointer;transition:all 0.2s;
+  flex-shrink:0;margin-top:4px;
+}
+.concierge-btn:active{background:rgba(59,130,246,0.18)}
+.concierge-pulse{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 6px var(--blue);
+  animation:cpulse 2s infinite;
+}
+@keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.concierge-lbl{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:1.5px;
+  color:var(--blue);text-transform:uppercase;
 }
 
 /* ── HERO BRIEF CARD ── */
 .hero-card{
-  margin:16px 20px 0;
-  background:linear-gradient(135deg,var(--bg2) 0%,var(--bg1) 100%);
-  border:1px solid var(--blue);
+  margin:4px 16px 0;
+  background:var(--bg2);
+  border:1px solid var(--border2);
   border-radius:var(--r-lg);
   overflow:hidden;cursor:pointer;
   position:relative;
-  box-shadow:0 0 32px var(--blue-glow);
-  transition:transform 0.15s,box-shadow 0.15s;
+  transition:transform 0.15s;
 }
 .hero-card:active{transform:scale(0.99)}
 .hero-card::before{
   content:'';position:absolute;
-  top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--blue),#818cf8);
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);
 }
 .hero-card-top{
-  padding:16px 18px 10px;
+  padding:12px 16px 8px;
   display:flex;align-items:center;justify-content:space-between;
 }
 .hero-card-label{
   font-family:var(--font-mono);
-  font-size:9px;letter-spacing:3px;
+  font-size:8px;letter-spacing:3px;
   color:var(--blue);text-transform:uppercase;
-  font-weight:500;
 }
-.hero-card-time{
-  font-family:var(--font-mono);
-  font-size:10px;color:var(--t3);
-}
+.hero-card-time{font-family:var(--font-mono);font-size:9px;color:var(--t3)}
 .hero-card-verdict{
-  padding:0 18px 12px;
-  font-size:14px;color:var(--t2);
-  line-height:1.65;
+  padding:0 16px 10px;
+  font-size:13px;color:var(--t2);
+  line-height:1.6;
   display:-webkit-box;
-  -webkit-line-clamp:3;
+  -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
 .hero-card-footer{
   display:flex;align-items:center;
   justify-content:space-between;
-  padding:10px 18px;
+  padding:9px 16px;
   border-top:1px solid var(--border);
   background:rgba(0,0,0,0.2);
 }
-.hero-card-stats{
-  display:flex;gap:12px;
-}
-.hero-stat{
-  font-family:var(--font-mono);
-  font-size:10px;color:var(--t3);
-}
+.hero-card-stats{display:flex;gap:14px}
+.hero-stat{font-family:var(--font-mono);font-size:9px;color:var(--t3)}
 .hero-stat span{color:var(--t2)}
-.hero-card-cta{
-  font-family:var(--font-mono);
-  font-size:10px;color:var(--blue);
-  letter-spacing:1px;
-}
+.hero-card-cta{font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:1px}
 .hero-card-empty{
-  margin:16px 20px 0;
+  margin:4px 16px 0;
   background:var(--bg2);
   border:1px dashed var(--border2);
   border-radius:var(--r-lg);
-  padding:24px;text-align:center;
+  padding:20px;text-align:center;
 }
-.hero-empty-title{
+.hero-empty-title{font-family:var(--font-mono);font-size:10px;color:var(--t3);letter-spacing:2px;margin-bottom:4px}
+.hero-empty-sub{font-size:12px;color:var(--t3)}
+
+/* ── HOME SECTION LABELS ── */
+.home-sec{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px 8px;
+}
+.home-sec-title{
   font-family:var(--font-mono);
-  font-size:11px;color:var(--t3);
-  letter-spacing:2px;margin-bottom:6px;
+  font-size:8px;letter-spacing:3px;
+  color:var(--t3);text-transform:uppercase;
 }
-.hero-empty-sub{font-size:13px;color:var(--t3)}
+.home-sec-action{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:1px;
+  color:var(--blue);cursor:pointer;
+}
+
+/* ── INTEL GRID ── */
+.intel-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:8px;padding:0 16px;
+}
+.intel-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:13px 14px;
+  cursor:pointer;transition:all 0.15s;
+  position:relative;overflow:hidden;
+}
+.intel-card:active{background:var(--bg3)}
+.intel-card-accent{
+  position:absolute;top:0;left:0;right:0;height:1px;
+}
+.intel-card-top{
+  display:flex;align-items:center;
+  justify-content:space-between;margin-bottom:8px;
+}
+.intel-card-label{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:2px;
+  color:var(--t3);text-transform:uppercase;
+}
+.intel-card-value{
+  font-family:var(--font-display);
+  font-size:22px;color:var(--t1);
+  line-height:1;margin-bottom:5px;
+}
+.intel-card-sub{
+  font-size:10px;color:var(--t3);
+  display:flex;align-items:center;gap:5px;
+}
+.intel-sub-dot{
+  width:5px;height:5px;border-radius:50%;flex-shrink:0;
+}
+.intel-bar-wrap{height:2px;background:var(--bg4);border-radius:2px;margin:6px 0 5px}
+.intel-bar{height:2px;border-radius:2px}
+
+/* ── MARKET CHIPS ── */
+.market-strip{
+  display:flex;gap:6px;
+  padding:0 16px;
+  overflow-x:auto;
+}
+.market-strip::-webkit-scrollbar{display:none}
+.market-chip{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;padding:9px 12px;
+  flex-shrink:0;min-width:76px;
+  cursor:pointer;transition:all 0.15s;
+}
+.market-chip:active{background:var(--bg3)}
+.mc-label{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:1px;
+  color:var(--t3);text-transform:uppercase;margin-bottom:4px;
+}
+.mc-value{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--t1)}
+.mc-change{font-family:var(--font-mono);font-size:9px;margin-top:2px}
+.mc-change.up{color:var(--green)}
+.mc-change.dn{color:var(--red)}
+.mc-change.flat{color:var(--t3)}
+
+/* ── ALERT CARDS (HOME) ── */
+.home-alert{
+  margin:0 16px 8px;
+  background:rgba(239,68,68,0.05);
+  border:1px solid rgba(239,68,68,0.2);
+  border-left:2px solid var(--red);
+  border-radius:var(--r);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;
+}
+.home-alert-body{flex:1}
+.home-alert-title{font-size:12px;font-weight:500;color:var(--t1)}
+.home-alert-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.home-alert-dismiss{
+  font-family:var(--font-mono);font-size:8px;
+  color:var(--t3);padding:4px 8px;
+  border:1px solid var(--border);border-radius:6px;
+  cursor:pointer;flex-shrink:0;
+}
+
+/* ── PRIORITIES (HOME) ── */
+.home-tasks{
+  margin:0 16px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.priority-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;
+  border-bottom:1px solid var(--border);
+}
+.priority-item:last-child{border-bottom:none}
+.priority-check{
+  width:18px;height:18px;
+  border:1.5px solid var(--t3);
+  border-radius:50%;flex-shrink:0;
+  cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.priority-check.done{background:var(--green-dim);border-color:var(--green)}
+.priority-check.done::after{content:'\2713';font-size:10px;color:var(--green)}
+.priority-text{font-size:12px;color:var(--t2);flex:1}
+.priority-text.done{text-decoration:line-through;color:var(--t3)}
+.priority-tag{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:1px;
+  padding:3px 7px;border-radius:20px;
+  text-transform:uppercase;flex-shrink:0;
+}
+.priority-tag.high{background:var(--red-dim);color:var(--red)}
+.priority-tag.medium{background:var(--amber-dim);color:var(--amber)}
+
+/* ── ASK SHADOW ── */
+.ask-shadow{
+  margin:12px 16px 0;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:var(--r-lg);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;transition:all 0.15s;
+  box-shadow:0 0 20px rgba(59,130,246,0.06);
+}
+.ask-shadow:active{background:var(--bg3)}
+.ask-shadow-text{flex:1;font-size:13px;color:var(--t3)}
+.ask-shadow-right{display:flex;align-items:center;gap:8px}
+.ask-search-badge{
+  font-family:var(--font-mono);font-size:8px;
+  letter-spacing:1px;color:var(--t3);
+  background:var(--bg3);padding:3px 7px;
+  border-radius:6px;border:1px solid var(--border);
+}
+.ask-shadow-mic{
+  width:32px;height:32px;
+  background:var(--blue);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+  box-shadow:0 0 14px var(--blue-glow);
+}
+
+/* ── ALERTS SECTION (keep for JS compat) ── */
+.alerts-section{display:none}
+.alerts-section.show{display:block}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.section-title{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+.alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:background 0.15s}
+.alert-card:active{background:var(--bg3)}
+.alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.alert-dot.high{background:var(--red)}
+.alert-dot.normal{background:var(--blue)}
+.alert-content{flex:1}
+.alert-title{font-size:13px;color:var(--t1);font-weight:500;margin-bottom:3px}
+.alert-time{font-family:var(--font-mono);font-size:10px;color:var(--t3)}
+
+/* ── PULSE STRIP (keep for JS compat, hidden on home) ── */
+.pulse-strip{display:none}
+.pulse-item{flex:1;text-align:center;padding:0 12px;border-right:1px solid var(--border)}
+.pulse-item:last-child{border-right:none}
+.pulse-label{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;margin-bottom:5px}
+.pulse-value{font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--t1)}
+.pulse-change{font-family:var(--font-mono);font-size:10px;margin-top:2px}
+.pulse-change.up{color:var(--green)}
+.pulse-change.dn{color:var(--red)}
+@keyframes pulse-glow{0%,100%{opacity:1}50%{opacity:0.5}}
+.pulse-live::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--green);margin-right:5px;animation:pulse-glow 2s infinite}
+
 
 /* ── PULSE STRIP ── */
 .pulse-strip{
@@ -910,53 +1103,114 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 <!-- TODAY SCREEN -->
 <div class="screen" id="homeScreen">
   <div class="home-hdr">
-    <div class="home-greeting" id="homeGreeting">Good morning</div>
-    <div class="home-date" id="homeDate"></div>
+    <div class="home-hdr-left">
+      <div class="home-greeting" id="homeGreeting">Good morning</div>
+      <div class="home-date" id="homeDate"></div>
+    </div>
+    <div class="concierge-btn" onclick="switchLifeTab('concierge',null);switchNav('life',document.querySelector('[data-tab=life]'))">
+      <div class="concierge-pulse"></div>
+      <div class="concierge-lbl">Concierge</div>
+    </div>
   </div>
   <div class="scroll-body">
-    <!-- Hero Brief Card -->
     <div id="briefCardContainer"></div>
-    <!-- Pulse Strip -->
-    <div class="pulse-strip" id="pulseStrip">
-      <div class="pulse-item">
-        <div class="pulse-label pulse-live">S&P 500</div>
-        <div class="pulse-value" id="pulseSPY">--</div>
-        <div class="pulse-change" id="pulseSPYchg">--</div>
+    <div class="home-sec" style="padding-top:14px">
+      <div class="home-sec-title">Intelligence</div>
+      <div class="home-sec-action" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">Treasury &rsaquo;</div>
+    </div>
+    <div class="intel-grid">
+      <div class="intel-card" style="border-color:rgba(34,197,94,0.15)" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">
+        <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--green),transparent)"></div>
+        <div class="intel-card-top">
+          <div class="intel-card-label">Wealth</div>
+          <div style="font-size:13px;opacity:0.5">&#128200;</div>
+        </div>
+        <div class="intel-card-value" id="intelWealth">--</div>
+        <div class="intel-card-sub" id="intelWealthSub"><div class="intel-sub-dot" style="background:var(--green)"></div><span>Loading...</span></div>
       </div>
-      <div class="pulse-item">
-        <div class="pulse-label">NVDA</div>
-        <div class="pulse-value" id="pulseNVDA">--</div>
-        <div class="pulse-change" id="pulseNVDAchg">--</div>
+      <div class="intel-card" style="border-color:rgba(245,158,11,0.15)" onclick="switchNav('life',document.querySelector('[data-tab=life]'))">
+        <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--amber),transparent)"></div>
+        <div class="intel-card-top">
+          <div class="intel-card-label">Body Battery</div>
+          <div style="font-size:13px;opacity:0.5">&#10084;</div>
+        </div>
+        <div class="intel-card-value" id="intelBattery">--</div>
+        <div class="intel-bar-wrap"><div class="intel-bar" id="intelBatteryBar" style="background:linear-gradient(90deg,var(--amber),var(--green));width:0%"></div></div>
+        <div class="intel-card-sub" id="intelBatterySub"><span style="color:var(--t3)">From morning brief</span></div>
       </div>
-      <div class="pulse-item">
-        <div class="pulse-label">Portfolio</div>
-        <div class="pulse-value" id="pulsePort">--</div>
-        <div class="pulse-change" id="pulsePortchg">--</div>
+      <div class="intel-card" onclick="switchNav('me',document.querySelector('[data-tab=me]'))">
+        <div class="intel-card-top">
+          <div class="intel-card-label">Today</div>
+          <div style="font-size:13px;opacity:0.5">&#10003;</div>
+        </div>
+        <div class="intel-card-value" id="intelTasks">--</div>
+        <div class="intel-card-sub" id="intelTasksSub"><div class="intel-sub-dot" style="background:var(--red)"></div><span>Loading...</span></div>
+      </div>
+      <div class="intel-card" style="border-color:rgba(59,130,246,0.15)" onclick="switchNav('life',document.querySelector('[data-tab=life]'));setTimeout(function(){switchLifeTab('specialists',null)},100)">
+        <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--blue),transparent)"></div>
+        <div class="intel-card-top">
+          <div class="intel-card-label">HRV</div>
+          <div style="font-size:13px;opacity:0.5">&#128200;</div>
+        </div>
+        <div class="intel-card-value" id="intelHRV">--</div>
+        <div class="intel-card-sub" id="intelHRVSub"><div class="intel-sub-dot" style="background:var(--blue)"></div><span>From morning brief</span></div>
       </div>
     </div>
-    <!-- Alerts -->
-    <div class="alerts-section" id="alertsSection">
-      <div class="section-hdr">
-        <div class="section-title">Active Alerts</div>
-        <div class="pill blue" id="alertCount"></div>
+    <div class="home-sec">
+      <div class="home-sec-title">Markets</div>
+      <div class="home-sec-action" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">Treasury &rsaquo;</div>
+    </div>
+    <div class="market-strip">
+      <div class="market-chip">
+        <div class="mc-label">S&amp;P 500</div>
+        <div class="mc-value" id="mcSPY">--</div>
+        <div class="mc-change" id="mcSPYchg">--</div>
+      </div>
+      <div class="market-chip">
+        <div class="mc-label">NVDA</div>
+        <div class="mc-value" id="mcNVDA">--</div>
+        <div class="mc-change" id="mcNVDAchg">--</div>
+      </div>
+      <div class="market-chip">
+        <div class="mc-label">Portfolio</div>
+        <div class="mc-value" id="mcPort">--</div>
+        <div class="mc-change" id="mcPortchg">--</div>
+      </div>
+      <div class="market-chip">
+        <div class="mc-label">Gold</div>
+        <div class="mc-value" id="mcGold">--</div>
+        <div class="mc-change" id="mcGoldchg">--</div>
+      </div>
+      <div class="market-chip">
+        <div class="mc-label">Oil</div>
+        <div class="mc-value" id="mcOil">--</div>
+        <div class="mc-change" id="mcOilchg">--</div>
+      </div>
+    </div>
+    <div id="alertsSection" class="alerts-section">
+      <div class="home-sec" style="padding-bottom:0">
+        <div class="home-sec-title">Alerts</div>
       </div>
       <div id="alertsList"></div>
     </div>
-    <!-- Priorities -->
-    <div class="priorities-section">
-      <div class="section-hdr">
-        <div class="section-title">Today's Priorities</div>
-      </div>
+    <div class="home-sec">
+      <div class="home-sec-title">Priorities</div>
+      <div class="home-sec-action" onclick="switchNav('me',document.querySelector('[data-tab=me]'))">All tasks &rsaquo;</div>
+    </div>
+    <div class="home-tasks">
       <div id="prioritiesList"></div>
     </div>
-    <!-- Ask Shadow -->
     <div class="ask-shadow" onclick="openShadowChat()">
       <div class="ask-shadow-text">Ask Shadow anything...</div>
-      <div class="ask-shadow-mic">🎙️</div>
+      <div class="ask-shadow-right">
+        <div class="ask-search-badge">LIVE SEARCH</div>
+        <div class="ask-shadow-mic">&#127897;</div>
+      </div>
     </div>
     <div class="section-gap"></div>
   </div>
 </div>
+
 
 <!-- INTELLIGENCE SCREEN -->
 <div class="screen" id="financialScreen">
@@ -1465,7 +1719,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
   <div class="nav-btn" data-tab="financial" onclick="switchNav('financial',this)">
     <div class="nav-icon">💰</div>
-    <div class="nav-lbl">Financial</div>
+    <div class="nav-lbl">Treasury</div>
   </div>
   <div class="nav-btn" data-tab="life" onclick="switchNav('life',this)">
     <div class="nav-icon">🌿</div>
@@ -2101,6 +2355,7 @@ async function loadTasks(){
     const{data}=await db.from('shadow_tasks').select('*').eq('user_id',UID).neq('status','done').order('created_at',{ascending:false});
     tasks=data||[];
     renderPriorities();
+    updateIntelGrid();
   }catch(e){console.log('tasks error',e);}
 }
 
@@ -2275,6 +2530,7 @@ function renderPortfolio(){
     const pnl=totalVal-totalCost;
     const pct=totalCost>0?(pnl/totalCost*100):0;
     document.getElementById('portTotal').textContent=fmtCurrency(totalVal);
+  updateIntelGrid();updateMarketChips();
     const chgEl=document.getElementById('portChange');
     chgEl.textContent=(pnl>=0?'+':'')+fmtCurrency(Math.abs(pnl))+' ('+fmtPct(pct)+') all time';
     chgEl.className='port-change '+(pnl>=0?'up':'dn');
@@ -2331,6 +2587,120 @@ async function dismissAlert(id,el){
   }catch(e){console.log('dismiss error',e);}
 }
 
+// ── HOME INTEL GRID ──
+function updateIntelGrid() {
+  // Wealth — from portTotal already calculated in loadPortfolio
+  var portEl = document.getElementById('portTotal');
+  var wealthEl = document.getElementById('intelWealth');
+  var wealthSub = document.getElementById('intelWealthSub');
+  if (wealthEl && portEl) {
+    var val = portEl.textContent;
+    wealthEl.textContent = val && val !== '$0.00' ? val : '--';
+    if (wealthSub) {
+      wealthSub.innerHTML = '<div class="intel-sub-dot" style="background:var(--green)"></div><span style="color:var(--green)">Portfolio live</span>';
+    }
+  }
+
+  // Tasks — from global tasks array
+  var taskEl = document.getElementById('intelTasks');
+  var taskSub = document.getElementById('intelTasksSub');
+  if (taskEl) {
+    var total = typeof tasks !== 'undefined' ? tasks.length : 0;
+    var high = typeof tasks !== 'undefined' ? tasks.filter(function(t) { return t.priority === 'high'; }).length : 0;
+    taskEl.textContent = total;
+    if (taskSub) {
+      var dotColor = high > 0 ? 'var(--red)' : 'var(--green)';
+      var subText = high > 0 ? high + ' high priority' : 'All clear';
+      taskSub.innerHTML = '<div class="intel-sub-dot" style="background:' + dotColor + '"></div><span>' + subText + '</span>';
+    }
+  }
+
+  // Body Battery + HRV — from todayBriefData verdict text (best effort parse)
+  var battEl = document.getElementById('intelBattery');
+  var battBar = document.getElementById('intelBatteryBar');
+  var battSub = document.getElementById('intelBatterySub');
+  var hrvEl = document.getElementById('intelHRV');
+  var hrvSub = document.getElementById('intelHRVSub');
+
+  if (typeof todayBriefData !== 'undefined' && todayBriefData && todayBriefData.verdict) {
+    var v = todayBriefData.verdict;
+    var battMatch = v.match(/body battery[:\s]+(\d+)/i) || v.match(/battery[:\s]+(\d+)/i);
+    var hrvMatch = v.match(/hrv[:\s]+(\d+)/i);
+    var sleepMatch = v.match(/sleep[:\s]+([\d.]+)\s*h/i) || v.match(/([\d.]+)\s*hours? sleep/i);
+
+    if (battEl && battMatch) {
+      var batt = parseInt(battMatch[1]);
+      battEl.textContent = batt;
+      if (battBar) battBar.style.width = batt + '%';
+      if (battSub) {
+        var sleepStr = sleepMatch ? sleepMatch[1] + 'h sleep' : 'From brief';
+        var bColor = batt >= 70 ? 'var(--green)' : batt >= 40 ? 'var(--amber)' : 'var(--red)';
+        battSub.innerHTML = '<span style="color:' + bColor + '">' + sleepStr + '</span>';
+      }
+    } else if (battEl) {
+      battEl.textContent = '--';
+      if (battSub) battSub.innerHTML = '<span style="color:var(--t3)">No brief data</span>';
+    }
+
+    if (hrvEl && hrvMatch) {
+      var hrv = parseInt(hrvMatch[1]);
+      hrvEl.textContent = hrv;
+      if (hrvSub) {
+        var hColor = hrv >= 60 ? 'var(--green)' : hrv >= 40 ? 'var(--amber)' : 'var(--red)';
+        hrvSub.innerHTML = '<div class="intel-sub-dot" style="background:' + hColor + '"></div><span style="color:' + hColor + '">HRV score</span>';
+      }
+    } else if (hrvEl) {
+      hrvEl.textContent = '--';
+    }
+  }
+}
+
+// ── HOME MARKET CHIPS ──
+function updateMarketChips() {
+  // Mirror from existing pulse values already loaded
+  var maps = [
+    ['pulseSPY', 'pulseSPYchg', 'mcSPY', 'mcSPYchg'],
+    ['pulseNVDA', 'pulseNVDAchg', 'mcNVDA', 'mcNVDAchg'],
+    ['pulsePort', 'pulsePortchg', 'mcPort', 'mcPortchg']
+  ];
+  maps.forEach(function(m) {
+    var src = document.getElementById(m[0]);
+    var srcChg = document.getElementById(m[1]);
+    var dst = document.getElementById(m[2]);
+    var dstChg = document.getElementById(m[3]);
+    if (src && dst) dst.textContent = src.textContent;
+    if (srcChg && dstChg) {
+      dstChg.textContent = srcChg.textContent;
+      dstChg.className = 'mc-change ' + (srcChg.classList.contains('up') ? 'up' : srcChg.classList.contains('dn') ? 'dn' : 'flat');
+    }
+  });
+  // Gold and Oil from market grid if loaded
+  var mktGrid = document.getElementById('mktGrid');
+  if (mktGrid) {
+    var tickers = mktGrid.querySelectorAll('.mkt-card');
+    tickers.forEach(function(card) {
+      var ticker = card.querySelector('.mkt-ticker');
+      var price = card.querySelector('.mkt-price');
+      var chg = card.querySelector('.mkt-chg');
+      if (!ticker || !price) return;
+      var sym = ticker.textContent.trim().toUpperCase();
+      var goldEl = document.getElementById('mcGold');
+      var goldChg = document.getElementById('mcGoldchg');
+      var oilEl = document.getElementById('mcOil');
+      var oilChg = document.getElementById('mcOilchg');
+      if ((sym === 'GC=F' || sym.indexOf('GOLD') > -1) && goldEl) {
+        goldEl.textContent = price.textContent;
+        if (goldChg && chg) { goldChg.textContent = chg.textContent; goldChg.className = 'mc-change ' + (chg.classList.contains('up') ? 'up' : 'dn'); }
+      }
+      if ((sym === 'CL=F' || sym.indexOf('OIL') > -1 || sym.indexOf('CL') > -1) && oilEl) {
+        oilEl.textContent = price.textContent;
+        if (oilChg && chg) { oilChg.textContent = chg.textContent; oilChg.className = 'mc-change ' + (chg.classList.contains('up') ? 'up' : 'dn'); }
+      }
+    });
+  }
+}
+
+
 // ── BRIEF ──
 let todayBriefData=null;
 
@@ -2339,6 +2709,7 @@ async function loadTodayBrief(){
     const{data}=await db.from('shadow_briefs').select('*').eq('user_id',UID).order('created_at',{ascending:false}).limit(1);
     todayBriefData=data&&data[0]?data[0]:null;
     renderBriefCard();
+    updateIntelGrid();
   }catch(e){renderBriefCardEmpty();}
 }
 
