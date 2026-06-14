@@ -2966,27 +2966,133 @@ function renderResearchCard(item) {
   '</div>';
 }
 
+var conTaskChats = {};
+
 function expandConciergeItem(id) {
-  var item = conciergeItems.find(function(i) { return i.id === id; });
+  var item = conciergeAllItems.find(function(i) { return i.id === id; }) ||
+             conciergeItems.find(function(i) { return i.id === id; });
   if (!item) return;
+  if (!conTaskChats[id]) conTaskChats[id] = [];
+
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.8);display:flex;align-items:flex-end;justify-content:center';
+  overlay.id = 'conOverlay_' + id;
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end';
+
   var panel = document.createElement('div');
-  panel.style.cssText = 'background:var(--bg1);border:1px solid var(--border2);border-radius:20px 20px 0 0;width:100%;max-width:430px;padding:20px;max-height:80vh;overflow-y:auto';
+  panel.style.cssText = 'background:var(--bg1);border-top:1px solid var(--border2);width:100%;max-height:92vh;display:flex;flex-direction:column';
+
   panel.innerHTML =
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-      '<div style="font-family:var(--font-display);font-size:18px;font-style:italic;color:var(--t1)">' + (item.title || '') + '</div>' +
-      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px" onclick="this.closest(\'div[style*=fixed]\').remove()">Close</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0">' +
+      '<div>' +
+        '<div style="font-family:var(--font-display);font-size:17px;font-style:italic;color:var(--t1);line-height:1.2">' + (item.title || '') + '</div>' +
+        '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-top:3px">Concierge Thread</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<div class="con-action-btn con-action-done" onclick="markConciergeDone(\'' + id + '\');document.getElementById(\'conOverlay_' + id + '\').remove()">Done</div>' +
+        '<div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:6px" onclick="document.getElementById(\'conOverlay_' + id + '\').remove()">Close</div>' +
+      '</div>' +
     '</div>' +
-    '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:12px">Shadow Research Brief</div>' +
-    '<div style="font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap">' + linkifyText(item.notes || '') + '</div>' +
-    '<div style="display:flex;gap:8px;margin-top:16px">' +
-      '<div class="con-action-btn con-action-done" style="flex:1;text-align:center;padding:10px" onclick="markConciergeDone(\'' + item.id + '\');this.closest(\'div[style*=fixed]\').remove()">Mark done</div>' +
-      '<div class="con-action-btn" style="flex:1;text-align:center;padding:10px" onclick="this.closest(\'div[style*=fixed]\').remove()">Keep open</div>' +
+    '<div id="conThread_' + id + '" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px">' +
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px">' +
+        '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);margin-bottom:8px">SHADOW RESEARCH BRIEF</div>' +
+        '<div style="font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap">' + linkifyText(item.notes || 'Research pending...') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg1)">' +
+      '<div style="display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px">' +
+        '<input id="conChatInput_' + id + '" type="text" placeholder="Ask Shadow to refine, change details, research more..." style="flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--t1);font-family:var(--font-body)" onkeydown="if(event.key===\'Enter\')sendConciergeChat(\'' + id + '\')">' +
+        '<div onclick="sendConciergeChat(\'' + id + '\')" style="width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 10px var(--blue-glow)">' +
+          '<div style="width:10px;height:10px;border-top:1.5px solid white;border-right:1.5px solid white;transform:rotate(45deg);margin-left:-2px"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">' +
+        '<div onclick="setConInput(\'' + id + '\',\'Change the dates to\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">Change dates</div>' +
+        '<div onclick="setConInput(\'' + id + '\',\'Find a cheaper option\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">Cheaper option</div>' +
+        '<div onclick="setConInput(\'' + id + '\',\'Research more options for\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">More options</div>' +
+        '<div onclick="setConInput(\'' + id + '\',\'Book this - what are the exact steps?\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">How to book</div>' +
+      '</div>' +
     '</div>';
+
   overlay.appendChild(panel);
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   document.body.appendChild(overlay);
+}
+
+function setConInput(id, text) {
+  var el = document.getElementById('conChatInput_' + id);
+  if (el) { el.value = text; el.focus(); }
+}
+
+function appendConMessage(threadId, role, text) {
+  var thread = document.getElementById('conThread_' + threadId);
+  if (!thread) return;
+  var isUser = role === 'user';
+  var msg = document.createElement('div');
+  msg.style.cssText = 'display:flex;justify-content:' + (isUser ? 'flex-end' : 'flex-start');
+  msg.innerHTML = '<div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;' +
+    (isUser ?
+      'background:var(--blue);color:white;border-radius:12px 12px 2px 12px' :
+      'background:var(--bg2);border:1px solid var(--border);color:var(--t2);border-radius:12px 12px 12px 2px') +
+    '">' + (isUser ? text : linkifyText(text)) + '</div>';
+  thread.appendChild(msg);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function appendConThinking(threadId) {
+  var thread = document.getElementById('conThread_' + threadId);
+  if (!thread) return;
+  var el = document.createElement('div');
+  el.id = 'conThink_' + threadId;
+  el.style.cssText = 'display:flex;gap:5px;align-items:center;padding:8px 2px';
+  el.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite"></div>' +
+    '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite;animation-delay:0.2s"></div>' +
+    '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite;animation-delay:0.4s"></div>';
+  thread.appendChild(el);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+async function sendConciergeChat(id) {
+  var input = document.getElementById('conChatInput_' + id);
+  if (!input) return;
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  var item = conciergeAllItems.find(function(i) { return i.id === id; }) ||
+             conciergeItems.find(function(i) { return i.id === id; });
+  if (!item) return;
+
+  if (!conTaskChats[id]) conTaskChats[id] = [];
+  conTaskChats[id].push({role:'user', content: msg});
+  appendConMessage(id, 'user', msg);
+  appendConThinking(id);
+
+  var memCtx = memories.slice(0, 8).map(function(m) { return m.key + ': ' + m.value; }).join('\n');
+  var sysPmt = 'You are Shadow Concierge, a personal chief of staff for AJ based in Abu Dhabi.' +
+    ' You are continuing a conversation about this concierge request: "' + (item.title || '') + '".' +
+    ' The original research brief was:\n\n' + (item.notes || '') +
+    '\n\nAJ is now following up. Respond concisely and helpfully. Include direct URLs whenever relevant.' +
+    ' Be specific - real prices, real options, real links. No filler.' +
+    (memCtx ? '\n\nWhat Shadow knows about AJ:\n' + memCtx : '');
+
+  var messages = conTaskChats[id].slice();
+
+  try {
+    var r = await fetch(PROXY, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: MODEL, max_tokens: 1500, system: sysPmt, messages: messages})
+    });
+    var data = await r.json();
+    var reply = data.content && data.content[0] ? data.content[0].text : 'Sorry, something went wrong.';
+    conTaskChats[id].push({role: 'assistant', content: reply});
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', reply);
+  } catch(e) {
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', 'Error reaching Shadow. Please try again.');
+  }
 }
 
 function renderConciergeSnapshot() {
@@ -3139,7 +3245,7 @@ async function submitConciergeRequest() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1000,
+        max_tokens: 2000,
         system: sysPrompt,
         messages: [{role: 'user', content: userMsg}]
       })
