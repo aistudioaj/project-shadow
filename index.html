@@ -3321,7 +3321,16 @@ async function submitConciergeRequest() {
       })
     });
     var data = await r.json();
-    var brief = data.content && data.content[0] ? data.content[0].text : 'Research complete. Please check back shortly.';
+    console.log('concierge research response:', JSON.stringify(data).substring(0, 300));
+    var brief = '';
+    if (data.content && data.content[0] && data.content[0].text) {
+      brief = data.content[0].text;
+    } else if (data.error) {
+      console.log('research API error:', JSON.stringify(data.error));
+      brief = 'Research error: ' + (data.error.message || JSON.stringify(data.error));
+    } else {
+      brief = 'Research complete. Please check back shortly.';
+    }
 
     // Update Supabase with research
     var targetId = newId;
