@@ -3117,16 +3117,19 @@ async function sendConciergeChat(id) {
   appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Build messages array: last 6 exchanges from Supabase history
-  // Each message truncated to 300 chars to keep payload small
+  // Send only last 2 exchanges to API — full history stored in Supabase
   var fullHistory = conTaskChats[id];
-  var recentHistory = fullHistory.slice(-6);
+  var recentHistory = fullHistory.slice(-4);
   var messages = recentHistory.map(function(m) {
     return {
       role: m.role,
-      content: m.content.substring(0, 300)
+      content: m.content.substring(0, 150)
     };
   });
+  // Always ensure last message is current user message
+  if (!messages.length || messages[messages.length-1].role !== 'user') {
+    messages = [{role: 'user', content: msg.substring(0, 150)}];
+  }
 
   // Compact system prompt with brief context
   var briefCtx = (item.notes || '').replace(/[\r\n]+/g, ' ').substring(0, 200);
@@ -3138,12 +3141,19 @@ async function sendConciergeChat(id) {
     (memCtx ? ' AJ profile: ' + memCtx : '');
 
   try {
+    var payload = {model: MODEL, max_tokens: 1000, system: sysPmt, messages: messages};
+    var payloadStr = JSON.stringify(payload);
+    console.log('CONCIERGE PAYLOAD SIZE:', payloadStr.length, 'chars');
+    console.log('CONCIERGE SYSTEM:', sysPmt.substring(0, 100));
+    console.log('CONCIERGE MESSAGES:', JSON.stringify(messages).substring(0, 200));
     var r = await fetch(PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({model: MODEL, max_tokens: 1000, system: sysPmt, messages: messages})
+      body: payloadStr
     });
+    console.log('CONCIERGE HTTP STATUS:', r.status);
     var data = await r.json();
+    console.log('CONCIERGE FULL RESPONSE:', JSON.stringify(data).substring(0, 500));
     var reply = '';
     if (data.content && data.content[0] && data.content[0].text) {
       reply = data.content[0].text;
