@@ -3078,20 +3078,24 @@ async function sendConciergeChat(id) {
   }
 
   var memCtx = memories.slice(0, 5).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 150);
+  // Include original brief context — first 300 chars only
+  var briefCtx = (item.notes || '').replace(/[\r\n]+/g, ' ').substring(0, 300);
+
   var sysPmt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi.' +
     ' Request: "' + (item.title || '') + '".' +
+    (briefCtx ? ' Original research: ' + briefCtx : '') +
     convoSummary +
-    ' Be concise, include direct URLs, real prices.' +
+    ' Be concise. Include direct URLs and real prices.' +
     (memCtx ? ' AJ: ' + memCtx : '');
 
-  // Only send current message — history is summarised in system prompt
+  // Only send current message — context is in system prompt
   var messages = [{role: 'user', content: msg}];
 
   try {
     var r = await fetch(PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({model: MODEL, max_tokens: 1000, system: sysPmt, messages: messages})
+      body: JSON.stringify({model: MODEL, max_tokens: 800, system: sysPmt, messages: messages})
     });
     var data = await r.json();
     console.log('concierge chat response:', JSON.stringify(data).substring(0, 200));
