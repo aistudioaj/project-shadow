@@ -2837,10 +2837,13 @@ var conciergeItems = [];
 var conciergeItems = [];
 var selectedConCat = 'travel';
 
+var conciergeAllItems = [];
+
 async function loadConcierge() {
   try {
-    var res = await db.from('shadow_concierge').select('*').eq('user_id', UID).neq('status', 'done').order('created_at', {ascending: false});
-    conciergeItems = res.data || [];
+    var res = await db.from('shadow_concierge').select('*').eq('user_id', UID).order('created_at', {ascending: false}).limit(50);
+    conciergeAllItems = res.data || [];
+    conciergeItems = conciergeAllItems.filter(function(i) { return i.status !== 'done'; });
     renderConciergePanel();
     renderConciergeSnapshot();
     updateConciergePreview();
@@ -2878,16 +2881,35 @@ function renderConciergePanel() {
   }
 
   if (proEl) {
+    var done = conciergeAllItems.filter(function(i) { return i.status === 'done'; });
+    var html = '';
     if (!conciergeItems.length) {
-      proEl.innerHTML = '<div class="con-sec">Get started</div>' +
+      html += '<div class="con-sec">Get started</div>' +
         '<div style="margin:0 16px 12px;padding:24px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);text-align:center">' +
           '<div style="font-size:32px;margin-bottom:12px">&#127914;</div>' +
           '<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:8px">CONCIERGE READY</div>' +
-          '<div style="font-size:13px;color:var(--t2);line-height:1.6">Shadow will research any request and brief you with options, costs and recommendations. Use the quick actions below.</div>' +
+          '<div style="font-size:13px;color:var(--t2);line-height:1.6">Shadow will research any request and brief you with options, costs and recommendations.</div>' +
         '</div>';
-    } else {
-      proEl.innerHTML = '';
     }
+    if (done.length) {
+      html += '<div class="con-sec">Completed</div>' +
+        done.slice(0, 5).map(function(item) {
+          var dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+          return '<div class="con-req" onclick="expandConciergeItem(\'' + item.id + '\')">' +
+            '<div class="con-req-main">' +
+              '<div class="con-req-icon" style="background:var(--green-dim)">&#10003;</div>' +
+              '<div class="con-req-body">' +
+                '<div class="con-req-title">' + (item.title || '') + '</div>' +
+                '<div class="con-req-sub">' + dateStr + ' &middot; ' + (item.category || '') + '</div>' +
+              '</div>' +
+              '<div class="con-req-right">' +
+                '<div class="con-status cs-done">Done</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+    }
+    proEl.innerHTML = html;
   }
 }
 
@@ -2913,24 +2935,25 @@ function renderResearchCard(item) {
   var statusLabel = item.status === 'handling' ? 'Researched' : 'Researching...';
   var catColors = {travel:'var(--blue)',booking:'var(--purple)',payment:'var(--amber)',research:'var(--teal)',vehicle:'var(--green)',other:'var(--t3)'};
   var catColor = catColors[item.category] || 'var(--t3)';
-  var dateStr = new Date(item.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-  var hasResearch = item.notes && item.notes.length > 50;
+  var dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'Today';
+  var hasResearch = item.notes && item.notes.trim().length > 10;
+  var preview = hasResearch ? item.notes.substring(0, 200) + (item.notes.length > 200 ? '...' : '') : '';
 
-  return '<div class="con-research">' +
+  return '<div class="con-research" onclick="expandConciergeItem(\'' + item.id + '\')"> ' +
     '<div class="con-research-top">' +
       '<div class="con-research-badge ' + statusClass + '" style="padding:3px 8px;border-radius:8px">' + statusLabel + '</div>' +
       '<div class="con-research-date">' + dateStr + '</div>' +
     '</div>' +
     '<div class="con-research-title">' + (item.title || '') + '</div>' +
     (hasResearch ?
-      '<div class="con-research-brief">' + (item.notes || '').substring(0, 300) + (item.notes.length > 300 ? '...' : '') + '</div>' :
-      '<div class="con-research-brief" style="color:var(--t3);font-style:italic">Shadow is researching this request...</div>'
+      '<div class="con-research-brief">' + preview + '</div>' :
+      '<div class="con-research-brief" style="color:var(--t3);font-style:italic">Shadow is researching...</div>'
     ) +
     '<div class="con-research-footer">' +
       '<div class="con-research-cat" style="background:rgba(255,255,255,0.05);color:' + catColor + '">' + (item.category || 'other') + '</div>' +
       '<div class="con-research-actions">' +
-        (hasResearch ? '<div class="con-action-btn" onclick="expandConciergeItem(\'' + item.id + '\')">Full brief</div>' : '') +
-        '<div class="con-action-btn con-action-done" onclick="markConciergeDone(\'' + item.id + '\')">Done</div>' +
+        (hasResearch ? '<div class="con-action-btn" onclick="event.stopPropagation();expandConciergeItem(\'' + item.id + '\')">Full brief</div>' : '') +
+        '<div class="con-action-btn con-action-done" onclick="event.stopPropagation();markConciergeDone(\'' + item.id + '\')">Done</div>' +
       '</div>' +
     '</div>' +
   '</div>';
