@@ -2705,16 +2705,16 @@ function updatePulse(){
   const spy=mktData['SPY'];
   const nvda=mktData['NVDA'];
   if(spy){
-    document.getElementById('pulseSPY').textContent=fmtCurrency(spy.price);
-    const el=document.getElementById('pulseSPYchg');
-    el.textContent=fmtPct(spy.pct);
-    el.className='pulse-change '+(spy.pct>=0?'up':'dn');
+    const spyEl=document.getElementById('pulseSPY');
+    const spyChg=document.getElementById('pulseSPYchg');
+    if(spyEl)spyEl.textContent=fmtCurrency(spy.price);
+    if(spyChg){spyChg.textContent=fmtPct(spy.pct);spyChg.className='pulse-change '+(spy.pct>=0?'up':'dn');}
   }
   if(nvda){
-    document.getElementById('pulseNVDA').textContent=fmtCurrency(nvda.price);
-    const el=document.getElementById('pulseNVDAchg');
-    el.textContent=fmtPct(nvda.pct);
-    el.className='pulse-change '+(nvda.pct>=0?'up':'dn');
+    const nvdaEl=document.getElementById('pulseNVDA');
+    const nvdaChg=document.getElementById('pulseNVDAchg');
+    if(nvdaEl)nvdaEl.textContent=fmtCurrency(nvda.price);
+    if(nvdaChg){nvdaChg.textContent=fmtPct(nvda.pct);nvdaChg.className='pulse-change '+(nvda.pct>=0?'up':'dn');}
   }
   // Portfolio pulse
   let total=0,totalCost=0;
@@ -2728,11 +2728,13 @@ function updatePulse(){
   if(total>0){
     const pnl=total-totalCost;
     const pct=totalCost>0?(pnl/totalCost*100):0;
-    document.getElementById('pulsePort').textContent=fmtCurrency(total);
-    const el=document.getElementById('pulsePortchg');
-    el.textContent=fmtPct(pct);
-    el.className='pulse-change '+(pct>=0?'up':'dn');
+    const portEl=document.getElementById('pulsePort');
+    const portChg=document.getElementById('pulsePortchg');
+    if(portEl)portEl.textContent=fmtCurrency(total);
+    if(portChg){portChg.textContent=fmtPct(pct);portChg.className='pulse-change '+(pct>=0?'up':'dn');}
   }
+  updateMarketChips();
+  updateIntelGrid();
 }
 
 // ── PORTFOLIO ──
@@ -3114,11 +3116,15 @@ async function submitConciergeRequest() {
     var brief = data.content && data.content[0] ? data.content[0].text : 'Research complete. Please check back shortly.';
 
     // Update Supabase with research
-    if (newId) {
-      await db.from('shadow_concierge').update({
-        status: 'handling',
-        notes: brief
-      }).eq('id', newId);
+    var targetId = newId;
+    if (!targetId) {
+      var findRes = await db.from('shadow_concierge').select('id').eq('user_id', UID).eq('title', title).order('created_at', {ascending: false}).limit(1);
+      targetId = findRes.data && findRes.data[0] ? findRes.data[0].id : null;
+    }
+    if (targetId) {
+      await db.from('shadow_concierge').update({status: 'handling', notes: brief}).eq('id', targetId);
+    } else {
+      await db.from('shadow_concierge').insert({user_id: UID, title: title, status: 'handling', category: selectedConCat, due_date: due || null, notes: brief});
     }
     showToast('Research complete');
   } catch(e) {
