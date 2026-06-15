@@ -3027,7 +3027,7 @@ async function expandConciergeItem(id) {
     '</div>' +
     '<div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg1)">' +
       '<div style="display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px">' +
-        '<input id="conChatInput_' + id + '" type="text" placeholder="Ask Shadow to refine, change details, research more..." style="flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--t1);font-family:var(--font-body)" onkeydown="if(event.key===\'Enter\')sendConciergeChat(\'' + id + '\')">' +
+        '<input id="conChatInput_' + id + '" type="text" placeholder="Reply to Shadow..." style="flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--t1);font-family:var(--font-body)" onkeydown="if(event.key===\'Enter\')sendConciergeChat(\'' + id + '\')">' +
         '<div onclick="sendConciergeChat(\'' + id + '\')" style="width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 10px var(--blue-glow)">' +
           '<div style="width:10px;height:10px;border-top:1.5px solid white;border-right:1.5px solid white;transform:rotate(45deg);margin-left:-2px"></div>' +
         '</div>' +
@@ -3110,59 +3110,58 @@ async function sendConciergeChat(id) {
              conciergeItems.find(function(i) { return i.id === id; });
   if (!item) return;
 
-  // Save user message to Supabase and local cache
   if (!conTaskChats[id]) conTaskChats[id] = [];
-  conTaskChats[id].push({role:'user', content: msg});
+  conTaskChats[id].push({role: 'user', content: msg});
   appendConMessage(id, 'user', msg);
   appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Build conversation for Claude:
-  // - User messages sent in full
-  // - Assistant responses compressed to first 120 chars (key recommendation only)
-  // This keeps payload bounded while Shadow retains memory of what it said
+  // Detect if user is confirming — trigger full brief generation
+  var confirmWords = ['confirmed', 'confirm', 'go ahead', 'yes proceed', 'finalise', 'finalize', 'book it', 'lets go', 'let\'s go', 'proceed', 'do it', 'yes please', 'approved'];
+  var isConfirming = confirmWords.some(function(w) { return msg.toLowerCase().indexOf(w) > -1; });
+
+  // Build messages array — only user messages, keep last 6
+  // Assistant responses are naturally short in stage 1/2 so we include them compressed
   var fullHistory = conTaskChats[id];
-  var recentHistory = fullHistory.slice(-8);
+  var recentHistory = fullHistory.slice(-6);
   var messages = recentHistory.map(function(m) {
     if (m.role === 'assistant') {
-      // Extract first meaningful line as summary
-      var summary = m.content.replace(/[#*|]/g, '').replace(/\r/g, ' ').replace(/\n/g, ' ').trim().substring(0, 120);
-      return {role: 'assistant', content: summary};
+      return {role: 'assistant', content: m.content.replace(/\r/g, ' ').replace(/\n/g, ' ').substring(0, 80)};
     }
     return {role: 'user', content: m.content};
   });
 
-  // Compact system prompt - strip all markdown from brief context
-  var briefCtx = (item.notes || '')
-    .replace(/#{1,6}\s/g, '')
-    .replace(/\*\*/g, '')
-    .replace(/[\r\n|]+/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/[^a-zA-Z0-9\s.,;:!?()\/'-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .substring(0, 300);
-  var memCtx = memories.slice(0, 5).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 100);
-  var sysPmt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE.' +
-    ' Request: ' + (item.title || '') + '.' +
-    (briefCtx ? ' Prior research summary: ' + briefCtx : '') +
-    ' Be helpful and specific. Include real URLs and prices.' +
+  // System prompt with 3-stage rules
+  var memCtx = memories.slice(0, 3).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 80);
+
+  var sysPmt = isConfirming ?
+    // Stage 3 — full brief
+    'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE.' +
+    ' AJ has confirmed the plan. Now produce a complete, detailed travel brief.' +
+    ' Include: full itinerary day by day, hotel recommendations with direct booking links and prices, flight options with links, all activities with links and prices, total budget breakdown by category.' +
+    ' Be thorough. This is the final deliverable.' +
+    (memCtx ? ' AJ profile: ' + memCtx : '') :
+    // Stage 1/2 — exploration and confirmation
+    'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE. STRICT RULES:' +
+    ' 1. Keep responses under 120 words maximum.' +
+    ' 2. Never give full itineraries or detailed plans until AJ confirms.' +
+    ' 3. Never mention costs unless AJ asks.' +
+    ' 4. Ask one clarifying question at a time if needed.' +
+    ' 5. When you have enough info, summarise the plan in 5 bullet points and ask for confirmation.' +
+    ' 6. Only after confirmation word produce the full brief.' +
+    ' Request context: ' + (item.title || '') + '.' +
     (memCtx ? ' AJ profile: ' + memCtx : '');
 
   try {
-    var payload = {model: MODEL, max_tokens: 1000, system: sysPmt, messages: messages};
+    var maxTok = isConfirming ? 2000 : 300;
+    var payload = {model: MODEL, max_tokens: maxTok, system: sysPmt, messages: messages};
     var payloadStr = JSON.stringify(payload);
-    console.log('CONCIERGE PAYLOAD SIZE:', payloadStr.length, 'chars');
-    console.log('CONCIERGE SYSTEM:', sysPmt.substring(0, 100));
-    console.log('CONCIERGE MESSAGES:', JSON.stringify(messages).substring(0, 200));
     var r = await fetch(PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: payloadStr
     });
-    console.log('CONCIERGE HTTP STATUS:', r.status);
     var data = await r.json();
-    console.log('CONCIERGE FULL RESPONSE:', JSON.stringify(data).substring(0, 500));
     var reply = '';
     if (data.content && data.content[0] && data.content[0].text) {
       reply = data.content[0].text;
@@ -3171,11 +3170,20 @@ async function sendConciergeChat(id) {
     } else {
       reply = 'No response received. Please try again.';
     }
+
+    // If confirmed, save as new research brief
+    if (isConfirming && reply && !reply.startsWith('Shadow error')) {
+      try {
+        await db.from('shadow_concierge').update({notes: reply, status: 'handling'}).eq('id', id);
+        await loadConcierge();
+      } catch(e) { console.log('brief save error', e); }
+    }
+
     conTaskChats[id].push({role: 'assistant', content: reply});
     saveConMessage(id, 'assistant', reply);
     var think = document.getElementById('conThink_' + id);
     if (think) think.remove();
-    appendConMessage(id, 'assistant', reply);
+    appendConMessage(id, 'assistant', linkifyText(reply));
   } catch(e) {
     var think = document.getElementById('conThink_' + id);
     if (think) think.remove();
@@ -3184,43 +3192,6 @@ async function sendConciergeChat(id) {
 }
 
 
-function renderConciergeSnapshot() {
-  var el = document.getElementById('homeConciergeSnap');
-  if (!el) return;
-  var top = conciergeItems.slice(0, 3);
-  if (!top.length) {
-    el.innerHTML = '<div class="hcs-empty">No active requests &mdash; tap to add one</div>';
-    return;
-  }
-  el.innerHTML = top.map(function(item) {
-    var dotColor = item.status === 'urgent' ? 'var(--red)' : item.status === 'handling' ? 'var(--blue)' : 'var(--amber)';
-    var tagStyle = item.status === 'urgent' ? 'background:var(--red-dim);color:var(--red)' : item.status === 'handling' ? 'background:var(--blue-dim);color:var(--blue)' : 'background:var(--amber-dim);color:var(--amber)';
-    var tagLabel = item.status === 'urgent' ? 'Urgent' : item.status === 'handling' ? 'Researched' : 'Pending';
-    var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : item.category || '';
-    return '<div class="hcs-item" onclick="switchLifeTab(\'concierge\',null);switchNav(\'life\',document.querySelector(\'[data-tab=life]\'))">' +
-      '<div class="hcs-dot" style="background:' + dotColor + '"></div>' +
-      '<div class="hcs-body">' +
-        '<div class="hcs-title">' + (item.title || '') + '</div>' +
-        '<div class="hcs-sub">' + dueStr + '</div>' +
-      '</div>' +
-      '<div class="hcs-tag" style="' + tagStyle + '">' + tagLabel + '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function updateConciergePreview() {
-  var el = document.getElementById('lifeConciergePreview');
-  if (!el) return;
-  var urgent = conciergeItems.filter(function(i) { return i.status === 'urgent'; }).length;
-  var total = conciergeItems.length;
-  if (urgent > 0) {
-    el.textContent = urgent + ' item' + (urgent > 1 ? 's' : '') + ' need your attention';
-  } else if (total > 0) {
-    el.textContent = total + ' active request' + (total > 1 ? 's' : '');
-  } else {
-    el.textContent = 'Your affairs, handled';
-  }
-}
 
 async function markConciergeHandling(id) {
   try {
