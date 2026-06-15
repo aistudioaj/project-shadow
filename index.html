@@ -3121,12 +3121,20 @@ async function sendConciergeChat(id) {
   var fullHistory = conTaskChats[id];
   var messages = fullHistory.slice(-8);
 
-  // Compact system prompt with brief context
-  var briefCtx = (item.notes || '').replace(/[\r\n]+/g, ' ').substring(0, 200);
+  // Compact system prompt - strip all markdown from brief context
+  var briefCtx = (item.notes || '')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/[\r\n|]+/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[^a-zA-Z0-9\s.,;:!?()\/'-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 300);
   var memCtx = memories.slice(0, 5).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 100);
   var sysPmt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE.' +
-    ' Request: "' + (item.title || '') + '".' +
-    (briefCtx ? ' Context: ' + briefCtx : '') +
+    ' Request: ' + (item.title || '') + '.' +
+    (briefCtx ? ' Prior research summary: ' + briefCtx : '') +
     ' Be helpful and specific. Include real URLs and prices.' +
     (memCtx ? ' AJ profile: ' + memCtx : '');
 
