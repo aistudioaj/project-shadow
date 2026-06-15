@@ -3117,9 +3117,11 @@ async function sendConciergeChat(id) {
   appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Send last 8 messages with full content — Cloudflare Worker now on paid plan
+  // Send last 8 messages — only role and content, strip all other fields
   var fullHistory = conTaskChats[id];
-  var messages = fullHistory.slice(-8);
+  var messages = fullHistory.slice(-8).map(function(m) {
+    return {role: m.role, content: m.content};
+  });
 
   // Compact system prompt - strip all markdown from brief context
   var briefCtx = (item.notes || '')
