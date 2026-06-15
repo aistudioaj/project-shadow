@@ -3280,17 +3280,17 @@ async function submitConciergeRequest() {
     var searchQuery = buildConciergeSearchQuery(title, details, selectedConCat);
     var searchCtx = await doTavilySearch(searchQuery);
 
-    var memCtx = memories.slice(0, 10).map(function(m) { return m.key + ': ' + m.value; }).join('\n');
+    var memCtx = memories.slice(0, 5).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 150);
 
     var sysPrompt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE. UHNW executive, premium lifestyle.' +
       ' Deliver a structured research brief with: OVERVIEW (2 sentences), OPTIONS (2-3 with real prices in AED/USD and direct URLs), RECOMMENDATION (best option with link), LINKS (all relevant URLs), NEXT STEPS (3 actions with links).' +
       ' Always include real working URLs. Be specific - real names, real prices. No filler.' +
-      (memCtx ? ' AJ profile: ' + memCtx.substring(0, 200) : '') +
-      (searchCtx ? ' Live research: ' + searchCtx.substring(0, 500) : '');
+      (memCtx ? ' AJ: ' + memCtx : '') +
+      (searchCtx ? ' Research: ' + searchCtx.substring(0, 300) : '');
 
-    var userMsg = 'Please research and brief me on this concierge request:\n\nRequest: ' + title +
-      (details ? '\nAdditional details: ' + details : '') +
-      '\nCategory: ' + selectedConCat;
+    var userMsg = 'Research this request: ' + title +
+      (details ? '. Details: ' + details : '') +
+      '. Category: ' + selectedConCat;
 
     var r = await fetch(PROXY, {
       method: 'POST',
