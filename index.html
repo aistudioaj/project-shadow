@@ -3117,10 +3117,12 @@ async function sendConciergeChat(id) {
   appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Send last 8 messages — only role and content, strip all other fields
+  // Send only user messages — never assistant responses (they are too large)
+  // Context is carried via system prompt summary instead
   var fullHistory = conTaskChats[id];
-  var messages = fullHistory.slice(-8).map(function(m) {
-    return {role: m.role, content: m.content};
+  var userMessages = fullHistory.filter(function(m) { return m.role === 'user'; });
+  var messages = userMessages.slice(-6).map(function(m) {
+    return {role: 'user', content: m.content};
   });
 
   // Compact system prompt - strip all markdown from brief context
