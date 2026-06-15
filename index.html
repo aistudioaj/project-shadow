@@ -3117,11 +3117,18 @@ async function sendConciergeChat(id) {
   appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Send only user messages — never assistant responses (they are too large)
-  // Context is carried via system prompt summary instead
+  // Build conversation for Claude:
+  // - User messages sent in full
+  // - Assistant responses compressed to first 120 chars (key recommendation only)
+  // This keeps payload bounded while Shadow retains memory of what it said
   var fullHistory = conTaskChats[id];
-  var userMessages = fullHistory.filter(function(m) { return m.role === 'user'; });
-  var messages = userMessages.slice(-6).map(function(m) {
+  var recentHistory = fullHistory.slice(-8);
+  var messages = recentHistory.map(function(m) {
+    if (m.role === 'assistant') {
+      // Extract first meaningful line as summary
+      var summary = m.content.replace(/[#*|]/g, '').replace(/\r/g, ' ').replace(/\n/g, ' ').trim().substring(0, 120);
+      return {role: 'assistant', content: summary};
+    }
     return {role: 'user', content: m.content};
   });
 
