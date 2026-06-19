@@ -3579,17 +3579,23 @@ async function triggerConciergeBrief(id, item) {
     if (briefJson) {
       // Render as beautiful cards
       var thread = document.getElementById('conThread_' + id);
+      console.log('RENDER: thread found:', !!thread, 'id:', id);
       if (thread) {
         var briefContainer = document.createElement('div');
-        briefContainer.style.cssText = 'margin:-4px -4px 0';
+        briefContainer.style.cssText = 'width:100%';
         try {
           renderConciergeBrief(briefContainer, briefJson);
           thread.appendChild(briefContainer);
           thread.scrollTop = thread.scrollHeight;
+          console.log('RENDER: cards rendered successfully');
         } catch(re) {
-          console.log('render error:', re);
-          appendConMessage(id, 'assistant', JSON.stringify(briefJson, null, 2));
+          console.log('RENDER ERROR:', re.message, re.stack);
+          appendConMessage(id, 'assistant', 'Render error: ' + re.message);
         }
+      } else {
+        console.log('RENDER: thread not found for id:', id);
+        // Fallback - show as text
+        appendConMessage(id, 'assistant', JSON.stringify(briefJson).substring(0, 500));
       }
       // Save JSON as notes
       var saveStr = JSON.stringify(briefJson);
@@ -4299,11 +4305,17 @@ async function expandAndBrief(id, title, notes, category) {
   // Set flag to skip questions
   window._csfDirectBrief = id;
   await expandConciergeItem(id);
-  // Trigger brief after thread opens
-  setTimeout(function() {
-    window._csfDirectBrief = null;
-    triggerConciergeBrief(id, item);
-  }, 600);
+  // Wait for DOM to be ready then trigger brief
+  var attempts = 0;
+  var waitForThread = setInterval(function() {
+    attempts++;
+    var thread = document.getElementById('conThread_' + id);
+    if (thread || attempts > 20) {
+      clearInterval(waitForThread);
+      window._csfDirectBrief = null;
+      if (thread) triggerConciergeBrief(id, item);
+    }
+  }, 100);
 }
 
 
