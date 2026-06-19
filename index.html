@@ -3280,16 +3280,16 @@ function appendConThinking(threadId) {
 async function triggerConciergeQuestions(id, item) {
   appendConThinking(id);
 
-  var briefCtx = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 300);
+  var briefCtx = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 400);
 
   var sysPmt = 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE.' +
-    ' Based on this concierge request, ask exactly 3 short, smart clarifying questions.' +
-    ' Number them 1, 2, 3. Each question maximum 15 words.' +
-    ' Do not answer anything. Do not give suggestions. Just 3 numbered questions.' +
-    ' Make them specific to what you actually need to know to execute this request perfectly.';
+    ' Based on this concierge request and the details provided, ask 1-3 smart clarifying questions ONLY if critical information is missing.' +
+    ' If the request already has enough detail, confirm what Shadow will do and say ready to build the brief.' +
+    ' Number questions 1, 2, 3. Each maximum 12 words. No answers, no suggestions.' +
+    ' Make questions specific to what is genuinely missing.';
 
-  var userMsg = 'My request: ' + (item.title || '') +
-    (briefCtx ? '. Initial research: ' + briefCtx : '');
+  var userMsg = 'Request: ' + (item.title || '') +
+    (briefCtx ? '. Details provided: ' + briefCtx : '. No additional details provided.');
 
   try {
     var r = await fetch(PROXY, {
@@ -4047,7 +4047,7 @@ async function submitConciergeWithData(title, notes, category) {
   showToast('Request received');
   await loadConcierge();
   if (newId) {
-    setTimeout(function() { expandConciergeItem(newId); }, 400);
+    setTimeout(function() { expandConciergeItem(newId); }, 800);
   }
 }
 
