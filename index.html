@@ -3239,7 +3239,7 @@ async function expandConciergeItem(id) {
     '<div id="conThread_' + id + '" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px">' +
       '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Loading...</div>' +
     '</div>' +
-    '<div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg1)">' +
+    '<div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg1);display:none" id="conFooter_' + id + '">' +
       '<div style="display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px">' +
         '<input id="conChatInput_' + id + '" type="text" placeholder="Reply to Shadow..." style="flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--t1);font-family:var(--font-body)" onkeydown="if(event.key===\'Enter\')sendConciergeChat(\'' + id + '\')">' +
         '<div onclick="sendConciergeChat(\'' + id + '\')" style="width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 10px var(--blue-glow)">' +
@@ -3448,9 +3448,38 @@ function renderConciergeBrief(container, data) {
   // Action buttons
   var actions = document.createElement('div');
   actions.style.cssText = 'margin:4px 16px 16px;display:flex;gap:8px';
-  actions.innerHTML =
-    '<div style="flex:1;padding:13px;border-radius:12px;background:var(--blue);color:white;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-align:center;cursor:pointer;box-shadow:0 0 16px rgba(59,130,246,0.3)">SAVE BRIEF</div>' +
-    '<div style="flex:1;padding:13px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);color:var(--t3);font-family:var(--font-mono);font-size:9px;letter-spacing:1px;text-align:center;cursor:pointer">REFINE</div>';
+  var saveBtn = document.createElement('div');
+  saveBtn.style.cssText = 'flex:1;padding:13px;border-radius:12px;background:var(--blue);color:white;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-align:center;cursor:pointer;box-shadow:0 0 16px rgba(59,130,246,0.3)';
+  saveBtn.textContent = 'SAVE BRIEF';
+  saveBtn.onclick = function() {
+    showToast('Brief saved');
+    // Close thread overlay
+    var overlays = document.querySelectorAll('[id^="conOverlay_"]');
+    overlays.forEach(function(o) { o.remove(); });
+    loadConcierge();
+  };
+  var refineBtn = document.createElement('div');
+  refineBtn.style.cssText = 'flex:1;padding:13px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);color:var(--t3);font-family:var(--font-mono);font-size:9px;letter-spacing:1px;text-align:center;cursor:pointer';
+  refineBtn.textContent = 'REFINE';
+  refineBtn.onclick = function() {
+    // Find footer by looking for conFooter_ in the overlay
+    var overlays = document.querySelectorAll('[id^="conOverlay_"]');
+    overlays.forEach(function(overlay) {
+      var footer = overlay.querySelector('[id^="conFooter_"]');
+      if (footer) {
+        footer.style.display = 'block';
+        var input = footer.querySelector('[id^="conChatInput_"]');
+        if (input) {
+          input.placeholder = 'What would you like to change?';
+          input.focus();
+          // Set refine mode flag
+          window._conRefineMode = input.id.replace('conChatInput_','');
+        }
+      }
+    });
+  };
+  actions.appendChild(saveBtn);
+  actions.appendChild(refineBtn);
   container.appendChild(actions);
 }
 
@@ -3649,7 +3678,37 @@ async function sendConciergeChat(id) {
   var confirmWords = ['confirmed', 'confirm', 'go ahead', 'yes proceed', 'finalise', 'finalize', 'book it', 'lets go', 'let\'s go', 'proceed', 'do it', 'yes please', 'approved', 'yes go ahead', 'go'];
   var isConfirming = confirmWords.some(function(w) { return msg.toLowerCase().trim() === w || msg.toLowerCase().indexOf(w) > -1; });
 
-  if (isConfirming) {
+  // If brief already generated, all messages are conversational
+  var briefGenerated = conTaskChats[id] && conTaskChats[id].some(function(m) {
+    return m.role === 'assistant' && m.content && m.content.indexOf('"destination"') > -1;
+  });
+
+  if (briefGenerated || window._conRefineMode === id) {
+    // Conversational follow-up — short response with brief context
+    appendConThinking(id);
+    var briefCtxForChat = '';
+    if (item && item.notes) {
+      try {
+        var bn = JSON.parse(item.notes);
+        briefCtxForChat = 'Destination: ' + (bn.destination||'') + '. Dates: ' + (bn.dates||'') + '. Hotels: ' + (bn.hotels||[]).map(function(h){return h.name;}).join(', ');
+      } catch(e) { briefCtxForChat = (item.title||''); }
+    }
+    var chatSys = 'You are Shadow Concierge for AJ. Answer concisely in 2-4 sentences. Context: ' + briefCtxForChat;
+    fetch(PROXY, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:MODEL, max_tokens:300, system:chatSys, messages:[{role:'user',content:msg}]})
+    }).then(function(r){return r.json();}).then(function(data){
+      var think = document.getElementById('conThink_' + id);
+      if (think) think.remove();
+      var reply = data.content && data.content[0] ? data.content[0].text : 'Sorry, try again.';
+      appendConMessage(id, 'assistant', reply);
+      saveConMessage(id, 'assistant', reply);
+    }).catch(function(e){
+      var think = document.getElementById('conThink_' + id);
+      if (think) think.remove();
+      appendConMessage(id, 'assistant', 'Connection error.');
+    });
+    return;
+  } else if (isConfirming) {
     // CALL 2 — generate full brief
     triggerConciergeBrief(id, item);
   } else {
