@@ -3387,13 +3387,16 @@ async function triggerConciergeBrief(id, item) {
     }
   } catch(e) { console.log('tavily error', e); }
 
-  var sysPmt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE. UHNW executive.' +
-    ' Return ONLY a JSON object. No markdown, no explanation, just the JSON.' +
-    ' Schema: {destination,dates,travellers,tags[],flights[{name,sub,price,features[],link,recommended}],hotels[{name,sub,per_night,total,features[],link,recommended}],itinerary[{day,date,title,desc}],budget[{label,value}],total}' +
-    ' Use real website URLs (domain only e.g. emirates.com). Prices in AED. 2-3 flight options, 2-3 hotel options, full day-by-day itinerary.' +
-    (searchCtx ? ' Context: ' + searchCtx.substring(0, 150) : '');
+  var sysPmt = 'You are Shadow Concierge for AJ. Output ONLY raw JSON, starting with { and ending with }. Zero other text.' +
+    ' Required fields: destination(string), dates(string), travellers(string), tags(array of strings), ' +
+    'flights(array of {name,sub,price,features,link,recommended}), ' +
+    'hotels(array of {name,sub,per_night,total,features,link,recommended}), ' +
+    'itinerary(array of {day,date,title,desc}), ' +
+    'budget(array of {label,value}), total(string). ' +
+    'features must be arrays of short strings. link must be domain only like emirates.com. recommended is boolean. Prices in AED.' +
+    (searchCtx ? ' Data: ' + searchCtx.substring(0, 100) : '');
 
-  var userMsg = 'Trip: ' + originalBrief.substring(0, 250);
+  var userMsg = '{"trip":' + JSON.stringify({dest: originalBrief.substring(0, 200)}) + '}\n\nReturn the complete brief JSON for this trip:';
 
   try {
     var payload2 = {model: MODEL, max_tokens: 1500, system: sysPmt, messages: [{role: 'user', content: userMsg}]};
@@ -4279,11 +4282,21 @@ async function submitConciergeWithData(title, notes, category) {
 }
 
 async function expandAndBrief(id, title, notes, category) {
-  // Get the item
   var item = {id: id, title: title, notes: notes, category: category};
+  // Mark history as non-empty so triggerConciergeQuestions does not fire
+  conTaskChats[id] = [{role: 'assistant', content: 'brief_pending'}];
   await expandConciergeItem(id);
-  // Auto-trigger brief after thread opens
-  setTimeout(function() { triggerConciergeBrief(id, item); }, 300);
+  // Clear the placeholder and trigger brief
+  setTimeout(function() {
+    conTaskChats[id] = [];
+    var thread = document.getElementById('conThread_' + id);
+    if (thread) {
+      // Remove any existing messages except the brief div
+      var msgs = thread.querySelectorAll('div[style*="justify-content"]');
+      msgs.forEach(function(m) { m.remove(); });
+    }
+    triggerConciergeBrief(id, item);
+  }, 400);
 }
 
 
