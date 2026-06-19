@@ -3152,15 +3152,31 @@ async function triggerConciergeBrief(id, item) {
     return (m.role === 'user' ? 'AJ: ' : 'Shadow: ') + m.content;
   }).join('\n');
 
-  var sysPmt = 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE.' +
-    ' AJ has confirmed the plan. Produce a complete, detailed brief.' +
-    ' Include: day-by-day itinerary, hotel names with booking websites and price ranges, flight options with airline websites, all activities with official websites, total budget breakdown by category in AED.' +
-    ' Format clearly with sections. Include real website URLs for every recommendation.' +
-    ' Be specific and thorough. This is the deliverable AJ will act on.';
+  // Run Tavily search at confirmation time for fresh data
+  var searchCtx = '';
+  try {
+    var searchQ = (item.title || '') + ' ' + (item.category || '') + ' Abu Dhabi UAE 2025 prices';
+    var sr = await fetch(PROXY + '?service=tavily', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: searchQ})
+    });
+    var sd = await sr.json();
+    if (sd.results && sd.results.length) {
+      var ans = sd.answer ? sd.answer.substring(0, 200) : '';
+      var res = sd.results.slice(0, 3).map(function(r) { return r.title + ': ' + r.content.substring(0, 100); }).join(' | ');
+      searchCtx = ans + ' ' + res;
+    }
+  } catch(e) { console.log('tavily error', e); }
 
-  var userMsg = 'Original research: ' + originalBrief +
-    '\n\nOur conversation:\n' + fullConvo.substring(0, 800) +
-    '\n\nPlease produce the complete final brief based on everything above.';
+  var sysPmt = 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE.' +
+    ' AJ has confirmed. Produce a complete, detailed brief.' +
+    ' Include: day-by-day itinerary, hotel names with booking websites and price ranges, flights with airline websites, all activities with official websites, total budget by category in AED.' +
+    ' Include real website URLs for every recommendation. Be specific and thorough.' +
+    (searchCtx ? ' Live data: ' + searchCtx.substring(0, 300) : '');
+
+  var userMsg = 'Conversation so far: ' + fullConvo.substring(0, 600) +
+    '\n\nProduce the complete final brief.';
 
   try {
     var r = await fetch(PROXY, {
@@ -3289,7 +3305,6 @@ async function submitConciergeRequest() {
   var titleEl = document.getElementById('conFormTitle');
   var detailsEl = document.getElementById('conFormDetails');
   var dueEl = document.getElementById('conFormDue');
-  var btn = document.getElementById('conSubmitBtn');
   var title = titleEl ? titleEl.value.trim() : '';
   var details = detailsEl ? detailsEl.value.trim() : '';
   var due = dueEl ? dueEl.value : '';
@@ -3297,7 +3312,7 @@ async function submitConciergeRequest() {
 
   closeConciergeForm();
 
-  // Save immediately as pending
+  // Save request — Shadow will ask clarifying questions first, research after confirmation
   var insertRes = await db.from('shadow_concierge').insert({
     user_id: UID,
     title: title,
@@ -3306,79 +3321,15 @@ async function submitConciergeRequest() {
     due_date: due || null,
     notes: details ? 'Details: ' + details : ''
   }).select();
+
   var newId = insertRes.data && insertRes.data[0] ? insertRes.data[0].id : null;
+  showToast('Request received');
   await loadConcierge();
 
-  // Show thinking state in panel
-  var handlingEl = document.getElementById('conciergeHandlingSection');
-  if (handlingEl) {
-    var thinkDiv = document.createElement('div');
-    thinkDiv.className = 'con-thinking';
-    thinkDiv.id = 'conThinking';
-    thinkDiv.innerHTML = '<div class="con-thinking-dots"><span></span><span></span><span></span></div>' +
-      '<div class="con-thinking-text">Shadow is researching: ' + title + '</div>';
-    handlingEl.insertBefore(thinkDiv, handlingEl.firstChild);
+  // Auto-open the thread so Shadow asks clarifying questions immediately
+  if (newId) {
+    setTimeout(function() { expandConciergeItem(newId); }, 400);
   }
-
-  // Research via Tavily + Claude
-  try {
-    var searchQuery = buildConciergeSearchQuery(title, details, selectedConCat);
-    var searchCtx = await doTavilySearch(searchQuery);
-
-    var memCtx = memories.slice(0, 5).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 150);
-
-    var sysPrompt = 'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE. UHNW executive, premium lifestyle.' +
-      ' Deliver a structured research brief with: OVERVIEW (2 sentences), OPTIONS (2-3 with real prices in AED/USD and direct URLs), RECOMMENDATION (best option with link), LINKS (all relevant URLs), NEXT STEPS (3 actions with links).' +
-      ' Always include real working URLs. Be specific - real names, real prices. No filler.' +
-      (memCtx ? ' AJ: ' + memCtx : '') +
-      (searchCtx ? ' Research: ' + searchCtx.substring(0, 300) : '');
-
-    var userMsg = 'Research this request: ' + title +
-      (details ? '. Details: ' + details : '') +
-      '. Category: ' + selectedConCat;
-
-    var r = await fetch(PROXY, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1200,
-        system: sysPrompt,
-        messages: [{role: 'user', content: userMsg}]
-      })
-    });
-    var data = await r.json();
-    console.log('concierge research response:', JSON.stringify(data).substring(0, 300));
-    var brief = '';
-    if (data.content && data.content[0] && data.content[0].text) {
-      brief = data.content[0].text;
-    } else if (data.error) {
-      console.log('research API error:', JSON.stringify(data.error));
-      brief = 'Research error: ' + (data.error.message || JSON.stringify(data.error));
-    } else {
-      brief = 'Research complete. Please check back shortly.';
-    }
-
-    // Update Supabase with research
-    var targetId = newId;
-    if (!targetId) {
-      var findRes = await db.from('shadow_concierge').select('id').eq('user_id', UID).eq('title', title).order('created_at', {ascending: false}).limit(1);
-      targetId = findRes.data && findRes.data[0] ? findRes.data[0].id : null;
-    }
-    if (targetId) {
-      await db.from('shadow_concierge').update({status: 'handling', notes: brief}).eq('id', targetId);
-    } else {
-      await db.from('shadow_concierge').insert({user_id: UID, title: title, status: 'handling', category: selectedConCat, due_date: due || null, notes: brief});
-    }
-    showToast('Research complete');
-  } catch(e) {
-    console.log('concierge research error', e);
-    showToast('Research saved - will retry');
-  }
-
-  var think = document.getElementById('conThinking');
-  if (think) think.remove();
-  await loadConcierge();
 }
 
 function buildConciergeSearchQuery(title, details, category) {
@@ -4234,7 +4185,7 @@ init();
     <input class="con-form-input" id="conFormDue" type="date">
     <div class="con-form-btns">
       <div class="con-cancel-btn" onclick="closeConciergeForm()">Cancel</div>
-      <div class="con-submit-btn" id="conSubmitBtn" onclick="submitConciergeRequest()">RESEARCH &amp; BRIEF ME</div>
+      <div class="con-submit-btn" id="conSubmitBtn" onclick="submitConciergeRequest()">SUBMIT TO SHADOW</div>
     </div>
   </div>
 </div>
