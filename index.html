@@ -3016,6 +3016,44 @@ function linkifyText(text) {
 
 var conciergeAllItems = [];
 
+function renderConciergeSnapshot() {
+  var el = document.getElementById('homeConciergeSnap');
+  if (!el) return;
+  var top = conciergeItems.slice(0, 3);
+  if (!top.length) {
+    el.innerHTML = '<div class="hcs-empty">No active requests &mdash; tap to add one</div>';
+    return;
+  }
+  el.innerHTML = top.map(function(item) {
+    var dotColor = item.status === 'urgent' ? 'var(--red)' : item.status === 'handling' ? 'var(--blue)' : 'var(--amber)';
+    var tagStyle = item.status === 'urgent' ? 'background:var(--red-dim);color:var(--red)' : item.status === 'handling' ? 'background:var(--blue-dim);color:var(--blue)' : 'background:var(--amber-dim);color:var(--amber)';
+    var tagLabel = item.status === 'urgent' ? 'Urgent' : item.status === 'handling' ? 'Researched' : 'Pending';
+    var dueStr = item.due_date ? 'Due ' + new Date(item.due_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : item.category || '';
+    return '<div class="hcs-item" onclick="switchLifeTab(\'concierge\',null);switchNav(\'life\',document.querySelector(\'[data-tab=life]\'))">' +
+      '<div class="hcs-dot" style="background:' + dotColor + '"></div>' +
+      '<div class="hcs-body">' +
+        '<div class="hcs-title">' + (item.title || '') + '</div>' +
+        '<div class="hcs-sub">' + dueStr + '</div>' +
+      '</div>' +
+      '<div class="hcs-tag" style="' + tagStyle + '">' + tagLabel + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function updateConciergePreview() {
+  var el = document.getElementById('lifeConciergePreview');
+  if (!el) return;
+  var urgent = conciergeItems.filter(function(i) { return i.status === 'urgent'; }).length;
+  var total = conciergeItems.length;
+  if (urgent > 0) {
+    el.textContent = urgent + ' item' + (urgent > 1 ? 's' : '') + ' need your attention';
+  } else if (total > 0) {
+    el.textContent = total + ' active request' + (total > 1 ? 's' : '');
+  } else {
+    el.textContent = 'Your affairs, handled';
+  }
+}
+
 async function loadConcierge() {
   try {
     var res = await db.from('shadow_concierge').select('*').eq('user_id', UID).order('created_at', {ascending: false}).limit(50);
