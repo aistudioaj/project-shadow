@@ -3384,13 +3384,26 @@ async function triggerConciergeBrief(id, item) {
     '\n\nBuild the complete brief for this trip.';
 
   try {
+    var payload2 = {model: MODEL, max_tokens: 1500, system: sysPmt, messages: [{role: 'user', content: userMsg}]};
+    console.log('CALL2 PAYLOAD SIZE:', JSON.stringify(payload2).length, 'chars');
+    console.log('CALL2 SYS:', sysPmt.substring(0, 100));
+    console.log('CALL2 MSG:', userMsg.substring(0, 100));
     var r = await fetch(PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({model: MODEL, max_tokens: 1500, system: sysPmt, messages: [{role: 'user', content: userMsg}]})
+      body: JSON.stringify(payload2)
     });
     var data = await r.json();
-    var brief = data.content && data.content[0] ? data.content[0].text : 'Unable to generate brief. Please try again.';
+    console.log('CALL2 STATUS:', r.status);
+    console.log('CALL2 RESPONSE:', JSON.stringify(data).substring(0, 300));
+    var brief = '';
+    if (data.content && data.content[0] && data.content[0].text) {
+      brief = data.content[0].text;
+    } else if (data.error) {
+      brief = 'Error: ' + data.error.type + ' - ' + data.error.message;
+    } else {
+      brief = 'Unable to generate brief. Please try again.';
+    }
     var think = document.getElementById('conThink_' + id);
     if (think) think.remove();
     appendConMessage(id, 'assistant', brief);
