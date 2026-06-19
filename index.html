@@ -3452,11 +3452,17 @@ function renderConciergeBrief(container, data) {
   saveBtn.style.cssText = 'flex:1;padding:13px;border-radius:12px;background:var(--blue);color:white;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-align:center;cursor:pointer;box-shadow:0 0 16px rgba(59,130,246,0.3)';
   saveBtn.textContent = 'SAVE BRIEF';
   saveBtn.onclick = function() {
+    // Save status to Supabase
+    var overlayEl = saveBtn.closest('[id^="conOverlay_"]');
+    var overlayId = overlayEl ? overlayEl.id.replace('conOverlay_','') : null;
+    if (overlayId) {
+      db.from('shadow_concierge').update({status:'handling'}).eq('id', overlayId).then(function(){
+        loadConcierge();
+      });
+    }
     showToast('Brief saved');
-    // Close thread overlay
-    var overlays = document.querySelectorAll('[id^="conOverlay_"]');
-    overlays.forEach(function(o) { o.remove(); });
-    loadConcierge();
+    // Close thread overlay immediately
+    document.querySelectorAll('[id^="conOverlay_"]').forEach(function(o) { o.remove(); });
   };
   var refineBtn = document.createElement('div');
   refineBtn.style.cssText = 'flex:1;padding:13px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);color:var(--t3);font-family:var(--font-mono);font-size:9px;letter-spacing:1px;text-align:center;cursor:pointer';
@@ -3628,9 +3634,7 @@ async function triggerConciergeBrief(id, item) {
       }
       // Save JSON as notes
       var saveStr = JSON.stringify(briefJson);
-      conTaskChats[id] = conTaskChats[id] || [];
-      conTaskChats[id].push({role: 'assistant', content: saveStr});
-      saveConMessage(id, 'assistant', saveStr);
+      // Save to Supabase notes but NOT as a chat message - avoid showing raw JSON
       try {
         await db.from('shadow_concierge').update({notes: saveStr, status: 'handling'}).eq('id', id);
         await loadConcierge();
