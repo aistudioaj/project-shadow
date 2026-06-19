@@ -1312,6 +1312,85 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 @keyframes conthink{0%,80%,100%{opacity:0.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
 .con-thinking-text{font-size:13px;color:var(--t2)}
 
+/* ── CONCIERGE SMART FORM ── */
+#conFormOverlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:var(--bg0);
+  flex-direction:column;
+}
+#conFormOverlay.show{display:flex}
+.csf-prog{height:3px;background:var(--bg4);flex-shrink:0}
+.csf-prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width 0.4s ease;border-radius:0 2px 2px 0}
+.csf-hdr{padding:16px 20px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.csf-close{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--t2);flex-shrink:0}
+.csf-step-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+.csf-counter{font-family:var(--font-mono);font-size:9px;color:var(--blue);margin-left:auto}
+.csf-title{font-family:var(--font-display);font-size:22px;font-style:italic;color:var(--t1);padding:6px 20px 14px;line-height:1.3;flex-shrink:0}
+.csf-body{flex:1;padding:0 20px;overflow-y:auto}
+.csf-body::-webkit-scrollbar{display:none}
+.csf-footer{padding:14px 20px 28px;flex-shrink:0}
+.csf-next{width:100%;background:var(--blue);border-radius:var(--r-lg);padding:15px;font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:white;text-align:center;cursor:pointer;box-shadow:0 0 20px var(--blue-glow);transition:opacity 0.15s}
+.csf-next:active{opacity:0.85}
+.csf-next.purple{background:linear-gradient(135deg,var(--blue),var(--purple));box-shadow:0 0 24px rgba(59,130,246,0.4)}
+/* Inputs */
+.csf-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;font-size:15px;color:var(--t1);outline:none;font-family:var(--font-body);transition:border-color 0.15s;-webkit-appearance:none}
+.csf-input:focus{border-color:var(--border2)}
+.csf-input::placeholder{color:var(--t3)}
+.csf-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;font-size:14px;color:var(--t1);outline:none;font-family:var(--font-body);resize:none;min-height:80px;line-height:1.5;transition:border-color 0.15s;-webkit-appearance:none}
+.csf-textarea:focus{border-color:var(--border2)}
+.csf-textarea::placeholder{color:var(--t3)}
+/* Section label */
+.csf-sec{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin:14px 0 8px}
+/* Chips */
+.csf-chips{display:flex;flex-wrap:wrap;gap:8px}
+.csf-chip{padding:9px 16px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--t3);font-size:13px;cursor:pointer;transition:all 0.15s;font-family:var(--font-body)}
+.csf-chip.on{background:var(--blue-dim);border-color:var(--border2);color:var(--t1)}
+/* Class cards */
+.csf-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;cursor:pointer;transition:all 0.15s;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.csf-card.on{border-color:var(--border2);background:var(--blue-dim)}
+.csf-card-name{font-size:14px;color:var(--t1);font-weight:500}
+.csf-card-sub{font-size:11px;color:var(--t3);margin-top:3px}
+.csf-card-price{font-family:var(--font-mono);font-size:10px;color:var(--t3);text-align:right}
+.csf-card.on .csf-card-price{color:var(--blue)}
+.csf-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--t4);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;font-size:10px;color:white}
+.csf-card.on .csf-check{background:var(--blue);border-color:var(--blue)}
+/* Steppers */
+.csf-stepper-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.csf-stepper-row:last-child{border-bottom:none}
+.csf-s-label{font-size:14px;color:var(--t1)}
+.csf-s-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.csf-s-ctrl{display:flex;align-items:center;gap:14px}
+.csf-s-btn{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);color:var(--t1);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;flex-shrink:0}
+.csf-s-val{font-size:16px;color:var(--t1);min-width:20px;text-align:center;font-weight:500}
+/* Calendar */
+.csf-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.csf-cal-month{font-size:15px;font-weight:500;color:var(--t1)}
+.csf-cal-arrow{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);color:var(--t2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;user-select:none}
+.csf-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.csf-cal-name{text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--t3);padding:4px 0;text-transform:uppercase}
+.csf-cal-day{text-align:center;padding:9px 2px;font-size:13px;color:var(--t2);cursor:pointer;border-radius:8px;transition:background 0.1s;user-select:none}
+.csf-cal-day.today{color:var(--blue);font-weight:600}
+.csf-cal-day.ss,.csf-cal-day.se{background:var(--blue) !important;color:white !important;border-radius:8px}
+.csf-cal-day.ir{background:var(--blue-dim);color:var(--t1);border-radius:0}
+.csf-cal-day.past{color:var(--bg4);cursor:default;pointer-events:none}
+.csf-cal-day.empty{pointer-events:none}
+.csf-cal-day:not(.past):not(.empty):not(.ss):not(.se):hover{background:rgba(255,255,255,0.06)}
+.csf-dates{display:flex;gap:8px;margin-top:12px}
+.csf-date-box{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;transition:border-color 0.15s}
+.csf-date-box.active{border-color:var(--border2)}
+.csf-date-lbl{font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;margin-bottom:4px}
+.csf-date-val{font-size:13px;color:var(--t3)}
+.csf-date-val.set{color:var(--t1)}
+.csf-hint{font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--blue);text-align:center;margin-top:8px;min-height:16px}
+/* Review */
+.csf-review-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.csf-rv-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border)}
+.csf-rv-row:last-child{border-bottom:none}
+.csf-rv-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;flex-shrink:0;margin-right:12px}
+.csf-rv-val{font-size:13px;color:var(--t1);text-align:right}
+.csf-shadow-note{display:flex;align-items:center;gap:8px;background:var(--blue-dim);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
+.csf-note-txt{font-size:12px;color:var(--t2)}
+
 </style>
 </head>
 <body>
@@ -3277,6 +3356,611 @@ async function markConciergeDone(id) {
   } catch(e) { showToast('Error updating item'); }
 }
 
+// ── CONCIERGE SMART FORM ENGINE ──
+var csfData = {};
+var csfStep = 0;
+var csfSteps = [];
+var csfCat = 'travel';
+var csfCalYear, csfCalMonth;
+var csfStartDate = null, csfEndDate = null;
+var csfCounts = {adults:2,children:0,infants:0};
+
+var CSF_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+var CSF_CATEGORIES = {
+  travel: {
+    label: 'Travel concierge',
+    steps: [
+      { id:'dest', title:'Where do you want to go?', type:'text-chips', placeholder:'City, country or region...', chips:['London','Tokyo','Paris','Maldives','Gold Coast','New York','Singapore','Bangkok','Sydney','Rome'] },
+      { id:'depart', title:'Where are you flying from?', type:'text-chips', placeholder:'Departure city', default:'Abu Dhabi', chips:['Abu Dhabi','Dubai','Sharjah','Riyadh','Doha','Kuwait City','Bahrain'] },
+      { id:'dates', title:'When are you travelling?', type:'calendar' },
+      { id:'travellers', title:'Who is travelling?', type:'steppers', steppers:[{key:'adults',label:'Adults',sub:'Age 18+',min:1},{key:'children',label:'Children',sub:'Age 2-17',min:0},{key:'infants',label:'Infants',sub:'Under 2',min:0}] },
+      { id:'class', title:'How would you like to fly?', type:'cards', cards:[{label:'Economy',sub:'Standard seat, best value',price:'from AED 1,800'},{label:'Premium Economy',sub:'Extra legroom, priority boarding',price:'from AED 3,500'},{label:'Business',sub:'Flat bed, lounge access, premium dining',price:'from AED 8,500',default:true},{label:'First Class',sub:'Private suite, chef, chauffeur service',price:'from AED 18,000'}] },
+      { id:'stay', title:'Accommodation preference', type:'chips-single', chips:['Hotel','Serviced apartment','Villa','Resort','Any'] },
+      { id:'budget', title:'What is your budget?', type:'chips-single', chips:['Flexible','AED 20-50K','AED 50-100K','AED 100-200K','AED 200K+'] },
+      { id:'review', title:'Looks good?', type:'review' }
+    ]
+  },
+  booking: {
+    label: 'Restaurant booking',
+    steps: [
+      { id:'city', title:'Which city?', type:'text-chips', placeholder:'City or area...', chips:['Abu Dhabi','Dubai','London','Paris','Tokyo','New York','Singapore','Bangkok'] },
+      { id:'datetime', title:'When is the reservation?', type:'datetime' },
+      { id:'guests', title:'How many guests?', type:'steppers', steppers:[{key:'adults',label:'Adults',sub:'Age 18+',min:1},{key:'children',label:'Children',sub:'Under 18',min:0}] },
+      { id:'cuisine', title:'Any cuisine preference?', type:'chips-multi', chips:['Arabic','Japanese','Italian','Steakhouse','Asian','Seafood','French','Mediterranean','Any'] },
+      { id:'occasion', title:'What is the occasion?', type:'chips-single', chips:['Business dinner','Birthday','Anniversary','Casual dining','Special occasion','Family gathering'] },
+      { id:'notes', title:'Anything else to know?', type:'textarea', placeholder:'Dietary requirements, seating preference, special requests...' },
+      { id:'review', title:'Looks good?', type:'review' }
+    ]
+  },
+  vehicle: {
+    label: 'Vehicle concierge',
+    steps: [
+      { id:'request', title:'What do you need?', type:'chips-single', chips:['Lease renewal','New vehicle','Service appointment','Insurance renewal','Buy a vehicle'] },
+      { id:'brand', title:'Any brand preference?', type:'chips-multi', chips:['Tesla','Mercedes','BMW','Porsche','Range Rover','Toyota','Lexus','Audi','No preference'] },
+      { id:'budget', title:'What is your budget?', type:'chips-single', chips:['Flexible','AED 100-200K','AED 200-400K','AED 400-600K','AED 600K+'] },
+      { id:'notes', title:'Any other details?', type:'textarea', placeholder:'Current vehicle, plate number, preferred dealer, specific requirements...' },
+      { id:'review', title:'Looks good?', type:'review' }
+    ]
+  },
+  payment: {
+    label: 'Payment request',
+    steps: [
+      { id:'what', title:'What needs to be paid?', type:'text', placeholder:'e.g. School fees, utility bill, subscription...' },
+      { id:'amount', title:'How much?', type:'text', placeholder:'Amount and currency e.g. AED 28,400' },
+      { id:'due', title:'When is it due?', type:'date-single' },
+      { id:'recipient', title:'Who is the recipient?', type:'text', placeholder:'Name of payee or organisation...' },
+      { id:'notes', title:'Any other details?', type:'textarea', placeholder:'Account number, reference, bank details...' },
+      { id:'review', title:'Looks good?', type:'review' }
+    ]
+  },
+  research: {
+    label: 'Research request',
+    steps: [
+      { id:'topic', title:'What do you need researched?', type:'text', placeholder:'Topic or question...' },
+      { id:'detail', title:'What specifically do you need?', type:'textarea', placeholder:'What information, comparisons, or analysis would be most useful...' },
+      { id:'urgency', title:'How urgent is this?', type:'chips-single', chips:['Today','This week','No rush'] },
+      { id:'review', title:'Looks good?', type:'review' }
+    ]
+  },
+  other: {
+    label: 'Concierge request',
+    steps: [
+      { id:'title', title:'What do you need handled?', type:'textarea', placeholder:'Describe your request in as much detail as you like...' },
+      { id:'due', title:'Any deadline?', type:'date-single' },
+      { id:'review', title:'Looks good?', type:'review' }
+    ]
+  }
+};
+
+function openConciergeForm(prefill) {
+  var cat = selectedConCat || 'travel';
+  csfCat = cat;
+  csfData = {};
+  csfStep = 0;
+  csfCounts = {adults:2,children:0,infants:0};
+  csfStartDate = null;
+  csfEndDate = null;
+  var now = new Date();
+  csfCalYear = now.getFullYear();
+  csfCalMonth = now.getMonth();
+  csfSteps = CSF_CATEGORIES[cat] ? CSF_CATEGORIES[cat].steps : CSF_CATEGORIES.other.steps;
+  if (prefill) csfData._prefill = prefill;
+  document.getElementById('conFormOverlay').classList.add('show');
+  csfRender();
+}
+
+function openConciergeRequest(prefill) { openConciergeForm(prefill); }
+function closeConciergeForm() { document.getElementById('conFormOverlay').classList.remove('show'); }
+
+function csfBack() {
+  if (csfStep === 0) { closeConciergeForm(); return; }
+  csfStep--;
+  csfRender();
+}
+
+function csfNext() {
+  csfSaveStep();
+  if (csfStep < csfSteps.length - 1) {
+    csfStep++;
+    csfRender();
+  }
+}
+
+function csfSaveStep() {
+  var step = csfSteps[csfStep];
+  if (!step) return;
+  if (step.type === 'text' || step.type === 'text-chips') {
+    var el = document.getElementById('csfInput_' + step.id);
+    if (el) csfData[step.id] = el.value.trim();
+  }
+  if (step.type === 'textarea') {
+    var el = document.getElementById('csfTA_' + step.id);
+    if (el) csfData[step.id] = el.value.trim();
+  }
+  if (step.type === 'steppers') {
+    csfData[step.id] = csfCounts;
+    csfData._travellers = csfCounts.adults + ' adult' + (csfCounts.adults>1?'s':'') +
+      (csfCounts.children>0 ? ', ' + csfCounts.children + ' child' + (csfCounts.children>1?'ren':'') : '') +
+      (csfCounts.infants>0 ? ', ' + csfCounts.infants + ' infant' + (csfCounts.infants>1?'s':'') : '');
+  }
+  if (step.type === 'calendar') {
+    if (csfStartDate) csfData.dep = csfStartDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    if (csfEndDate) csfData.ret = csfEndDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    var dur = document.querySelector('.csf-chip.on[data-dur]');
+    if (dur) csfData.duration = dur.textContent;
+  }
+  if (step.type === 'date-single') {
+    var el = document.getElementById('csfDateSingle');
+    if (el) csfData[step.id] = el.value;
+  }
+  if (step.type === 'datetime') {
+    var d = document.getElementById('csfDTDate');
+    var t = document.getElementById('csfDTTime');
+    if (d) csfData.date = d.value;
+    if (t) csfData.time = t.value;
+  }
+}
+
+function csfRender() {
+  var step = csfSteps[csfStep];
+  var total = csfSteps.length;
+  var cat = CSF_CATEGORIES[csfCat];
+  var pct = Math.round(((csfStep + 1) / total) * 100);
+
+  document.getElementById('csfProgFill').style.width = pct + '%';
+  document.getElementById('csfStepLabel').textContent = cat ? cat.label : 'Concierge';
+  document.getElementById('csfCounter').textContent = (csfStep + 1) + ' of ' + total;
+  document.getElementById('csfTitle').textContent = step.title;
+
+  var back = document.getElementById('csfBack');
+  back.innerHTML = csfStep === 0 ? '&#10005;' : '&#8249;';
+
+  var next = document.getElementById('csfNext');
+  var isLast = step.type === 'review';
+  next.textContent = isLast ? 'BRIEF ME' : 'NEXT \u2192';
+  next.className = 'csf-next' + (isLast ? ' purple' : '');
+  if (isLast) next.onclick = csfSubmit;
+  else next.onclick = csfNext;
+
+  var body = document.getElementById('csfBody');
+  body.innerHTML = '';
+  body.scrollTop = 0;
+
+  if (step.type === 'text' || step.type === 'text-chips') {
+    var inp = document.createElement('input');
+    inp.className = 'csf-input';
+    inp.id = 'csfInput_' + step.id;
+    inp.placeholder = step.placeholder || '';
+    inp.value = csfData[step.id] || step.default || '';
+    inp.type = 'text';
+    body.appendChild(inp);
+    setTimeout(function(){inp.focus();},100);
+    if (step.chips && step.chips.length) {
+      var sec = document.createElement('div');
+      sec.className = 'csf-sec';
+      sec.textContent = 'Quick select';
+      body.appendChild(sec);
+      var grid = document.createElement('div');
+      grid.className = 'csf-chips';
+      step.chips.forEach(function(ch) {
+        var c = document.createElement('div');
+        c.className = 'csf-chip' + (inp.value === ch ? ' on' : '');
+        c.textContent = ch;
+        c.onclick = function() {
+          inp.value = ch;
+          grid.querySelectorAll('.csf-chip').forEach(function(x){x.classList.remove('on')});
+          c.classList.add('on');
+        };
+        grid.appendChild(c);
+      });
+      body.appendChild(grid);
+    }
+  }
+
+  else if (step.type === 'textarea') {
+    var ta = document.createElement('textarea');
+    ta.className = 'csf-textarea';
+    ta.id = 'csfTA_' + step.id;
+    ta.placeholder = step.placeholder || '';
+    ta.value = csfData[step.id] || '';
+    body.appendChild(ta);
+  }
+
+  else if (step.type === 'chips-single') {
+    var grid = document.createElement('div');
+    grid.className = 'csf-chips';
+    step.chips.forEach(function(ch, i) {
+      var c = document.createElement('div');
+      var saved = csfData[step.id];
+      c.className = 'csf-chip' + ((saved ? saved===ch : i===0) ? ' on' : '');
+      c.textContent = ch;
+      c.onclick = function() {
+        grid.querySelectorAll('.csf-chip').forEach(function(x){x.classList.remove('on')});
+        c.classList.add('on');
+        csfData[step.id] = ch;
+      };
+      grid.appendChild(c);
+    });
+    body.appendChild(grid);
+    if (!csfData[step.id]) csfData[step.id] = step.chips[0];
+  }
+
+  else if (step.type === 'chips-multi') {
+    var sec = document.createElement('div');
+    sec.className = 'csf-sec';
+    sec.textContent = 'Select all that apply';
+    body.appendChild(sec);
+    var grid = document.createElement('div');
+    grid.className = 'csf-chips';
+    var selected = csfData[step.id] || [];
+    step.chips.forEach(function(ch) {
+      var c = document.createElement('div');
+      c.className = 'csf-chip' + (selected.indexOf(ch) > -1 ? ' on' : '');
+      c.textContent = ch;
+      c.onclick = function() {
+        c.classList.toggle('on');
+        var arr = csfData[step.id] || [];
+        var idx = arr.indexOf(ch);
+        if (idx > -1) arr.splice(idx,1); else arr.push(ch);
+        csfData[step.id] = arr;
+      };
+      grid.appendChild(c);
+    });
+    body.appendChild(grid);
+  }
+
+  else if (step.type === 'cards') {
+    var defaultCard = step.cards.findIndex(function(c){return c.default;});
+    if (!csfData[step.id]) csfData[step.id] = step.cards[defaultCard >= 0 ? defaultCard : 0].label;
+    step.cards.forEach(function(card) {
+      var d = document.createElement('div');
+      d.className = 'csf-card' + (csfData[step.id] === card.label ? ' on' : '');
+      d.innerHTML =
+        '<div><div class="csf-card-name">' + card.label + '</div><div class="csf-card-sub">' + card.sub + '</div></div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div class="csf-card-price">' + card.price + '</div>' +
+          '<div class="csf-check">' + (csfData[step.id] === card.label ? '&#10003;' : '') + '</div>' +
+        '</div>';
+      d.onclick = function() {
+        body.querySelectorAll('.csf-card').forEach(function(x){
+          x.classList.remove('on');
+          x.querySelector('.csf-check').innerHTML = '';
+          x.querySelector('.csf-card-price').classList.remove('blue');
+        });
+        d.classList.add('on');
+        d.querySelector('.csf-check').innerHTML = '&#10003;';
+        csfData[step.id] = card.label;
+      };
+      body.appendChild(d);
+    });
+  }
+
+  else if (step.type === 'steppers') {
+    step.steppers.forEach(function(s) {
+      var row = document.createElement('div');
+      row.className = 'csf-stepper-row';
+      row.innerHTML =
+        '<div><div class="csf-s-label">' + s.label + '</div><div class="csf-s-sub">' + s.sub + '</div></div>' +
+        '<div class="csf-s-ctrl">' +
+          '<div class="csf-s-btn" id="csf_minus_'+s.key+'">&#8722;</div>' +
+          '<div class="csf-s-val" id="csf_val_'+s.key+'">' + csfCounts[s.key] + '</div>' +
+          '<div class="csf-s-btn" id="csf_plus_'+s.key+'">&#43;</div>' +
+        '</div>';
+      body.appendChild(row);
+      document.getElementById('csf_minus_'+s.key).onclick = function(){
+        csfCounts[s.key] = Math.max(s.min, csfCounts[s.key]-1);
+        document.getElementById('csf_val_'+s.key).textContent = csfCounts[s.key];
+      };
+      document.getElementById('csf_plus_'+s.key).onclick = function(){
+        csfCounts[s.key]++;
+        document.getElementById('csf_val_'+s.key).textContent = csfCounts[s.key];
+      };
+    });
+  }
+
+  else if (step.type === 'calendar') {
+    csfRenderCalendar(body);
+  }
+
+  else if (step.type === 'date-single') {
+    var lbl = document.createElement('div');
+    lbl.className = 'csf-sec';
+    lbl.textContent = 'Select date';
+    body.appendChild(lbl);
+    var inp = document.createElement('input');
+    inp.className = 'csf-input';
+    inp.id = 'csfDateSingle';
+    inp.type = 'date';
+    inp.value = csfData[step.id] || '';
+    body.appendChild(inp);
+  }
+
+  else if (step.type === 'datetime') {
+    var lbl1 = document.createElement('div');
+    lbl1.className = 'csf-sec';
+    lbl1.textContent = 'Date';
+    body.appendChild(lbl1);
+    var d = document.createElement('input');
+    d.className = 'csf-input';
+    d.id = 'csfDTDate';
+    d.type = 'date';
+    d.value = csfData.date || '';
+    d.style.marginBottom = '14px';
+    body.appendChild(d);
+    var lbl2 = document.createElement('div');
+    lbl2.className = 'csf-sec';
+    lbl2.textContent = 'Time';
+    body.appendChild(lbl2);
+    var t = document.createElement('input');
+    t.className = 'csf-input';
+    t.id = 'csfDTTime';
+    t.type = 'time';
+    t.value = csfData.time || '20:00';
+    body.appendChild(t);
+  }
+
+  else if (step.type === 'review') {
+    var badge = document.createElement('div');
+    badge.className = 'csf-shadow-note';
+    badge.innerHTML = '<div class="concierge-pulse"></div><div class="csf-note-txt">Shadow will research and brief you on this request</div>';
+    body.appendChild(badge);
+    var card = document.createElement('div');
+    card.className = 'csf-review-card';
+    var rows = csfBuildReview();
+    rows.forEach(function(r) {
+      var row = document.createElement('div');
+      row.className = 'csf-rv-row';
+      row.innerHTML = '<div class="csf-rv-lbl">' + r.label + '</div><div class="csf-rv-val">' + r.value + '</div>';
+      card.appendChild(row);
+    });
+    body.appendChild(card);
+  }
+}
+
+function csfRenderCalendar(body) {
+  var nav = document.createElement('div');
+  nav.className = 'csf-cal-nav';
+  nav.innerHTML =
+    '<div class="csf-cal-arrow" id="csfCalPrev">&#8249;</div>' +
+    '<div class="csf-cal-month" id="csfCalMonth"></div>' +
+    '<div class="csf-cal-arrow" id="csfCalNext">&#8250;</div>';
+  body.appendChild(nav);
+
+  var names = document.createElement('div');
+  names.className = 'csf-cal-grid';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(function(n){
+    var d = document.createElement('div');
+    d.className = 'csf-cal-name';
+    d.textContent = n;
+    names.appendChild(d);
+  });
+  body.appendChild(names);
+
+  var grid = document.createElement('div');
+  grid.className = 'csf-cal-grid';
+  grid.id = 'csfCalGrid';
+  body.appendChild(grid);
+
+  var hint = document.createElement('div');
+  hint.className = 'csf-hint';
+  hint.id = 'csfCalHint';
+  hint.textContent = 'Tap to select departure date';
+  body.appendChild(hint);
+
+  var dates = document.createElement('div');
+  dates.className = 'csf-dates';
+  dates.innerHTML =
+    '<div class="csf-date-box active" id="csfDepBox"><div class="csf-date-lbl">Departure</div><div class="csf-date-val" id="csfDepVal">Select date</div></div>' +
+    '<div class="csf-date-box" id="csfRetBox"><div class="csf-date-lbl">Return</div><div class="csf-date-val" id="csfRetVal">Select date</div></div>';
+  body.appendChild(dates);
+
+  var durSec = document.createElement('div');
+  durSec.className = 'csf-sec';
+  durSec.textContent = 'Or select duration';
+  body.appendChild(durSec);
+
+  var durGrid = document.createElement('div');
+  durGrid.className = 'csf-chips';
+  ['3-5 days','1 week','2 weeks','Flexible'].forEach(function(d) {
+    var c = document.createElement('div');
+    c.className = 'csf-chip' + (csfData.duration === d ? ' on' : '');
+    c.setAttribute('data-dur','1');
+    c.textContent = d;
+    c.onclick = function() {
+      durGrid.querySelectorAll('.csf-chip').forEach(function(x){x.classList.remove('on')});
+      c.classList.add('on');
+      csfData.duration = d;
+      csfStartDate = null; csfEndDate = null;
+      csfUpdateCalDisplay();
+      csfDrawCal();
+    };
+    durGrid.appendChild(c);
+  });
+  body.appendChild(durGrid);
+
+  document.getElementById('csfCalPrev').onclick = function(){
+    if(csfCalMonth===0){csfCalMonth=11;csfCalYear--;}else csfCalMonth--;
+    csfDrawCal();
+  };
+  document.getElementById('csfCalNext').onclick = function(){
+    if(csfCalMonth===11){csfCalMonth=0;csfCalYear++;}else csfCalMonth++;
+    csfDrawCal();
+  };
+
+  csfDrawCal();
+  csfUpdateCalDisplay();
+}
+
+function csfDrawCal() {
+  var el = document.getElementById('csfCalMonth');
+  if(el) el.textContent = CSF_MONTHS[csfCalMonth] + ' ' + csfCalYear;
+  var grid = document.getElementById('csfCalGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  var today = new Date(); today.setHours(0,0,0,0);
+  var firstDay = new Date(csfCalYear, csfCalMonth, 1).getDay();
+  var daysInMonth = new Date(csfCalYear, csfCalMonth+1, 0).getDate();
+  for(var i=0;i<firstDay;i++){
+    var e=document.createElement('div');e.className='csf-cal-day empty';grid.appendChild(e);
+  }
+  for(var d=1;d<=daysInMonth;d++){
+    var cell=document.createElement('div');
+    var thisDate=new Date(csfCalYear,csfCalMonth,d);
+    thisDate.setHours(0,0,0,0);
+    cell.textContent=d;
+    cell.className='csf-cal-day';
+    if(thisDate<today){cell.classList.add('past');}
+    else{
+      if(thisDate.getTime()===today.getTime()) cell.classList.add('today');
+      if(csfStartDate && thisDate.getTime()===csfStartDate.getTime()) cell.classList.add('ss');
+      if(csfEndDate && thisDate.getTime()===csfEndDate.getTime()) cell.classList.add('se');
+      if(csfStartDate && csfEndDate && thisDate>csfStartDate && thisDate<csfEndDate) cell.classList.add('ir');
+      cell.addEventListener('click',(function(dt){
+        return function(){
+          if(!csfStartDate||(csfStartDate&&csfEndDate)){
+            csfStartDate=new Date(dt);csfEndDate=null;
+            var h=document.getElementById('csfCalHint');if(h)h.textContent='Now tap your return date';
+            var db=document.getElementById('csfDepBox'),rb=document.getElementById('csfRetBox');
+            if(db)db.classList.add('active');if(rb)rb.classList.remove('active');
+          } else if(dt.getTime()>csfStartDate.getTime()){
+            csfEndDate=new Date(dt);
+            var h=document.getElementById('csfCalHint');if(h)h.textContent='Dates confirmed';
+            var db=document.getElementById('csfDepBox'),rb=document.getElementById('csfRetBox');
+            if(rb)rb.classList.add('active');if(db)db.classList.remove('active');
+          } else {
+            csfStartDate=new Date(dt);csfEndDate=null;
+          }
+          csfUpdateCalDisplay();csfDrawCal();
+        };
+      })(thisDate));
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function csfUpdateCalDisplay(){
+  var dv=document.getElementById('csfDepVal');
+  var rv=document.getElementById('csfRetVal');
+  var fmt=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});};
+  if(dv){if(csfStartDate){dv.textContent=fmt(csfStartDate);dv.className='csf-date-val set';}else{dv.textContent='Select date';dv.className='csf-date-val';}}
+  if(rv){if(csfEndDate){rv.textContent=fmt(csfEndDate);rv.className='csf-date-val set';}else{rv.textContent='Select date';rv.className='csf-date-val';}}
+}
+
+function csfBuildReview() {
+  var rows = [];
+  var cat = csfCat;
+  if(cat==='travel'){
+    if(csfData.dest) rows.push({label:'Destination',value:csfData.dest});
+    if(csfData.depart) rows.push({label:'Flying from',value:csfData.depart});
+    var dates = '';
+    if(csfStartDate && csfEndDate){
+      var fmt=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
+      dates = fmt(csfStartDate) + ' - ' + fmt(csfEndDate);
+    } else if(csfData.duration) dates = csfData.duration;
+    if(dates) rows.push({label:'Dates',value:dates});
+    if(csfData._travellers) rows.push({label:'Travellers',value:csfData._travellers});
+    if(csfData.class) rows.push({label:'Class',value:csfData.class});
+    if(csfData.stay) rows.push({label:'Stay',value:csfData.stay});
+    if(csfData.budget) rows.push({label:'Budget',value:csfData.budget});
+  } else if(cat==='booking'){
+    if(csfData.city) rows.push({label:'City',value:csfData.city});
+    if(csfData.date) rows.push({label:'Date',value:csfData.date});
+    if(csfData.time) rows.push({label:'Time',value:csfData.time});
+    if(csfData._travellers) rows.push({label:'Guests',value:csfData._travellers});
+    if(csfData.cuisine && csfData.cuisine.length) rows.push({label:'Cuisine',value:csfData.cuisine.join(', ')});
+    if(csfData.occasion) rows.push({label:'Occasion',value:csfData.occasion});
+    if(csfData.notes) rows.push({label:'Notes',value:csfData.notes});
+  } else if(cat==='vehicle'){
+    if(csfData.request) rows.push({label:'Request',value:csfData.request});
+    if(csfData.brand && csfData.brand.length) rows.push({label:'Brand',value:csfData.brand.join(', ')});
+    if(csfData.budget) rows.push({label:'Budget',value:csfData.budget});
+    if(csfData.notes) rows.push({label:'Notes',value:csfData.notes});
+  } else if(cat==='payment'){
+    if(csfData.what) rows.push({label:'Payment for',value:csfData.what});
+    if(csfData.amount) rows.push({label:'Amount',value:csfData.amount});
+    if(csfData.due) rows.push({label:'Due date',value:csfData.due});
+    if(csfData.recipient) rows.push({label:'Recipient',value:csfData.recipient});
+  } else if(cat==='research'){
+    if(csfData.topic) rows.push({label:'Topic',value:csfData.topic});
+    if(csfData.urgency) rows.push({label:'Urgency',value:csfData.urgency});
+  } else {
+    if(csfData.title) rows.push({label:'Request',value:csfData.title.substring(0,80)});
+    if(csfData.due) rows.push({label:'Due date',value:csfData.due});
+  }
+  return rows;
+}
+
+function csfSubmit() {
+  csfSaveStep();
+  var cat = csfCat;
+  var title = '';
+  var notes = '';
+  if(cat==='travel'){
+    title = 'Trip to ' + (csfData.dest||'destination');
+    notes = 'Destination: ' + (csfData.dest||'') +
+      '\nFlying from: ' + (csfData.depart||'Abu Dhabi') +
+      (csfData.dep ? '\nDeparture: ' + csfData.dep : '') +
+      (csfData.ret ? '\nReturn: ' + csfData.ret : '') +
+      (csfData.duration ? '\nDuration: ' + csfData.duration : '') +
+      (csfData._travellers ? '\nTravellers: ' + csfData._travellers : '') +
+      (csfData.class ? '\nClass: ' + csfData.class : '') +
+      (csfData.stay ? '\nAccommodation: ' + csfData.stay : '') +
+      (csfData.budget ? '\nBudget: ' + csfData.budget : '');
+  } else if(cat==='booking'){
+    title = 'Restaurant in ' + (csfData.city||'city');
+    notes = 'City: ' + (csfData.city||'') +
+      (csfData.date ? '\nDate: ' + csfData.date : '') +
+      (csfData.time ? '\nTime: ' + csfData.time : '') +
+      (csfData._travellers ? '\nGuests: ' + csfData._travellers : '') +
+      (csfData.cuisine && csfData.cuisine.length ? '\nCuisine: ' + csfData.cuisine.join(', ') : '') +
+      (csfData.occasion ? '\nOccasion: ' + csfData.occasion : '') +
+      (csfData.notes ? '\nNotes: ' + csfData.notes : '');
+  } else if(cat==='vehicle'){
+    title = (csfData.request||'Vehicle request') + (csfData.brand && csfData.brand.length ? ' - ' + csfData.brand.join(', ') : '');
+    notes = (csfData.request||'') +
+      (csfData.brand && csfData.brand.length ? '\nBrand: ' + csfData.brand.join(', ') : '') +
+      (csfData.budget ? '\nBudget: ' + csfData.budget : '') +
+      (csfData.notes ? '\nNotes: ' + csfData.notes : '');
+  } else if(cat==='payment'){
+    title = 'Pay: ' + (csfData.what||'payment');
+    notes = 'Payment for: ' + (csfData.what||'') +
+      (csfData.amount ? '\nAmount: ' + csfData.amount : '') +
+      (csfData.due ? '\nDue: ' + csfData.due : '') +
+      (csfData.recipient ? '\nRecipient: ' + csfData.recipient : '') +
+      (csfData.notes ? '\nNotes: ' + csfData.notes : '');
+  } else if(cat==='research'){
+    title = 'Research: ' + (csfData.topic||'topic');
+    notes = 'Topic: ' + (csfData.topic||'') +
+      (csfData.detail ? '\nDetails: ' + csfData.detail : '') +
+      (csfData.urgency ? '\nUrgency: ' + csfData.urgency : '');
+  } else {
+    title = (csfData.title||'Concierge request').substring(0,80);
+    notes = csfData.title||'';
+  }
+  closeConciergeForm();
+  selectedConCat = cat;
+  submitConciergeWithData(title, notes, cat);
+}
+
+async function submitConciergeWithData(title, notes, category) {
+  var insertRes = await db.from('shadow_concierge').insert({
+    user_id: UID,
+    title: title,
+    status: 'pending',
+    category: category,
+    due_date: csfData.due || null,
+    notes: notes
+  }).select();
+  var newId = insertRes.data && insertRes.data[0] ? insertRes.data[0].id : null;
+  showToast('Request received');
+  await loadConcierge();
+  if (newId) {
+    setTimeout(function() { expandConciergeItem(newId); }, 400);
+  }
+}
+
+
 function openConciergeForm(prefill) {
   var overlay = document.getElementById('conciergeFormOverlay');
   var titleEl = document.getElementById('conFormTitle');
@@ -4170,30 +4854,18 @@ async function init(){
 init();
 </script>
 
-<!-- CONCIERGE REQUEST FORM OVERLAY -->
-<div id="conciergeFormOverlay">
-  <div class="con-form">
-    <div class="con-form-title">New request</div>
-    <div class="con-form-sub">Shadow will research and brief you</div>
-    <div class="con-form-label">What do you need?</div>
-    <input class="con-form-input" id="conFormTitle" type="text" placeholder="e.g. Book summer trip to Gold Coast for August">
-    <div class="con-form-label">More details (optional)</div>
-    <textarea class="con-form-textarea" id="conFormDetails" placeholder="Dates, preferences, budget, who's involved..."></textarea>
-    <div class="con-form-label">Category</div>
-    <div class="con-form-cats">
-      <div class="con-form-cat active" data-cat="travel" onclick="selectConCat(this)">Travel</div>
-      <div class="con-form-cat" data-cat="booking" onclick="selectConCat(this)">Booking</div>
-      <div class="con-form-cat" data-cat="payment" onclick="selectConCat(this)">Payment</div>
-      <div class="con-form-cat" data-cat="research" onclick="selectConCat(this)">Research</div>
-      <div class="con-form-cat" data-cat="vehicle" onclick="selectConCat(this)">Vehicle</div>
-      <div class="con-form-cat" data-cat="other" onclick="selectConCat(this)">Other</div>
-    </div>
-    <div class="con-form-label">Due date (optional)</div>
-    <input class="con-form-input" id="conFormDue" type="date">
-    <div class="con-form-btns">
-      <div class="con-cancel-btn" onclick="closeConciergeForm()">Cancel</div>
-      <div class="con-submit-btn" id="conSubmitBtn" onclick="submitConciergeRequest()">SUBMIT TO SHADOW</div>
-    </div>
+<!-- CONCIERGE SMART FORM OVERLAY -->
+<div id="conFormOverlay">
+  <div class="csf-prog"><div class="csf-prog-fill" id="csfProgFill"></div></div>
+  <div class="csf-hdr">
+    <div class="csf-close" id="csfBack" onclick="csfBack()">&#8249;</div>
+    <div class="csf-step-label" id="csfStepLabel">Concierge</div>
+    <div class="csf-counter" id="csfCounter"></div>
+  </div>
+  <div class="csf-title" id="csfTitle"></div>
+  <div class="csf-body" id="csfBody"></div>
+  <div class="csf-footer">
+    <div class="csf-next" id="csfNext" onclick="csfNext()">NEXT &rarr;</div>
   </div>
 </div>
 
