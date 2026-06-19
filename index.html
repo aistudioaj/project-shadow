@@ -3543,7 +3543,7 @@ async function triggerConciergeBrief(id, item) {
   var userMsg = '{"trip":' + JSON.stringify({dest: originalBrief.substring(0, 200)}) + '}\n\nReturn the complete brief JSON for this trip:';
 
   try {
-    var payload2 = {model: MODEL, max_tokens: 1500, system: sysPmt, messages: [{role: 'user', content: userMsg}]};
+    var payload2 = {model: MODEL, max_tokens: 2500, system: sysPmt, messages: [{role: 'user', content: userMsg}]};
     var r = await fetch(PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
