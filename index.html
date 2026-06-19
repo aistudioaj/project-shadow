@@ -2966,7 +2966,12 @@ function renderResearchCard(item) {
   '</div>';
 }
 
-var conTaskChats = {}; // local cache: concierge_id -> [{role,content}]
+// ── CONCIERGE CHAT v4 — TWO-CALL ARCHITECTURE ──
+// Call 1: Shadow asks 3 clarifying questions (fires on thread open if no history)
+// Call 2: Full brief generation (fires only on confirmation)
+// Between calls: pure text exchange, no API calls
+
+var conTaskChats = {};
 
 async function loadConversationHistory(id) {
   try {
@@ -2976,7 +2981,9 @@ async function loadConversationHistory(id) {
       .eq('concierge_id', id)
       .order('created_at', {ascending: true})
       .limit(50);
-    conTaskChats[id] = res.data || [];
+    conTaskChats[id] = (res.data || []).map(function(m) {
+      return {role: m.role, content: m.content};
+    });
     return conTaskChats[id];
   } catch(e) {
     console.log('load history error', e);
@@ -3003,7 +3010,6 @@ async function expandConciergeItem(id) {
              conciergeItems.find(function(i) { return i.id === id; });
   if (!item) return;
 
-  // Build overlay
   var overlay = document.createElement('div');
   overlay.id = 'conOverlay_' + id;
   overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end';
@@ -3023,7 +3029,7 @@ async function expandConciergeItem(id) {
       '</div>' +
     '</div>' +
     '<div id="conThread_' + id + '" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px">' +
-      '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Loading conversation...</div>' +
+      '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Loading...</div>' +
     '</div>' +
     '<div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg1)">' +
       '<div style="display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px">' +
@@ -3031,12 +3037,6 @@ async function expandConciergeItem(id) {
         '<div onclick="sendConciergeChat(\'' + id + '\')" style="width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 10px var(--blue-glow)">' +
           '<div style="width:10px;height:10px;border-top:1.5px solid white;border-right:1.5px solid white;transform:rotate(45deg);margin-left:-2px"></div>' +
         '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">' +
-        '<div onclick="setConInput(\'' + id + '\',\'Change the dates to\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">Change dates</div>' +
-        '<div onclick="setConInput(\'' + id + '\',\'Find a cheaper option\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">Cheaper option</div>' +
-        '<div onclick="setConInput(\'' + id + '\',\'Research more options\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">More options</div>' +
-        '<div onclick="setConInput(\'' + id + '\',\'How do I book this?\')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer">How to book</div>' +
       '</div>' +
     '</div>';
 
@@ -3049,35 +3049,35 @@ async function expandConciergeItem(id) {
   if (!thread) return;
   thread.innerHTML = '';
 
-  // Always show original brief first
-  if (item.notes) {
+  // Always show original research brief first
+  if (item.notes && !item.notes.startsWith('Research error') && !item.notes.startsWith('Details:')) {
     var briefDiv = document.createElement('div');
     briefDiv.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px';
-    briefDiv.innerHTML = '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);margin-bottom:8px">SHADOW RESEARCH BRIEF</div>' +
+    briefDiv.innerHTML =
+      '<div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--blue);margin-bottom:8px">SHADOW RESEARCH BRIEF</div>' +
       '<div style="font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap">' + linkifyText(item.notes) + '</div>';
     thread.appendChild(briefDiv);
   }
 
   // Render saved messages
   history.forEach(function(m) {
-    appendConMessage(id, m.role, m.content);
+    renderConMessage(thread, m.role, m.content);
   });
 
   thread.scrollTop = thread.scrollHeight;
+
+  // If no chat history yet — auto-trigger Call 1: Shadow asks 3 questions
+  if (history.length === 0) {
+    setTimeout(function() { triggerConciergeQuestions(id, item); }, 500);
+  }
 }
 
-function setConInput(id, text) {
-  var el = document.getElementById('conChatInput_' + id);
-  if (el) { el.value = text; el.focus(); }
-}
-
-function appendConMessage(threadId, role, text) {
-  var thread = document.getElementById('conThread_' + threadId);
-  if (!thread) return;
+function renderConMessage(thread, role, text) {
   var isUser = role === 'user';
   var msg = document.createElement('div');
   msg.style.cssText = 'display:flex;justify-content:' + (isUser ? 'flex-end' : 'flex-start');
-  msg.innerHTML = '<div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;' +
+  msg.innerHTML =
+    '<div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;' +
     (isUser ?
       'background:var(--blue);color:white;border-radius:12px 12px 2px 12px' :
       'background:var(--bg2);border:1px solid var(--border);color:var(--t2);border-radius:12px 12px 12px 2px') +
@@ -3086,17 +3086,106 @@ function appendConMessage(threadId, role, text) {
   thread.scrollTop = thread.scrollHeight;
 }
 
+function appendConMessage(threadId, role, text) {
+  var thread = document.getElementById('conThread_' + threadId);
+  if (!thread) return;
+  renderConMessage(thread, role, text);
+}
+
 function appendConThinking(threadId) {
   var thread = document.getElementById('conThread_' + threadId);
   if (!thread) return;
   var el = document.createElement('div');
   el.id = 'conThink_' + threadId;
   el.style.cssText = 'display:flex;gap:5px;align-items:center;padding:8px 2px';
-  el.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite"></div>' +
+  el.innerHTML =
+    '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite"></div>' +
     '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite;animation-delay:0.2s"></div>' +
     '<div style="width:6px;height:6px;border-radius:50%;background:var(--blue);animation:conthink 1.2s ease-in-out infinite;animation-delay:0.4s"></div>';
   thread.appendChild(el);
   thread.scrollTop = thread.scrollHeight;
+}
+
+// CALL 1 — Shadow asks 3 clarifying questions
+async function triggerConciergeQuestions(id, item) {
+  appendConThinking(id);
+
+  var briefCtx = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 300);
+
+  var sysPmt = 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE.' +
+    ' Based on this concierge request, ask exactly 3 short, smart clarifying questions.' +
+    ' Number them 1, 2, 3. Each question maximum 15 words.' +
+    ' Do not answer anything. Do not give suggestions. Just 3 numbered questions.' +
+    ' Make them specific to what you actually need to know to execute this request perfectly.';
+
+  var userMsg = 'My request: ' + (item.title || '') +
+    (briefCtx ? '. Initial research: ' + briefCtx : '');
+
+  try {
+    var r = await fetch(PROXY, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: MODEL, max_tokens: 150, system: sysPmt, messages: [{role: 'user', content: userMsg}]})
+    });
+    var data = await r.json();
+    var questions = data.content && data.content[0] ? data.content[0].text : 'Please share more details about your request.';
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', questions);
+    conTaskChats[id] = conTaskChats[id] || [];
+    conTaskChats[id].push({role: 'assistant', content: questions});
+    saveConMessage(id, 'assistant', questions);
+  } catch(e) {
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', 'Tell me more about what you need and I will get to work.');
+  }
+}
+
+// CALL 2 — Full brief on confirmation
+async function triggerConciergeBrief(id, item) {
+  appendConThinking(id);
+
+  // Build full context: original brief + entire conversation
+  var originalBrief = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 400);
+  var fullConvo = (conTaskChats[id] || []).map(function(m) {
+    return (m.role === 'user' ? 'AJ: ' : 'Shadow: ') + m.content;
+  }).join('\n');
+
+  var sysPmt = 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE.' +
+    ' AJ has confirmed the plan. Produce a complete, detailed brief.' +
+    ' Include: day-by-day itinerary, hotel names with booking websites and price ranges, flight options with airline websites, all activities with official websites, total budget breakdown by category in AED.' +
+    ' Format clearly with sections. Include real website URLs for every recommendation.' +
+    ' Be specific and thorough. This is the deliverable AJ will act on.';
+
+  var userMsg = 'Original research: ' + originalBrief +
+    '\n\nOur conversation:\n' + fullConvo.substring(0, 800) +
+    '\n\nPlease produce the complete final brief based on everything above.';
+
+  try {
+    var r = await fetch(PROXY, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: MODEL, max_tokens: 2000, system: sysPmt, messages: [{role: 'user', content: userMsg}]})
+    });
+    var data = await r.json();
+    var brief = data.content && data.content[0] ? data.content[0].text : 'Unable to generate brief. Please try again.';
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', brief);
+    conTaskChats[id] = conTaskChats[id] || [];
+    conTaskChats[id].push({role: 'assistant', content: brief});
+    saveConMessage(id, 'assistant', brief);
+    // Save final brief to concierge record
+    try {
+      await db.from('shadow_concierge').update({notes: brief, status: 'handling'}).eq('id', id);
+      await loadConcierge();
+    } catch(e) { console.log('brief save error', e); }
+  } catch(e) {
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', 'Connection error. Please try again.');
+  }
 }
 
 async function sendConciergeChat(id) {
@@ -3110,87 +3199,43 @@ async function sendConciergeChat(id) {
              conciergeItems.find(function(i) { return i.id === id; });
   if (!item) return;
 
+  // Save and display user message
   if (!conTaskChats[id]) conTaskChats[id] = [];
   conTaskChats[id].push({role: 'user', content: msg});
   appendConMessage(id, 'user', msg);
-  appendConThinking(id);
   saveConMessage(id, 'user', msg);
 
-  // Detect if user is confirming — trigger full brief generation
-  var confirmWords = ['confirmed', 'confirm', 'go ahead', 'yes proceed', 'finalise', 'finalize', 'book it', 'lets go', 'let\'s go', 'proceed', 'do it', 'yes please', 'approved'];
-  var isConfirming = confirmWords.some(function(w) { return msg.toLowerCase().indexOf(w) > -1; });
+  // Detect confirmation
+  var confirmWords = ['confirmed', 'confirm', 'go ahead', 'yes proceed', 'finalise', 'finalize', 'book it', 'lets go', 'let\'s go', 'proceed', 'do it', 'yes please', 'approved', 'yes go ahead', 'go'];
+  var isConfirming = confirmWords.some(function(w) { return msg.toLowerCase().trim() === w || msg.toLowerCase().indexOf(w) > -1; });
 
-  // Build messages array — only user messages, keep last 6
-  // Assistant responses are naturally short in stage 1/2 so we include them compressed
-  var fullHistory = conTaskChats[id];
-  var recentHistory = fullHistory.slice(-6);
-  var messages = recentHistory.map(function(m) {
-    if (m.role === 'assistant') {
-      return {role: 'assistant', content: m.content.replace(/\r/g, ' ').replace(/\n/g, ' ').substring(0, 80)};
+  if (isConfirming) {
+    // CALL 2 — generate full brief
+    triggerConciergeBrief(id, item);
+  } else {
+    // No API call — just display AJ's answer and wait
+    // Shadow already asked its questions, AJ is answering
+    // Check if we should prompt for confirmation
+    var history = conTaskChats[id];
+    var userMessages = history.filter(function(m) { return m.role === 'user'; });
+    if (userMessages.length >= 2) {
+      // AJ has answered enough — Shadow asks for confirmation
+      var confirmPrompt = document.createElement('div');
+      confirmPrompt.style.cssText = 'display:flex;justify-content:flex-start;margin-top:4px';
+      confirmPrompt.innerHTML = '<div style="max-width:85%;padding:10px 14px;border-radius:12px 12px 12px 2px;font-size:13px;line-height:1.6;background:var(--bg2);border:1px solid var(--border2);color:var(--t2)">' +
+        'Got it. Ready to build your full brief. Say <strong style="color:var(--blue)">confirmed</strong> and I will put everything together.' +
+        '</div>';
+      var thread = document.getElementById('conThread_' + id);
+      if (thread) {
+        thread.appendChild(confirmPrompt);
+        thread.scrollTop = thread.scrollHeight;
+      }
+      var confirmMsg = 'Got it. Ready to build your full brief. Say confirmed and I will put everything together.';
+      conTaskChats[id].push({role: 'assistant', content: confirmMsg});
+      saveConMessage(id, 'assistant', confirmMsg);
     }
-    return {role: 'user', content: m.content};
-  });
-
-  // System prompt with 3-stage rules
-  var memCtx = memories.slice(0, 3).map(function(m) { return m.key + ': ' + m.value; }).join(', ').substring(0, 80);
-
-  var sysPmt = isConfirming ?
-    // Stage 3 — full brief
-    'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE.' +
-    ' AJ has confirmed the plan. Now produce a complete, detailed travel brief.' +
-    ' Include: full itinerary day by day, hotel recommendations with direct booking links and prices, flight options with links, all activities with links and prices, total budget breakdown by category.' +
-    ' Be thorough. This is the final deliverable.' +
-    (memCtx ? ' AJ profile: ' + memCtx : '') :
-    // Stage 1/2 — exploration and confirmation
-    'You are Shadow Concierge for AJ, chief of staff, Abu Dhabi UAE. STRICT RULES:' +
-    ' 1. Keep responses under 120 words maximum.' +
-    ' 2. Never give full itineraries or detailed plans until AJ confirms.' +
-    ' 3. Never mention costs unless AJ asks.' +
-    ' 4. Ask one clarifying question at a time if needed.' +
-    ' 5. When you have enough info, summarise the plan in 5 bullet points and ask for confirmation.' +
-    ' 6. Only after confirmation word produce the full brief.' +
-    ' Request context: ' + (item.title || '') + '.' +
-    (memCtx ? ' AJ profile: ' + memCtx : '');
-
-  try {
-    var maxTok = isConfirming ? 2000 : 300;
-    var payload = {model: MODEL, max_tokens: maxTok, system: sysPmt, messages: messages};
-    var payloadStr = JSON.stringify(payload);
-    var r = await fetch(PROXY, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: payloadStr
-    });
-    var data = await r.json();
-    var reply = '';
-    if (data.content && data.content[0] && data.content[0].text) {
-      reply = data.content[0].text;
-    } else if (data.error) {
-      reply = 'Shadow error: ' + (data.error.message || JSON.stringify(data.error));
-    } else {
-      reply = 'No response received. Please try again.';
-    }
-
-    // If confirmed, save as new research brief
-    if (isConfirming && reply && !reply.startsWith('Shadow error')) {
-      try {
-        await db.from('shadow_concierge').update({notes: reply, status: 'handling'}).eq('id', id);
-        await loadConcierge();
-      } catch(e) { console.log('brief save error', e); }
-    }
-
-    conTaskChats[id].push({role: 'assistant', content: reply});
-    saveConMessage(id, 'assistant', reply);
-    var think = document.getElementById('conThink_' + id);
-    if (think) think.remove();
-    appendConMessage(id, 'assistant', linkifyText(reply));
-  } catch(e) {
-    var think = document.getElementById('conThink_' + id);
-    if (think) think.remove();
-    appendConMessage(id, 'assistant', 'Connection error: ' + e.message);
   }
 }
-
 
 
 async function markConciergeHandling(id) {
