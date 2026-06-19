@@ -1159,6 +1159,18 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .hcs-tag{font-family:var(--font-mono);font-size:8px;padding:2px 7px;border-radius:8px;flex-shrink:0}
 .hcs-empty{padding:16px;text-align:center;font-size:12px;color:var(--t3)}
 
+/* ── HOME CONCIERGE SNAPSHOT ── */
+.home-con-snap{margin:0 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.hcs-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s}
+.hcs-item:last-child{border-bottom:none}
+.hcs-item:active{background:var(--bg3)}
+.hcs-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.hcs-body{flex:1;min-width:0}
+.hcs-title{font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcs-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.hcs-tag{font-family:var(--font-mono);font-size:8px;padding:2px 7px;border-radius:8px;flex-shrink:0}
+.hcs-empty{padding:16px;text-align:center;font-size:12px;color:var(--t3)}
+
 /* ── CONCIERGE REQUEST FORM OVERLAY ── */
 #conciergeFormOverlay{
   display:none;position:fixed;inset:0;z-index:500;
@@ -1311,6 +1323,85 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 .con-thinking-dots span:nth-child(3){animation-delay:0.4s}
 @keyframes conthink{0%,80%,100%{opacity:0.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
 .con-thinking-text{font-size:13px;color:var(--t2)}
+
+/* ── CONCIERGE SMART FORM ── */
+#conFormOverlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:var(--bg0);
+  flex-direction:column;
+}
+#conFormOverlay.show{display:flex}
+.csf-prog{height:3px;background:var(--bg4);flex-shrink:0}
+.csf-prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width 0.4s ease;border-radius:0 2px 2px 0}
+.csf-hdr{padding:16px 20px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.csf-close{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--t2);flex-shrink:0}
+.csf-step-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+.csf-counter{font-family:var(--font-mono);font-size:9px;color:var(--blue);margin-left:auto}
+.csf-title{font-family:var(--font-display);font-size:22px;font-style:italic;color:var(--t1);padding:6px 20px 14px;line-height:1.3;flex-shrink:0}
+.csf-body{flex:1;padding:0 20px;overflow-y:auto}
+.csf-body::-webkit-scrollbar{display:none}
+.csf-footer{padding:14px 20px 28px;flex-shrink:0}
+.csf-next{width:100%;background:var(--blue);border-radius:var(--r-lg);padding:15px;font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:white;text-align:center;cursor:pointer;box-shadow:0 0 20px var(--blue-glow);transition:opacity 0.15s}
+.csf-next:active{opacity:0.85}
+.csf-next.purple{background:linear-gradient(135deg,var(--blue),var(--purple));box-shadow:0 0 24px rgba(59,130,246,0.4)}
+/* Inputs */
+.csf-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;font-size:15px;color:var(--t1);outline:none;font-family:var(--font-body);transition:border-color 0.15s;-webkit-appearance:none}
+.csf-input:focus{border-color:var(--border2)}
+.csf-input::placeholder{color:var(--t3)}
+.csf-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;font-size:14px;color:var(--t1);outline:none;font-family:var(--font-body);resize:none;min-height:80px;line-height:1.5;transition:border-color 0.15s;-webkit-appearance:none}
+.csf-textarea:focus{border-color:var(--border2)}
+.csf-textarea::placeholder{color:var(--t3)}
+/* Section label */
+.csf-sec{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin:14px 0 8px}
+/* Chips */
+.csf-chips{display:flex;flex-wrap:wrap;gap:8px}
+.csf-chip{padding:9px 16px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--t3);font-size:13px;cursor:pointer;transition:all 0.15s;font-family:var(--font-body)}
+.csf-chip.on{background:var(--blue-dim);border-color:var(--border2);color:var(--t1)}
+/* Class cards */
+.csf-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;cursor:pointer;transition:all 0.15s;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.csf-card.on{border-color:var(--border2);background:var(--blue-dim)}
+.csf-card-name{font-size:14px;color:var(--t1);font-weight:500}
+.csf-card-sub{font-size:11px;color:var(--t3);margin-top:3px}
+.csf-card-price{font-family:var(--font-mono);font-size:10px;color:var(--t3);text-align:right}
+.csf-card.on .csf-card-price{color:var(--blue)}
+.csf-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--t4);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;font-size:10px;color:white}
+.csf-card.on .csf-check{background:var(--blue);border-color:var(--blue)}
+/* Steppers */
+.csf-stepper-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.csf-stepper-row:last-child{border-bottom:none}
+.csf-s-label{font-size:14px;color:var(--t1)}
+.csf-s-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.csf-s-ctrl{display:flex;align-items:center;gap:14px}
+.csf-s-btn{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);color:var(--t1);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;flex-shrink:0}
+.csf-s-val{font-size:16px;color:var(--t1);min-width:20px;text-align:center;font-weight:500}
+/* Calendar */
+.csf-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.csf-cal-month{font-size:15px;font-weight:500;color:var(--t1)}
+.csf-cal-arrow{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);color:var(--t2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;user-select:none}
+.csf-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.csf-cal-name{text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--t3);padding:4px 0;text-transform:uppercase}
+.csf-cal-day{text-align:center;padding:9px 2px;font-size:13px;color:var(--t2);cursor:pointer;border-radius:8px;transition:background 0.1s;user-select:none}
+.csf-cal-day.today{color:var(--blue);font-weight:600}
+.csf-cal-day.ss,.csf-cal-day.se{background:var(--blue) !important;color:white !important;border-radius:8px}
+.csf-cal-day.ir{background:var(--blue-dim);color:var(--t1);border-radius:0}
+.csf-cal-day.past{color:var(--bg4);cursor:default;pointer-events:none}
+.csf-cal-day.empty{pointer-events:none}
+.csf-cal-day:not(.past):not(.empty):not(.ss):not(.se):hover{background:rgba(255,255,255,0.06)}
+.csf-dates{display:flex;gap:8px;margin-top:12px}
+.csf-date-box{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;transition:border-color 0.15s}
+.csf-date-box.active{border-color:var(--border2)}
+.csf-date-lbl{font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;margin-bottom:4px}
+.csf-date-val{font-size:13px;color:var(--t3)}
+.csf-date-val.set{color:var(--t1)}
+.csf-hint{font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--blue);text-align:center;margin-top:8px;min-height:16px}
+/* Review */
+.csf-review-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.csf-rv-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border)}
+.csf-rv-row:last-child{border-bottom:none}
+.csf-rv-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;flex-shrink:0;margin-right:12px}
+.csf-rv-val{font-size:13px;color:var(--t1);text-align:right}
+.csf-shadow-note{display:flex;align-items:center;gap:8px;background:var(--blue-dim);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
+.csf-note-txt{font-size:12px;color:var(--t2)}
 
 /* ── CONCIERGE SMART FORM ── */
 #conFormOverlay{
@@ -1635,12 +1726,12 @@ html,body{height:100%;overflow:hidden;background:#04060e}
     <div class="con-compose">
       <div class="con-compose-lbl">New request</div>
       <div class="con-compose-chips">
-        <div class="con-cc" onclick="selectedConCat='booking';openConciergeForm('Book a restaurant')">Book a restaurant</div>
-        <div class="con-cc" onclick="selectedConCat='other';openConciergeForm('Arrange transport')">Arrange transport</div>
-        <div class="con-cc" onclick="selectedConCat='research';openConciergeForm('Research something')">Research something</div>
-        <div class="con-cc" onclick="selectedConCat='payment';openConciergeForm('Pay a bill')">Pay a bill</div>
-        <div class="con-cc" onclick="selectedConCat='travel';openConciergeForm('Plan a trip')">Plan a trip</div>
-        <div class="con-cc" onclick="selectedConCat='other';openConciergeForm('Send a gift')">Send a gift</div>
+        <div class="con-cc" onclick="selectedConCat='booking';openConciergeForm('')">Book a restaurant</div>
+        <div class="con-cc" onclick="selectedConCat='other';openConciergeForm('')">Arrange transport</div>
+        <div class="con-cc" onclick="selectedConCat='research';openConciergeForm('')">Research something</div>
+        <div class="con-cc" onclick="selectedConCat='payment';openConciergeForm('')">Pay a bill</div>
+        <div class="con-cc" onclick="selectedConCat='travel';openConciergeForm('')">Plan a trip</div>
+        <div class="con-cc" onclick="selectedConCat='other';openConciergeForm('')">Send a gift</div>
       </div>
       <div class="con-compose-input" onclick="openConciergeForm('')">
         <div class="con-input-text">Describe what you need...</div>
@@ -3961,7 +4052,7 @@ async function submitConciergeWithData(title, notes, category) {
 }
 
 
-// old form functions removed - replaced by smart form engine
+
 
 function selectConCat(el) {
   document.querySelectorAll('.con-form-cat').forEach(function(c) { c.classList.remove('active'); });
@@ -4352,6 +4443,7 @@ async function doTavilySearch(query){
   }
 }
 
+// ── CONCIERGE SMART FORM ENGINE ──
 async function sendMsg(){
   if(elAudio){elAudio.pause();elAudio=null;}
   if(curUtt){window.speechSynthesis.cancel();curUtt=null;}
@@ -4846,5 +4938,20 @@ init();
   </div>
 </div>
 
+
+<!-- CONCIERGE SMART FORM OVERLAY -->
+<div id="conFormOverlay">
+  <div class="csf-prog"><div class="csf-prog-fill" id="csfProgFill"></div></div>
+  <div class="csf-hdr">
+    <div class="csf-close" id="csfBack" onclick="csfBack()">&#8249;</div>
+    <div class="csf-step-label" id="csfStepLabel">Concierge</div>
+    <div class="csf-counter" id="csfCounter"></div>
+  </div>
+  <div class="csf-title" id="csfTitle"></div>
+  <div class="csf-body" id="csfBody"></div>
+  <div class="csf-footer">
+    <div class="csf-next" id="csfNext" onclick="csfNext()">NEXT &rarr;</div>
+  </div>
+</div>
 </body>
 </html>
