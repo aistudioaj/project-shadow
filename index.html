@@ -3411,7 +3411,19 @@ async function triggerConciergeBrief(id, item) {
     if (data.content && data.content[0] && data.content[0].text) {
       var raw = data.content[0].text.trim();
       raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
-      try { briefJson = JSON.parse(raw); } catch(e) { console.log('JSON parse failed:', e); brief = raw; }
+      // Find first complete JSON object
+      var jsonStart = raw.indexOf('{');
+      if (jsonStart >= 0) {
+        // Find matching closing brace
+        var depth = 0;
+        var jsonEnd = -1;
+        for (var ci = jsonStart; ci < raw.length; ci++) {
+          if (raw[ci] === '{') depth++;
+          else if (raw[ci] === '}') { depth--; if (depth === 0) { jsonEnd = ci + 1; break; } }
+        }
+        if (jsonEnd > 0) raw = raw.substring(jsonStart, jsonEnd);
+      }
+      try { briefJson = JSON.parse(raw); } catch(e) { console.log('JSON parse failed:', e.message, raw.substring(0, 100)); brief = raw; }
     } else if (data.error) {
       brief = 'Error: ' + data.error.type + ' - ' + data.error.message;
     } else {
