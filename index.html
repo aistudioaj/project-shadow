@@ -3362,122 +3362,6 @@ async function triggerConciergeQuestions(id, item) {
 }
 
 // CALL 2 — Full brief on confirmation
-async function triggerConciergeBrief(id, item) {
-  appendConThinking(id);
-
-  // Build full context: original brief + entire conversation
-  var originalBrief = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 400);
-  var fullConvo = (conTaskChats[id] || []).map(function(m) {
-    return (m.role === 'user' ? 'AJ: ' : 'Shadow: ') + m.content;
-  }).join('\n');
-
-  // Run Tavily search at confirmation time for fresh data
-  var searchCtx = '';
-  try {
-    var searchQ = (item.title || '') + ' ' + (item.category || '') + ' Abu Dhabi UAE 2025 prices';
-    var sr = await fetch(PROXY + '?service=tavily', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({query: searchQ})
-    });
-    var sd = await sr.json();
-    if (sd.results && sd.results.length) {
-      var ans = sd.answer ? sd.answer.substring(0, 200) : '';
-      var res = sd.results.slice(0, 3).map(function(r) { return r.title + ': ' + r.content.substring(0, 100); }).join(' | ');
-      searchCtx = ans + ' ' + res;
-    }
-  } catch(e) { console.log('tavily error', e); }
-
-  var sysPmt = 'You are Shadow Concierge for AJ. Output ONLY raw JSON, starting with { and ending with }. Zero other text.' +
-    ' Required fields: destination(string), dates(string), travellers(string), tags(array of strings), ' +
-    'flights(array of {name,sub,price,features,link,recommended}), ' +
-    'hotels(array of {name,sub,per_night,total,features,link,recommended}), ' +
-    'itinerary(array of {day,date,title,desc}), ' +
-    'budget(array of {label,value}), total(string). ' +
-    'features must be arrays of short strings. link must be domain only like emirates.com. recommended is boolean. Prices in AED.' +
-    (searchCtx ? ' Data: ' + searchCtx.substring(0, 100) : '');
-
-  var userMsg = '{"trip":' + JSON.stringify({dest: originalBrief.substring(0, 200)}) + '}\n\nReturn the complete brief JSON for this trip:';
-
-  try {
-    var payload2 = {model: MODEL, max_tokens: 1500, system: sysPmt, messages: [{role: 'user', content: userMsg}]};
-    var r = await fetch(PROXY, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload2)
-    });
-    var data = await r.json();
-    var brief = '';
-    var briefJson = null;
-    if (data.content && data.content[0] && data.content[0].text) {
-      var raw = data.content[0].text.trim();
-      raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
-      // Find first complete JSON object
-      var jsonStart = raw.indexOf('{');
-      if (jsonStart >= 0) {
-        // Find matching closing brace
-        var depth = 0;
-        var jsonEnd = -1;
-        for (var ci = jsonStart; ci < raw.length; ci++) {
-          if (raw[ci] === '{') depth++;
-          else if (raw[ci] === '}') { depth--; if (depth === 0) { jsonEnd = ci + 1; break; } }
-        }
-        if (jsonEnd > 0) raw = raw.substring(jsonStart, jsonEnd);
-      }
-      try { briefJson = JSON.parse(raw); } catch(e) { console.log('JSON parse failed:', e.message, raw.substring(0, 100)); brief = raw; }
-    } else if (data.error) {
-      brief = 'Error: ' + data.error.type + ' - ' + data.error.message;
-    } else {
-      brief = 'Unable to generate brief. Please try again.';
-    }
-    var think = document.getElementById('conThink_' + id);
-    if (think) think.remove();
-
-    if (briefJson) {
-      // Render as beautiful cards
-      var thread = document.getElementById('conThread_' + id);
-      if (thread) {
-        var briefContainer = document.createElement('div');
-        briefContainer.style.cssText = 'margin:-4px -4px 0';
-        try {
-          renderConciergeBrief(briefContainer, briefJson);
-          thread.appendChild(briefContainer);
-          thread.scrollTop = thread.scrollHeight;
-        } catch(re) {
-          console.log('render error:', re);
-          appendConMessage(id, 'assistant', JSON.stringify(briefJson, null, 2));
-        }
-      }
-      // Save JSON as notes
-      var saveStr = JSON.stringify(briefJson);
-      conTaskChats[id] = conTaskChats[id] || [];
-      conTaskChats[id].push({role: 'assistant', content: saveStr});
-      saveConMessage(id, 'assistant', saveStr);
-      try {
-        await db.from('shadow_concierge').update({notes: saveStr, status: 'handling'}).eq('id', id);
-        await loadConcierge();
-      } catch(e) { console.log('brief save error', e); }
-    } else if (brief) {
-      appendConMessage(id, 'assistant', brief);
-      conTaskChats[id] = conTaskChats[id] || [];
-      conTaskChats[id].push({role: 'assistant', content: brief});
-      saveConMessage(id, 'assistant', brief);
-    }
-  } catch(e) {
-    var think = document.getElementById('conThink_' + id);
-    if (think) think.remove();
-    appendConMessage(id, 'assistant', 'Connection error: ' + e.message);
-  }
-}
-
-function conConfirm(id) {
-  var input = document.getElementById('conChatInput_' + id);
-  if (input) { input.value = 'confirmed'; }
-  sendConciergeChat(id);
-}
-
-// ── CONCIERGE BRIEF RENDERER ──
-
 function renderConciergeBrief(container, data) {
   var d = typeof data === 'string' ? JSON.parse(data) : data;
   container.innerHTML = '';
@@ -3620,6 +3504,122 @@ function briefDayCard(day) {
     '<div style="font-size:12px;color:var(--t2);line-height:1.5">' + (day.desc || '') + '</div>';
   return card;
 }
+
+async function triggerConciergeBrief(id, item) {
+  appendConThinking(id);
+
+  // Build full context: original brief + entire conversation
+  var originalBrief = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 400);
+  var fullConvo = (conTaskChats[id] || []).map(function(m) {
+    return (m.role === 'user' ? 'AJ: ' : 'Shadow: ') + m.content;
+  }).join('\n');
+
+  // Run Tavily search at confirmation time for fresh data
+  var searchCtx = '';
+  try {
+    var searchQ = (item.title || '') + ' ' + (item.category || '') + ' Abu Dhabi UAE 2025 prices';
+    var sr = await fetch(PROXY + '?service=tavily', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: searchQ})
+    });
+    var sd = await sr.json();
+    if (sd.results && sd.results.length) {
+      var ans = sd.answer ? sd.answer.substring(0, 200) : '';
+      var res = sd.results.slice(0, 3).map(function(r) { return r.title + ': ' + r.content.substring(0, 100); }).join(' | ');
+      searchCtx = ans + ' ' + res;
+    }
+  } catch(e) { console.log('tavily error', e); }
+
+  var sysPmt = 'You are Shadow Concierge for AJ. Output ONLY raw JSON, starting with { and ending with }. Zero other text.' +
+    ' Required fields: destination(string), dates(string), travellers(string), tags(array of strings), ' +
+    'flights(array of {name,sub,price,features,link,recommended}), ' +
+    'hotels(array of {name,sub,per_night,total,features,link,recommended}), ' +
+    'itinerary(array of {day,date,title,desc}), ' +
+    'budget(array of {label,value}), total(string). ' +
+    'features must be arrays of short strings. link must be domain only like emirates.com. recommended is boolean. Prices in AED.' +
+    (searchCtx ? ' Data: ' + searchCtx.substring(0, 100) : '');
+
+  var userMsg = '{"trip":' + JSON.stringify({dest: originalBrief.substring(0, 200)}) + '}\n\nReturn the complete brief JSON for this trip:';
+
+  try {
+    var payload2 = {model: MODEL, max_tokens: 1500, system: sysPmt, messages: [{role: 'user', content: userMsg}]};
+    var r = await fetch(PROXY, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload2)
+    });
+    var data = await r.json();
+    var brief = '';
+    var briefJson = null;
+    if (data.content && data.content[0] && data.content[0].text) {
+      var raw = data.content[0].text.trim();
+      raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
+      // Find first complete JSON object
+      var jsonStart = raw.indexOf('{');
+      if (jsonStart >= 0) {
+        // Find matching closing brace
+        var depth = 0;
+        var jsonEnd = -1;
+        for (var ci = jsonStart; ci < raw.length; ci++) {
+          if (raw[ci] === '{') depth++;
+          else if (raw[ci] === '}') { depth--; if (depth === 0) { jsonEnd = ci + 1; break; } }
+        }
+        if (jsonEnd > 0) raw = raw.substring(jsonStart, jsonEnd);
+      }
+      try { briefJson = JSON.parse(raw); } catch(e) { console.log('JSON parse failed:', e.message, raw.substring(0, 100)); brief = raw; }
+    } else if (data.error) {
+      brief = 'Error: ' + data.error.type + ' - ' + data.error.message;
+    } else {
+      brief = 'Unable to generate brief. Please try again.';
+    }
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+
+    if (briefJson) {
+      // Render as beautiful cards
+      var thread = document.getElementById('conThread_' + id);
+      if (thread) {
+        var briefContainer = document.createElement('div');
+        briefContainer.style.cssText = 'margin:-4px -4px 0';
+        try {
+          renderConciergeBrief(briefContainer, briefJson);
+          thread.appendChild(briefContainer);
+          thread.scrollTop = thread.scrollHeight;
+        } catch(re) {
+          console.log('render error:', re);
+          appendConMessage(id, 'assistant', JSON.stringify(briefJson, null, 2));
+        }
+      }
+      // Save JSON as notes
+      var saveStr = JSON.stringify(briefJson);
+      conTaskChats[id] = conTaskChats[id] || [];
+      conTaskChats[id].push({role: 'assistant', content: saveStr});
+      saveConMessage(id, 'assistant', saveStr);
+      try {
+        await db.from('shadow_concierge').update({notes: saveStr, status: 'handling'}).eq('id', id);
+        await loadConcierge();
+      } catch(e) { console.log('brief save error', e); }
+    } else if (brief) {
+      appendConMessage(id, 'assistant', brief);
+      conTaskChats[id] = conTaskChats[id] || [];
+      conTaskChats[id].push({role: 'assistant', content: brief});
+      saveConMessage(id, 'assistant', brief);
+    }
+  } catch(e) {
+    var think = document.getElementById('conThink_' + id);
+    if (think) think.remove();
+    appendConMessage(id, 'assistant', 'Connection error: ' + e.message);
+  }
+}
+
+function conConfirm(id) {
+  var input = document.getElementById('conChatInput_' + id);
+  if (input) { input.value = 'confirmed'; }
+  sendConciergeChat(id);
+}
+
+// ── CONCIERGE BRIEF RENDERER ──
 
 
 async function sendConciergeChat(id) {
