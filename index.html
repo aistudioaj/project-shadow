@@ -1635,12 +1635,12 @@ html,body{height:100%;overflow:hidden;background:#04060e}
     <div class="con-compose">
       <div class="con-compose-lbl">New request</div>
       <div class="con-compose-chips">
-        <div class="con-cc" onclick="openConciergeForm('Book a restaurant')">Book a restaurant</div>
-        <div class="con-cc" onclick="openConciergeForm('Arrange transport')">Arrange transport</div>
-        <div class="con-cc" onclick="openConciergeForm('Research something')">Research something</div>
-        <div class="con-cc" onclick="openConciergeForm('Pay a bill')">Pay a bill</div>
-        <div class="con-cc" onclick="openConciergeForm('Plan a trip')">Plan a trip</div>
-        <div class="con-cc" onclick="openConciergeForm('Send a gift')">Send a gift</div>
+        <div class="con-cc" onclick="selectedConCat='booking';openConciergeForm('Book a restaurant')">Book a restaurant</div>
+        <div class="con-cc" onclick="selectedConCat='other';openConciergeForm('Arrange transport')">Arrange transport</div>
+        <div class="con-cc" onclick="selectedConCat='research';openConciergeForm('Research something')">Research something</div>
+        <div class="con-cc" onclick="selectedConCat='payment';openConciergeForm('Pay a bill')">Pay a bill</div>
+        <div class="con-cc" onclick="selectedConCat='travel';openConciergeForm('Plan a trip')">Plan a trip</div>
+        <div class="con-cc" onclick="selectedConCat='other';openConciergeForm('Send a gift')">Send a gift</div>
       </div>
       <div class="con-compose-input" onclick="openConciergeForm('')">
         <div class="con-input-text">Describe what you need...</div>
@@ -3961,30 +3961,7 @@ async function submitConciergeWithData(title, notes, category) {
 }
 
 
-function openConciergeForm(prefill) {
-  var overlay = document.getElementById('conciergeFormOverlay');
-  var titleEl = document.getElementById('conFormTitle');
-  var detailsEl = document.getElementById('conFormDetails');
-  var dueEl = document.getElementById('conFormDue');
-  if (titleEl) titleEl.value = prefill || '';
-  if (detailsEl) detailsEl.value = '';
-  if (dueEl) dueEl.value = '';
-  selectedConCat = 'travel';
-  document.querySelectorAll('.con-form-cat').forEach(function(c) {
-    c.classList.toggle('active', c.dataset.cat === 'travel');
-  });
-  if (overlay) overlay.classList.add('show');
-  if (titleEl) setTimeout(function() { titleEl.focus(); }, 100);
-}
-
-function openConciergeRequest(prefill) {
-  openConciergeForm(prefill);
-}
-
-function closeConciergeForm() {
-  var overlay = document.getElementById('conciergeFormOverlay');
-  if (overlay) overlay.classList.remove('show');
-}
+// old form functions removed - replaced by smart form engine
 
 function selectConCat(el) {
   document.querySelectorAll('.con-form-cat').forEach(function(c) { c.classList.remove('active'); });
