@@ -3287,7 +3287,8 @@ async function expandConciergeItem(id) {
   thread.scrollTop = thread.scrollHeight;
 
   // If no chat history yet — auto-trigger Call 1: Shadow asks 3 questions
-  if (history.length === 0) {
+  // Only ask questions if not in direct brief flow
+  if (history.length === 0 && window._csfDirectBrief !== id) {
     setTimeout(function() { triggerConciergeQuestions(id, item); }, 500);
   }
 }
@@ -4295,20 +4296,14 @@ async function submitConciergeWithData(title, notes, category) {
 
 async function expandAndBrief(id, title, notes, category) {
   var item = {id: id, title: title, notes: notes, category: category};
-  // Mark history as non-empty so triggerConciergeQuestions does not fire
-  conTaskChats[id] = [{role: 'assistant', content: 'brief_pending'}];
+  // Set flag to skip questions
+  window._csfDirectBrief = id;
   await expandConciergeItem(id);
-  // Clear the placeholder and trigger brief
+  // Trigger brief after thread opens
   setTimeout(function() {
-    conTaskChats[id] = [];
-    var thread = document.getElementById('conThread_' + id);
-    if (thread) {
-      // Remove any existing messages except the brief div
-      var msgs = thread.querySelectorAll('div[style*="justify-content"]');
-      msgs.forEach(function(m) { m.remove(); });
-    }
+    window._csfDirectBrief = null;
     triggerConciergeBrief(id, item);
-  }, 400);
+  }, 600);
 }
 
 
