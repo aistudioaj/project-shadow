@@ -3204,6 +3204,12 @@ async function triggerConciergeBrief(id, item) {
   }
 }
 
+function conConfirm(id) {
+  var input = document.getElementById('conChatInput_' + id);
+  if (input) { input.value = 'confirmed'; }
+  sendConciergeChat(id);
+}
+
 async function sendConciergeChat(id) {
   var input = document.getElementById('conChatInput_' + id);
   if (!input) return;
@@ -3229,26 +3235,27 @@ async function sendConciergeChat(id) {
     // CALL 2 — generate full brief
     triggerConciergeBrief(id, item);
   } else {
-    // No API call — just display AJ's answer and wait
-    // Shadow already asked its questions, AJ is answering
-    // Check if we should prompt for confirmation
+    // No API call — AJ is answering Shadow questions
+    // Show confirmation prompt after first user answer
     var history = conTaskChats[id];
     var userMessages = history.filter(function(m) { return m.role === 'user'; });
-    if (userMessages.length >= 2) {
-      // AJ has answered enough — Shadow asks for confirmation
-      var confirmPrompt = document.createElement('div');
-      confirmPrompt.style.cssText = 'display:flex;justify-content:flex-start;margin-top:4px';
-      confirmPrompt.innerHTML = '<div style="max-width:85%;padding:10px 14px;border-radius:12px 12px 12px 2px;font-size:13px;line-height:1.6;background:var(--bg2);border:1px solid var(--border2);color:var(--t2)">' +
-        'Got it. Ready to build your full brief. Say <strong style="color:var(--blue)">confirmed</strong> and I will put everything together.' +
-        '</div>';
+    if (userMessages.length >= 1) {
+      // Show tappable confirmation card
       var thread = document.getElementById('conThread_' + id);
       if (thread) {
+        var confirmPrompt = document.createElement('div');
+        confirmPrompt.style.cssText = 'display:flex;justify-content:flex-start;margin-top:4px';
+        confirmPrompt.innerHTML =
+          '<div style="max-width:90%;padding:12px 14px;border-radius:12px 12px 12px 2px;font-size:13px;line-height:1.6;background:var(--bg2);border:1px solid var(--border2);color:var(--t2)">' +
+          'Got it. I have everything I need.' +
+          '<div onclick="conConfirm(\'' + id + '\')" style="margin-top:10px;background:var(--blue);color:white;padding:8px 16px;border-radius:8px;font-family:var(--font-mono);font-size:10px;letter-spacing:1px;cursor:pointer;display:inline-block;box-shadow:0 0 10px var(--blue-glow)">BUILD MY BRIEF</div>' +
+          '</div>';
         thread.appendChild(confirmPrompt);
         thread.scrollTop = thread.scrollHeight;
+        var confirmMsg = 'Got it. I have everything I need.';
+        conTaskChats[id].push({role: 'assistant', content: confirmMsg});
+        saveConMessage(id, 'assistant', confirmMsg);
       }
-      var confirmMsg = 'Got it. Ready to build your full brief. Say confirmed and I will put everything together.';
-      conTaskChats[id].push({role: 'assistant', content: confirmMsg});
-      saveConMessage(id, 'assistant', confirmMsg);
     }
   }
 }
