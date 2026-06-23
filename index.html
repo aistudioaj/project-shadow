@@ -2028,6 +2028,18 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
       <div id="alertsList"></div>
     </div>
+    <div class="home-sec" style="padding-bottom:4px">
+      <div style="background:linear-gradient(135deg,rgba(39,86,197,0.12) 0%,rgba(124,58,237,0.08) 100%);border:1px solid rgba(39,86,197,0.25);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="openCouncil()">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2756C5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#9670;</div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:15px;font-style:italic;color:var(--t1)">The Council</div>
+            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--blue);margin-top:2px">THREE ADVISORS &middot; ONE ANSWER</div>
+          </div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--blue)">&#8594;</div>
+      </div>
+    </div>
     <div class="home-sec">
       <div class="home-sec-title">Priorities</div>
       <div class="home-sec-action" onclick="switchNav('me',document.querySelector('[data-tab=me]'))">All tasks &rsaquo;</div>
@@ -2302,10 +2314,10 @@ html,body{height:100%;overflow:hidden;background:#04060e}
         <div class="spec-name">Fitness</div>
         <div class="spec-desc">Workouts, nutrition, recovery and health</div>
       </div>
-      <div class="spec-card" data-spec="master" onclick="openSpec('master')">
-        <div class="spec-icon">&#127758;</div>
-        <div class="spec-name">Ask Shadow</div>
-        <div class="spec-desc">General intelligence, anything and everything</div>
+      <div class="spec-card" data-spec="council" onclick="openCouncil()" style="border-color:rgba(39,86,197,0.3);background:rgba(39,86,197,0.06)">
+        <div class="spec-icon">&#9670;</div>
+        <div class="spec-name" style="color:var(--blue)">The Council</div>
+        <div class="spec-desc">Three AI advisors. One answer. Investment, strategy, legal, health.</div>
       </div>
     </div>
   </div>
@@ -2592,10 +2604,6 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   <div class="nav-btn" data-tab="life" onclick="switchNav('life',this)">
     <div class="nav-icon">🌿</div>
     <div class="nav-lbl">Life</div>
-  </div>
-  <div class="nav-btn" data-tab="council" onclick="openCouncil()">
-    <div class="nav-icon">&#9670;</div>
-    <div class="nav-lbl">Council</div>
   </div>
   <div class="nav-btn" data-tab="me" onclick="switchNav('me',this)">
     <div class="nav-icon">👤</div>
