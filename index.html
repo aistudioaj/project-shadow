@@ -5279,7 +5279,7 @@ var councilActive = false;
 var COUNCIL_TASK_TYPES = {
   investment: { keywords: ['invest', 'buy', 'sell', 'stock', 'property', 'apartment', 'villa', 'real estate', 'shares', 'portfolio', 'market', 'yield', 'roi', 'return', 'fund', 'crypto', 'gold', 'bond', 'equity', 'asset', 'price', 'valuation', 'aed', 'usd'], lead: 'gpt4o', label: 'Investment' },
   legal: { keywords: ['contract', 'legal', 'law', 'agreement', 'clause', 'terms', 'liability', 'dispute', 'sue', 'court', 'regulation', 'compliance', 'visa', 'license', 'permit'], lead: 'gpt4o', label: 'Legal' },
-  research: { keywords: ['research', 'data', 'statistics', 'report', 'analysis', 'compare', 'benchmark', 'trend', 'forecast', 'predict', 'numbers', 'figure', 'percentage', 'chart'], lead: 'gemini', label: 'Research' },
+  research: { keywords: ['research', 'data', 'statistics', 'report', 'analysis', 'compare', 'benchmark', 'trend', 'forecast', 'predict', 'numbers', 'figure', 'percentage', 'chart'], lead: 'perplexity', label: 'Research' },
   technical: { keywords: ['code', 'build', 'develop', 'app', 'software', 'system', 'architecture', 'database', 'api', 'bug', 'error', 'deploy', 'server', 'cloud', 'tech'], lead: 'claude', label: 'Technical' },
   creative: { keywords: ['write', 'draft', 'presentation', 'slides', 'proposal', 'email', 'letter', 'content', 'copy', 'story', 'design', 'brand', 'marketing', 'campaign'], lead: 'claude', label: 'Creative' },
   health: { keywords: ['health', 'fitness', 'workout', 'diet', 'nutrition', 'sleep', 'hrv', 'heart', 'doctor', 'medical', 'supplement', 'exercise', 'calories', 'weight'], lead: 'claude', label: 'Health' },
@@ -5376,7 +5376,7 @@ function detectTaskLive(val) {
     return;
   }
   var task = detectCouncilTask(val);
-  var leadMap = { claude: 'Claude', gpt4o: 'GPT-4o', gemini: 'Gemini' };
+  var leadMap = { claude: 'Claude', gpt4o: 'GPT-4o', perplexity: 'Perplexity' };
   var d = document.getElementById('councilDetect');
   if (d) {
     d.innerHTML = '<span style="color:#22c55e">&#9679;</span> Task detected: <span style="color:#2756C5">' + task.config.label + '</span> &nbsp;&middot;&nbsp; <span style="color:#2756C5">' + leadMap[task.config.lead] + ' leads</span>';
@@ -5457,7 +5457,7 @@ async function submitToCouncil() {
 
     // Step 3: Reviewers in parallel
     updateCouncilStatus('Reviewers challenging the draft...');
-    var reviewModels = ['claude', 'gpt4o', 'gemini'].filter(function(m) { return m !== leadModel; });
+    var reviewModels = ['claude', 'gpt4o', 'perplexity'].filter(function(m) { return m !== leadModel; });
 
     var reviewPrompt1 = baseContext + '\n\nYou are REVIEWER 1 for this Council deliberation.\n' +
       'Original question: ' + prompt + '\n' +
@@ -5553,19 +5553,19 @@ async function callCouncilModel(model, prompt) {
     throw new Error(d.error ? d.error.message : 'GPT-4o error');
   }
 
-  if (model === 'gemini') {
-    var r = await fetch(PROXY + '?service=gemini', {
+  if (model === 'perplexity') {
+    var r = await fetch(PROXY + '?service=perplexity', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'gemini-2.0-flash',
-        maxOutputTokens: 1000,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }]
+        model: 'sonar',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
     var d = await r.json();
-    if (d.candidates && d.candidates[0]) return d.candidates[0].content.parts[0].text;
-    throw new Error('Gemini error');
+    if (d.choices && d.choices[0]) return d.choices[0].message.content;
+    throw new Error('Perplexity error: ' + JSON.stringify(d));
   }
 
   throw new Error('Unknown model: ' + model);
@@ -5576,9 +5576,9 @@ function updateCouncilStatus(msg) {
   if (el) el.textContent = msg;
 }
 
-var modelLabels = { claude: 'Claude', gpt4o: 'GPT-4o', gemini: 'Gemini' };
-var modelColors = { claude: '#2756C5', gpt4o: '#0F6E56', gemini: '#854F0B' };
-var modelBgs = { claude: 'rgba(39,86,197,0.1)', gpt4o: 'rgba(15,110,86,0.1)', gemini: 'rgba(133,79,11,0.1)' };
+var modelLabels = { claude: 'Claude', gpt4o: 'GPT-4o', perplexity: 'Perplexity' };
+var modelColors = { claude: '#2756C5', gpt4o: '#0F6E56', perplexity: '#7c3aed' };
+var modelBgs = { claude: 'rgba(39,86,197,0.1)', gpt4o: 'rgba(15,110,86,0.1)', perplexity: 'rgba(124,58,237,0.1)' };
 
 function renderCouncilResponse(feed, data) {
   var wrap = document.createElement('div');
@@ -5679,7 +5679,7 @@ function renderCouncilResponse(feed, data) {
   // Model strip
   var modelStrip = document.createElement('div');
   modelStrip.style.cssText = 'display:flex;gap:6px';
-  ['claude', 'gpt4o', 'gemini'].forEach(function(m) {
+  ['claude', 'gpt4o', 'perplexity'].forEach(function(m) {
     var pill = document.createElement('div');
     pill.style.cssText = 'flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:7px 10px;text-align:center';
     var isLead = m === data.leadModel;
