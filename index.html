@@ -1968,7 +1968,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
 
     <div id="briefCardContainer" style="margin-bottom:24px"></div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;align-items:stretch">
       <div class="intel-card" style="border-color:rgba(34,197,94,0.15)" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">
         <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--green),transparent)"></div>
         <div class="intel-card-top">
@@ -1988,8 +1988,8 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       </div>
     </div>
 
-    <div style="background:var(--bg1);border:1px solid rgba(59,130,246,0.2);border-radius:14px;overflow:hidden;margin-bottom:24px">
-      <div style="padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between" onclick="openCouncil()" role="button">
+    <div style="background:var(--bg1);border:1px solid rgba(59,130,246,0.2);border-radius:14px;overflow:hidden;margin-bottom:24px;cursor:pointer" onclick="openCouncil()">
+      <div style="padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:14px">
           <div style="width:40px;height:40px;border-radius:11px;background:var(--bg3);border:1px solid rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <div style="width:14px;height:14px;background:linear-gradient(135deg,var(--blue),var(--purple));transform:rotate(45deg);border-radius:3px"></div>
@@ -5137,25 +5137,8 @@ function openShadowChat(){
 }
 
 function openSpec(spec){
-  currentSpec=spec;
-  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(function(id){
-    var s=document.getElementById(id);if(s)s.classList.remove('active');
-  });
-  document.getElementById('lifeScreen').classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
-  var nb=document.querySelector('[data-tab="life"]');if(nb)nb.classList.add('active');
-  ['lifeHomePanel','lifeReadsPanel','lifeJournalPanel','lifeSpecialistsPanel','lifeConciergePanel'].forEach(function(id){
-    var p=document.getElementById(id);if(p)p.style.display='none';
-  });
-  var back=document.getElementById('lifeBackBtn');if(back)back.style.display='flex';
-  var chat=document.getElementById('chatContainer');
-  if(chat){chat.style.display='flex';chat.style.flex='1';chat.style.flexDirection='column';chat.style.overflow='hidden';}
-  var names={master:'Shadow',investment:'Investment',productivity:'Productivity',tutor:'Tutor',travel:'Travel',fitness:'Fitness'};
-  var el=document.getElementById('chatTitle');if(el)el.textContent=names[spec]||'Shadow';
-  var statusEl=document.getElementById('chatStatus');if(statusEl)statusEl.textContent='READY';
-  chatHistory=[];
-  var msgs=document.getElementById('chatMsgs');if(msgs)msgs.innerHTML='';
-  setTimeout(function(){var input=document.getElementById('chatInput');if(input)input.focus();},300);
+  // All specialists now open The Council
+  openCouncil();
 }
 
 function closeChat(){
