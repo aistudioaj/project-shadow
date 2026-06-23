@@ -1965,95 +1965,91 @@ html,body{height:100%;overflow:hidden;background:#04060e}
     </div>
   </div>
   <div class="scroll-body">
-    <div id="briefCardContainer"></div>
-    <div class="home-sec" style="padding-top:14px">
-      <div class="home-sec-title">Intelligence</div>
-      <div class="home-sec-action" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">Treasury &rsaquo;</div>
-    </div>
-    <div class="intel-grid">
+
+    <div id="briefCardContainer" style="margin-bottom:24px"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px">
       <div class="intel-card" style="border-color:rgba(34,197,94,0.15)" onclick="switchNav('financial',document.querySelector('[data-tab=financial]'))">
         <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--green),transparent)"></div>
         <div class="intel-card-top">
           <div class="intel-card-label">Wealth</div>
-          <div style="font-size:13px;opacity:0.5">&#128200;</div>
         </div>
         <div class="intel-card-value" id="intelWealth">--</div>
         <div class="intel-card-sub" id="intelWealthSub"><div class="intel-sub-dot" style="background:var(--green)"></div><span>Loading...</span></div>
       </div>
-      <div class="intel-card" style="border-color:rgba(245,158,11,0.15)" onclick="switchNav('life',document.querySelector('[data-tab=life]'))">
+      <div class="intel-card" style="border-color:rgba(245,158,11,0.15)">
         <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--amber),transparent)"></div>
         <div class="intel-card-top">
           <div class="intel-card-label">Body Battery</div>
-          <div style="font-size:13px;opacity:0.5">&#10084;</div>
         </div>
         <div class="intel-card-value" id="intelBattery">--</div>
         <div class="intel-bar-wrap"><div class="intel-bar" id="intelBatteryBar" style="background:linear-gradient(90deg,var(--amber),var(--green));width:0%"></div></div>
         <div class="intel-card-sub" id="intelBatterySub"><span style="color:var(--t3)">From morning brief</span></div>
       </div>
-      <div class="intel-card" onclick="switchNav('me',document.querySelector('[data-tab=me]'))">
-        <div class="intel-card-top">
-          <div class="intel-card-label">Today</div>
-          <div style="font-size:13px;opacity:0.5">&#10003;</div>
+    </div>
+
+    <div style="background:var(--bg1);border:1px solid rgba(59,130,246,0.2);border-radius:14px;overflow:hidden;margin-bottom:24px">
+      <div style="padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between" onclick="openCouncil()" role="button">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:40px;height:40px;border-radius:11px;background:var(--bg3);border:1px solid rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <div style="width:14px;height:14px;background:linear-gradient(135deg,var(--blue),var(--purple));transform:rotate(45deg);border-radius:3px"></div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:20px;font-style:italic;color:var(--t1);line-height:1;margin-bottom:3px">The Council</div>
+            <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase">Three advisors &middot; One answer</div>
+          </div>
         </div>
-        <div class="intel-card-value" id="intelTasks">--</div>
-        <div class="intel-card-sub" id="intelTasksSub"><div class="intel-sub-dot" style="background:var(--red)"></div><span>Loading...</span></div>
-      </div>
-      <div class="intel-card" style="border-color:rgba(59,130,246,0.15)" onclick="switchNav('life',document.querySelector('[data-tab=life]'));setTimeout(function(){switchLifeTab('specialists',null)},100)">
-        <div class="intel-card-accent" style="background:linear-gradient(90deg,transparent,var(--blue),transparent)"></div>
-        <div class="intel-card-top">
-          <div class="intel-card-label">HRV</div>
-          <div style="font-size:13px;opacity:0.5">&#128200;</div>
+        <div style="background:var(--bg3);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:6px">
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:#93c5fd;text-transform:uppercase">Open</div>
+          <div style="color:#93c5fd;font-size:13px">&#8594;</div>
         </div>
-        <div class="intel-card-value" id="intelHRV">--</div>
-        <div class="intel-card-sub" id="intelHRVSub"><div class="intel-sub-dot" style="background:var(--blue)"></div><span>From morning brief</span></div>
+      </div>
+      <div style="border-top:1px solid rgba(59,130,246,0.1);padding:8px 18px;display:flex;gap:10px">
+        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--t4);text-transform:uppercase">Investment</div>
+        <div style="color:var(--t4)">&#183;</div>
+        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--t4);text-transform:uppercase">Strategy</div>
+        <div style="color:var(--t4)">&#183;</div>
+        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--t4);text-transform:uppercase">Legal</div>
+        <div style="color:var(--t4)">&#183;</div>
+        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--t4);text-transform:uppercase">Health</div>
       </div>
     </div>
-    <div class="home-sec">
-      <div class="home-sec-title">Concierge</div>
-      <div class="home-sec-action" onclick="switchLifeTab('concierge',null);switchNav('life',document.querySelector('[data-tab=life]'))">View all &rsaquo;</div>
+
+    <div style="margin-bottom:8px">
+      <div class="home-sec" style="padding-top:0">
+        <div class="home-sec-title">Concierge</div>
+        <div class="home-sec-action" onclick="switchLifeTab('concierge',null);switchNav('life',document.querySelector('[data-tab=life]'))">View all &rsaquo;</div>
+      </div>
+      <div class="home-con-snap" id="homeConciergeSnap">
+        <div class="hcs-empty">Loading...</div>
+      </div>
     </div>
-    <div class="home-con-snap" id="homeConciergeSnap">
-      <div class="hcs-empty">Loading...</div>
-    </div>
+
     <div style="display:none">
       <div id="mcSPY"></div><div id="mcSPYchg"></div>
       <div id="mcNVDA"></div><div id="mcNVDAchg"></div>
       <div id="mcPort"></div><div id="mcPortchg"></div>
       <div id="mcGold"></div><div id="mcGoldchg"></div>
       <div id="mcOil"></div><div id="mcOilchg"></div>
+      <div id="intelTasks"></div><div id="intelTasksSub"></div>
+      <div id="intelHRV"></div><div id="intelHRVSub"></div>
     </div>
+
     <div id="alertsSection" class="alerts-section">
       <div class="home-sec" style="padding-bottom:0">
         <div class="home-sec-title">Alerts</div>
       </div>
       <div id="alertsList"></div>
     </div>
-    <div class="home-sec" style="padding-bottom:4px">
-      <div style="background:linear-gradient(135deg,rgba(39,86,197,0.12) 0%,rgba(124,58,237,0.08) 100%);border:1px solid rgba(39,86,197,0.25);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="openCouncil()">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2756C5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#9670;</div>
-          <div>
-            <div style="font-family:var(--font-display);font-size:15px;font-style:italic;color:var(--t1)">The Council</div>
-            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--blue);margin-top:2px">THREE ADVISORS &middot; ONE ANSWER</div>
-          </div>
-        </div>
-        <div style="font-family:var(--font-mono);font-size:11px;color:var(--blue)">&#8594;</div>
-      </div>
-    </div>
-    <div class="home-sec">
+
+    <div class="home-sec" style="margin-top:8px">
       <div class="home-sec-title">Priorities</div>
       <div class="home-sec-action" onclick="switchNav('me',document.querySelector('[data-tab=me]'))">All tasks &rsaquo;</div>
     </div>
-    <div class="home-tasks">
+    <div class="home-tasks" style="margin-bottom:16px">
       <div id="prioritiesList"></div>
     </div>
-    <div class="ask-shadow" onclick="openShadowChat()">
-      <div class="ask-shadow-text">Ask Shadow anything...</div>
-      <div class="ask-shadow-right">
-        <div class="ask-search-badge">LIVE SEARCH</div>
-        <div class="ask-shadow-mic">&#127897;</div>
-      </div>
-    </div>
+
     <div class="section-gap"></div>
   </div>
 </div>
@@ -5137,12 +5133,7 @@ async function loadBriefById(id){
 
 // ── CHAT ──
 function openShadowChat(){
-  switchNav('life');
-  setTimeout(()=>{
-    openSpec('master');
-    const input=document.getElementById('chatInput');
-    if(input)input.focus();
-  },100);
+  openCouncil();
 }
 
 function openSpec(spec){
