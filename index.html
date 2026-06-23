@@ -11,465 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-// ── THE COUNCIL ── Shadow Intelligence Workspace ──
-
-var councilHistory = [];
-var councilActive = false;
-
-var COUNCIL_TASK_TYPES = {
-  investment: { keywords: ['invest', 'buy', 'sell', 'stock', 'property', 'apartment', 'villa', 'real estate', 'shares', 'portfolio', 'market', 'yield', 'roi', 'return', 'fund', 'crypto', 'gold', 'bond', 'equity', 'asset', 'price', 'valuation', 'aed', 'usd'], lead: 'gpt4o', label: 'Investment' },
-  legal: { keywords: ['contract', 'legal', 'law', 'agreement', 'clause', 'terms', 'liability', 'dispute', 'sue', 'court', 'regulation', 'compliance', 'visa', 'license', 'permit'], lead: 'gpt4o', label: 'Legal' },
-  research: { keywords: ['research', 'data', 'statistics', 'report', 'analysis', 'compare', 'benchmark', 'trend', 'forecast', 'predict', 'numbers', 'figure', 'percentage', 'chart'], lead: 'gemini', label: 'Research' },
-  technical: { keywords: ['code', 'build', 'develop', 'app', 'software', 'system', 'architecture', 'database', 'api', 'bug', 'error', 'deploy', 'server', 'cloud', 'tech'], lead: 'claude', label: 'Technical' },
-  creative: { keywords: ['write', 'draft', 'presentation', 'slides', 'proposal', 'email', 'letter', 'content', 'copy', 'story', 'design', 'brand', 'marketing', 'campaign'], lead: 'claude', label: 'Creative' },
-  health: { keywords: ['health', 'fitness', 'workout', 'diet', 'nutrition', 'sleep', 'hrv', 'heart', 'doctor', 'medical', 'supplement', 'exercise', 'calories', 'weight'], lead: 'claude', label: 'Health' },
-  strategy: { keywords: ['strategy', 'plan', 'decision', 'advise', 'recommend', 'should i', 'what do you think', 'opinion', 'evaluate', 'assess', 'consider', 'review'], lead: 'claude', label: 'Strategy' }
-};
-
-function detectCouncilTask(prompt) {
-  var lower = prompt.toLowerCase();
-  var scores = {};
-  for (var type in COUNCIL_TASK_TYPES) {
-    scores[type] = 0;
-    COUNCIL_TASK_TYPES[type].keywords.forEach(function(kw) {
-      if (lower.indexOf(kw) > -1) scores[type]++;
-    });
-  }
-  var best = 'strategy';
-  var bestScore = 0;
-  for (var t in scores) {
-    if (scores[t] > bestScore) { bestScore = scores[t]; best = t; }
-  }
-  return { type: best, config: COUNCIL_TASK_TYPES[best] };
-}
-
-function openCouncil() {
-  var existing = document.getElementById('councilOverlay');
-  if (existing) existing.remove();
-
-  var overlay = document.createElement('div');
-  overlay.id = 'councilOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:800;background:#04060e;display:flex;flex-direction:column;font-family:"DM Sans",sans-serif';
-
-  overlay.innerHTML =
-    '<div style="background:#04060e;border-bottom:1px solid rgba(255,255,255,0.06);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
-      '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2756C5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">&#9670;</div>' +
-        '<div>' +
-          '<div style="font-family:\'Playfair Display\',serif;font-size:17px;font-style:italic;color:#f0f4ff">The Council</div>' +
-          '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:2px;color:#475569;text-transform:uppercase">Three advisors &middot; One answer</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:8px;align-items:center">' +
-        '<div id="councilHistBtn" onclick="toggleCouncilHistory()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">History</div>' +
-        '<div onclick="closeCouncil()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
-      '</div>' +
-    '</div>' +
-    '<div id="councilFeed" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px">' +
-      '<div style="text-align:center;padding:40px 20px">' +
-        '<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-style:italic;color:#f0f4ff;margin-bottom:8px">The Council</div>' +
-        '<div style="font-size:13px;color:#94a3b8;line-height:1.6">Ask anything. The Council researches, deliberates, and delivers a position.<br>Investment &middot; Strategy &middot; Legal &middot; Health &middot; Creative &middot; Technical</div>' +
-      '</div>' +
-    '</div>' +
-    '<div style="padding:14px 18px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0">' +
-      '<div id="councilDetect" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;letter-spacing:1px;margin-bottom:8px;min-height:14px"></div>' +
-      '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;margin-bottom:8px">' +
-        '<textarea id="councilInput" placeholder="Ask The Council anything..." style="width:100%;background:none;border:none;outline:none;font-size:13px;color:#f0f4ff;font-family:\'DM Sans\',sans-serif;resize:none;min-height:48px;line-height:1.5" oninput="detectTaskLive(this.value)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();submitToCouncil()}"></textarea>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">' +
-          '<div style="display:flex;gap:6px">' +
-            '<label style="font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="file" multiple style="display:none" onchange="handleCouncilFiles(this)">&#128206; File</label>' +
-            '<label style="font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="file" accept="image/*" style="display:none" onchange="handleCouncilFiles(this)">&#128247; Image</label>' +
-          '</div>' +
-          '<div onclick="submitToCouncil()" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:1px;color:white;background:linear-gradient(135deg,#2756C5,#7c3aed);border-radius:8px;padding:7px 14px;cursor:pointer;box-shadow:0 0 16px rgba(39,86,197,0.4)">CONSULT &rarr;</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:#1e293b;text-align:center;letter-spacing:0.5px">AI analysis only &mdash; not regulated financial or legal advice</div>' +
-    '</div>';
-
-  document.body.appendChild(overlay);
-}
-
-function closeCouncil() {
-  var el = document.getElementById('councilOverlay');
-  if (el) el.remove();
-}
-
-var councilAttachments = [];
-
-function handleCouncilFiles(input) {
-  var files = Array.from(input.files);
-  files.forEach(function(file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      councilAttachments.push({ name: file.name, type: file.type, data: e.target.result.split(',')[1] });
-      var detect = document.getElementById('councilDetect');
-      if (detect) detect.textContent = file.name + ' attached';
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function detectTaskLive(val) {
-  if (!val || val.length < 10) {
-    var d = document.getElementById('councilDetect');
-    if (d) d.innerHTML = '';
-    return;
-  }
-  var task = detectCouncilTask(val);
-  var leadMap = { claude: 'Claude', gpt4o: 'GPT-4o', gemini: 'Gemini' };
-  var d = document.getElementById('councilDetect');
-  if (d) {
-    d.innerHTML = '<span style="color:#22c55e">&#9679;</span> Task detected: <span style="color:#2756C5">' + task.config.label + '</span> &nbsp;&middot;&nbsp; <span style="color:#2756C5">' + leadMap[task.config.lead] + ' leads</span>';
-  }
-}
-
-async function submitToCouncil() {
-  var input = document.getElementById('councilInput');
-  if (!input) return;
-  var prompt = input.value.trim();
-  if (!prompt) return;
-  input.value = '';
-
-  var task = detectCouncilTask(prompt);
-  var feed = document.getElementById('councilFeed');
-  if (!feed) return;
-
-  // User message
-  var userDiv = document.createElement('div');
-  userDiv.style.cssText = 'display:flex;justify-content:flex-end';
-  userDiv.innerHTML = '<div style="max-width:85%;background:rgba(39,86,197,0.15);border:1px solid rgba(39,86,197,0.2);border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:13px;color:#e2e8f0;line-height:1.5">' + prompt + '</div>';
-  feed.appendChild(userDiv);
-
-  // Thinking indicator
-  var thinkDiv = document.createElement('div');
-  thinkDiv.id = 'councilThink';
-  thinkDiv.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:8px 0';
-  thinkDiv.innerHTML =
-    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#475569;text-transform:uppercase;display:flex;align-items:center;gap:6px">' +
-      '<div style="width:5px;height:5px;border-radius:50%;background:#2756C5;animation:cpulse 1.2s ease-in-out infinite"></div>' +
-      '<span id="councilStatus">Searching live data...</span>' +
-    '</div>';
-  feed.appendChild(thinkDiv);
-  feed.scrollTop = feed.scrollHeight;
-
-  if (!document.getElementById('councilStyle')) {
-    var s = document.createElement('style');
-    s.id = 'councilStyle';
-    s.textContent = '@keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.2}}';
-    document.head.appendChild(s);
-  }
-
-  try {
-    // Step 1: Tavily search
-    updateCouncilStatus('Searching live data...');
-    var searchQuery = prompt + ' ' + (task.config.label === 'Investment' ? 'Dubai UAE market 2026 prices data' : '2026 latest');
-    var searchCtx = '';
-    try {
-      var sr = await fetch(PROXY + '?service=tavily', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery })
-      });
-      var sd = await sr.json();
-      if (sd.answer) searchCtx += sd.answer + ' ';
-      if (sd.results) {
-        searchCtx += sd.results.slice(0, 5).map(function(r) {
-          return r.title + ': ' + r.content.substring(0, 150);
-        }).join(' | ');
-      }
-    } catch(e) { console.log('search error', e); }
-
-    // Build base context
-    var baseContext = 'You are part of The Council - an elite AI advisory panel for AJ, a senior GCC executive based in Abu Dhabi UAE.\n' +
-      'Live data from web search: ' + searchCtx.substring(0, 600) + '\n' +
-      'AJ profile: UHNW executive, Abu Dhabi UAE, family of 5, investment-oriented, demands specific actionable advice.\n' +
-      'RULES: Never give generic advice. Always use specific numbers, named sources, real data. Be direct. Be specific.';
-
-    // Step 2: Lead generates initial draft
-    updateCouncilStatus('Lead advisor drafting...');
-    var leadModel = task.config.lead;
-    var leadPrompt = baseContext + '\n\nYou are the LEAD advisor for this ' + task.config.label + ' question.\n' +
-      'Question: ' + prompt + '\n\n' +
-      'Write a detailed initial analysis. Include specific numbers, data points, and sources from the live data provided. ' +
-      'Be thorough but focused. This will be reviewed by two other advisors before the final answer is delivered to AJ.';
-
-    var leadDraft = await callCouncilModel(leadModel, leadPrompt);
-
-    // Step 3: Reviewers in parallel
-    updateCouncilStatus('Reviewers challenging the draft...');
-    var reviewModels = ['claude', 'gpt4o', 'gemini'].filter(function(m) { return m !== leadModel; });
-
-    var reviewPrompt1 = baseContext + '\n\nYou are REVIEWER 1 for this Council deliberation.\n' +
-      'Original question: ' + prompt + '\n' +
-      'Lead advisor draft: ' + leadDraft + '\n\n' +
-      'Challenge, enhance, or correct the draft. Add anything missing. Flag any errors or gaps. ' +
-      'Be specific - add numbers, alternative perspectives, risks not mentioned, or better data if you have it. Keep your review under 150 words.';
-
-    var reviewPrompt2 = baseContext + '\n\nYou are REVIEWER 2 for this Council deliberation.\n' +
-      'Original question: ' + prompt + '\n' +
-      'Lead advisor draft: ' + leadDraft + '\n\n' +
-      'Challenge, enhance, or correct the draft from a different angle than Reviewer 1 would. ' +
-      'Focus on: practical next actions, alternatives not considered, or risks to flag. Keep your review under 150 words.';
-
-    var review1 = await callCouncilModel(reviewModels[0], reviewPrompt1);
-    var review2 = await callCouncilModel(reviewModels[1], reviewPrompt2);
-
-    // Step 4: Lead refines into final position
-    updateCouncilStatus('Producing final position...');
-    var finalPrompt = baseContext + '\n\nYou are the LEAD advisor. You have received reviews from two colleagues.\n' +
-      'Original question: ' + prompt + '\n' +
-      'Your initial draft: ' + leadDraft + '\n' +
-      'Reviewer 1 feedback: ' + review1 + '\n' +
-      'Reviewer 2 feedback: ' + review2 + '\n\n' +
-      'Now produce the FINAL COUNCIL POSITION. Structure it exactly as follows:\n\n' +
-      'VERDICT: [One sentence - clear position]\n\n' +
-      'ANALYSIS: [Specific findings with numbers, sources, live data. 3-5 key points. Be precise.]\n\n' +
-      'RECOMMENDED ACTIONS:\n1. [Most urgent action]\n2. [Second action]\n3. [Third action]\n[Continue as needed - all specific and immediately actionable]\n\n' +
-      'ALTERNATIVE TO CONSIDER: [At least one alternative with trade-offs clearly stated]\n\n' +
-      'Do not be generic. Every point must be specific to AJ\'s exact question and the live data retrieved.';
-
-    var finalPosition = await callCouncilModel(leadModel, finalPrompt);
-
-    // Remove thinking
-    var think = document.getElementById('councilThink');
-    if (think) think.remove();
-
-    // Render final response
-    renderCouncilResponse(feed, {
-      task: task,
-      leadModel: leadModel,
-      reviewModels: reviewModels,
-      leadDraft: leadDraft,
-      review1: review1,
-      review2: review2,
-      finalPosition: finalPosition,
-      prompt: prompt
-    });
-
-    // Save to history
-    councilHistory.push({ prompt: prompt, task: task.config.label, final: finalPosition, timestamp: new Date() });
-
-  } catch(e) {
-    var think = document.getElementById('councilThink');
-    if (think) think.remove();
-    var errDiv = document.createElement('div');
-    errDiv.style.cssText = 'font-size:12px;color:#ef4444;padding:8px';
-    errDiv.textContent = 'Council error: ' + e.message;
-    feed.appendChild(errDiv);
-  }
-
-  feed.scrollTop = feed.scrollHeight;
-  councilAttachments = [];
-}
-
-async function callCouncilModel(model, prompt) {
-  if (model === 'claude') {
-    var r = await fetch(PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var d = await r.json();
-    if (d.content && d.content[0]) return d.content[0].text;
-    throw new Error(d.error ? d.error.message : 'Claude error');
-  }
-
-  if (model === 'gpt4o') {
-    var r = await fetch(PROXY + '?service=openai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var d = await r.json();
-    if (d.choices && d.choices[0]) return d.choices[0].message.content;
-    throw new Error(d.error ? d.error.message : 'GPT-4o error');
-  }
-
-  if (model === 'gemini') {
-    var r = await fetch(PROXY + '?service=gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'gemini-2.0-flash',
-        maxOutputTokens: 1000,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }]
-      })
-    });
-    var d = await r.json();
-    if (d.candidates && d.candidates[0]) return d.candidates[0].content.parts[0].text;
-    throw new Error('Gemini error');
-  }
-
-  throw new Error('Unknown model: ' + model);
-}
-
-function updateCouncilStatus(msg) {
-  var el = document.getElementById('councilStatus');
-  if (el) el.textContent = msg;
-}
-
-var modelLabels = { claude: 'Claude', gpt4o: 'GPT-4o', gemini: 'Gemini' };
-var modelColors = { claude: '#2756C5', gpt4o: '#0F6E56', gemini: '#854F0B' };
-var modelBgs = { claude: 'rgba(39,86,197,0.1)', gpt4o: 'rgba(15,110,86,0.1)', gemini: 'rgba(133,79,11,0.1)' };
-
-function renderCouncilResponse(feed, data) {
-  var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
-
-  // Final position card
-  var finalCard = document.createElement('div');
-  finalCard.style.cssText = 'background:linear-gradient(135deg,rgba(39,86,197,0.1) 0%,rgba(124,58,237,0.06) 100%);border:1px solid rgba(39,86,197,0.25);border-radius:14px;padding:16px';
-
-  var finalHdr = document.createElement('div');
-  finalHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
-  finalHdr.innerHTML =
-    '<div style="display:flex;align-items:center;gap:6px">' +
-      '<div style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#2756C5,#7c3aed);box-shadow:0 0 8px rgba(39,86,197,0.5)"></div>' +
-      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#2756C5;text-transform:uppercase">Council position</div>' +
-    '</div>' +
-    '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#475569">' + modelLabels[data.leadModel] + ' lead &middot; ' + data.task.config.label + '</div>';
-  finalCard.appendChild(finalHdr);
-
-  var finalText = document.createElement('div');
-  finalText.style.cssText = 'font-size:13px;color:#e2e8f0;line-height:1.8;white-space:pre-wrap';
-  finalText.textContent = data.finalPosition;
-  finalCard.appendChild(finalText);
-
-  // Actions row
-  var actionsRow = document.createElement('div');
-  actionsRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:12px';
-
-  var expandBtn = document.createElement('div');
-  expandBtn.style.cssText = 'font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
-  expandBtn.textContent = 'See deliberation';
-  var deliberationDiv = document.createElement('div');
-  deliberationDiv.style.display = 'none';
-  expandBtn.onclick = function() {
-    if (deliberationDiv.style.display === 'none') {
-      deliberationDiv.style.display = 'block';
-      expandBtn.textContent = 'Hide deliberation';
-    } else {
-      deliberationDiv.style.display = 'none';
-      expandBtn.textContent = 'See deliberation';
-    }
-  };
-
-  var deeperBtn = document.createElement('div');
-  deeperBtn.style.cssText = 'font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
-  deeperBtn.textContent = 'Go deeper';
-  deeperBtn.onclick = function() {
-    var inp = document.getElementById('councilInput');
-    if (inp) { inp.value = 'Go deeper on: ' + data.prompt; inp.focus(); }
-  };
-
-  var altBtn = document.createElement('div');
-  altBtn.style.cssText = 'font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
-  altBtn.textContent = 'Compare alternatives';
-  altBtn.onclick = function() {
-    var inp = document.getElementById('councilInput');
-    if (inp) { inp.value = 'What are the best alternatives to: ' + data.prompt; inp.focus(); }
-  };
-
-  var saveBtn = document.createElement('div');
-  saveBtn.style.cssText = 'font-size:11px;color:#2756C5;background:rgba(39,86,197,0.1);border:1px solid rgba(39,86,197,0.2);border-radius:20px;padding:5px 12px;cursor:pointer';
-  saveBtn.textContent = 'Save to memory';
-  saveBtn.onclick = function() {
-    saveCouncilToMemory(data.prompt, data.finalPosition);
-    saveBtn.textContent = 'Saved';
-    saveBtn.style.color = '#22c55e';
-  };
-
-  actionsRow.appendChild(expandBtn);
-  actionsRow.appendChild(deeperBtn);
-  actionsRow.appendChild(altBtn);
-  actionsRow.appendChild(saveBtn);
-  finalCard.appendChild(actionsRow);
-  wrap.appendChild(finalCard);
-
-  // Deliberation trail
-  deliberationDiv.style.cssText = 'display:none;flex-direction:column;gap:8px';
-
-  var steps = [
-    { model: data.leadModel, label: 'Lead draft', text: data.leadDraft },
-    { model: data.reviewModels[0], label: 'Reviewer 1', text: data.review1 },
-    { model: data.reviewModels[1], label: 'Reviewer 2', text: data.review2 }
-  ];
-
-  steps.forEach(function(step) {
-    var stepDiv = document.createElement('div');
-    stepDiv.style.cssText = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-left:2px solid ' + modelColors[step.model] + ';border-radius:10px;padding:12px 14px';
-    stepDiv.innerHTML =
-      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:' + modelColors[step.model] + ';margin-bottom:6px">' +
-        modelLabels[step.model] + ' &middot; ' + step.label +
-      '</div>' +
-      '<div style="font-size:12px;color:#64748b;line-height:1.6">' + step.text + '</div>';
-    deliberationDiv.appendChild(stepDiv);
-  });
-
-  wrap.appendChild(deliberationDiv);
-
-  // Model strip
-  var modelStrip = document.createElement('div');
-  modelStrip.style.cssText = 'display:flex;gap:6px';
-  ['claude', 'gpt4o', 'gemini'].forEach(function(m) {
-    var pill = document.createElement('div');
-    pill.style.cssText = 'flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:7px 10px;text-align:center';
-    var isLead = m === data.leadModel;
-    pill.innerHTML =
-      '<div style="font-size:12px;font-weight:500;color:' + modelColors[m] + ';margin-bottom:2px">' + modelLabels[m] + '</div>' +
-      '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#334155">' + (isLead ? 'Lead' : 'Reviewer') + '</div>';
-    modelStrip.appendChild(pill);
-  });
-  wrap.appendChild(modelStrip);
-
-  feed.appendChild(wrap);
-  feed.scrollTop = feed.scrollHeight;
-}
-
-async function saveCouncilToMemory(prompt, response) {
-  try {
-    var summary = prompt.substring(0, 60) + ': ' + response.substring(0, 200);
-    await db.from('shadow_memory').insert({
-      user_id: UID,
-      category: 'Council',
-      key: 'Council session - ' + new Date().toLocaleDateString(),
-      value: summary
-    });
-    showToast('Saved to Shadow memory');
-  } catch(e) {
-    showToast('Could not save to memory');
-  }
-}
-
-function toggleCouncilHistory() {
-  var feed = document.getElementById('councilFeed');
-  if (!feed || councilHistory.length === 0) { showToast('No history yet'); return; }
-  var existing = document.getElementById('councilHistPanel');
-  if (existing) { existing.remove(); return; }
-  var panel = document.createElement('div');
-  panel.id = 'councilHistPanel';
-  panel.style.cssText = 'position:absolute;top:56px;right:18px;width:240px;background:#0d1528;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;z-index:900';
-  councilHistory.slice(-5).reverse().forEach(function(h) {
-    var item = document.createElement('div');
-    item.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer';
-    item.innerHTML =
-      '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#475569;margin-bottom:3px">' + h.task + ' &middot; ' + h.timestamp.toLocaleTimeString() + '</div>' +
-      '<div style="font-size:12px;color:#94a3b8">' + h.prompt.substring(0, 50) + '...</div>';
-    panel.appendChild(item);
-  });
-  document.getElementById('councilOverlay').appendChild(panel);
-}
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── RESET ── */
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -5727,5 +5269,466 @@ init();
     <div class="csf-next" id="csfNext" onclick="csfNext()">NEXT &rarr;</div>
   </div>
 </div>
+<script>
+
+// ── THE COUNCIL ── Shadow Intelligence Workspace ──
+
+var councilHistory = [];
+var councilActive = false;
+
+var COUNCIL_TASK_TYPES = {
+  investment: { keywords: ['invest', 'buy', 'sell', 'stock', 'property', 'apartment', 'villa', 'real estate', 'shares', 'portfolio', 'market', 'yield', 'roi', 'return', 'fund', 'crypto', 'gold', 'bond', 'equity', 'asset', 'price', 'valuation', 'aed', 'usd'], lead: 'gpt4o', label: 'Investment' },
+  legal: { keywords: ['contract', 'legal', 'law', 'agreement', 'clause', 'terms', 'liability', 'dispute', 'sue', 'court', 'regulation', 'compliance', 'visa', 'license', 'permit'], lead: 'gpt4o', label: 'Legal' },
+  research: { keywords: ['research', 'data', 'statistics', 'report', 'analysis', 'compare', 'benchmark', 'trend', 'forecast', 'predict', 'numbers', 'figure', 'percentage', 'chart'], lead: 'gemini', label: 'Research' },
+  technical: { keywords: ['code', 'build', 'develop', 'app', 'software', 'system', 'architecture', 'database', 'api', 'bug', 'error', 'deploy', 'server', 'cloud', 'tech'], lead: 'claude', label: 'Technical' },
+  creative: { keywords: ['write', 'draft', 'presentation', 'slides', 'proposal', 'email', 'letter', 'content', 'copy', 'story', 'design', 'brand', 'marketing', 'campaign'], lead: 'claude', label: 'Creative' },
+  health: { keywords: ['health', 'fitness', 'workout', 'diet', 'nutrition', 'sleep', 'hrv', 'heart', 'doctor', 'medical', 'supplement', 'exercise', 'calories', 'weight'], lead: 'claude', label: 'Health' },
+  strategy: { keywords: ['strategy', 'plan', 'decision', 'advise', 'recommend', 'should i', 'what do you think', 'opinion', 'evaluate', 'assess', 'consider', 'review'], lead: 'claude', label: 'Strategy' }
+};
+
+function detectCouncilTask(prompt) {
+  var lower = prompt.toLowerCase();
+  var scores = {};
+  for (var type in COUNCIL_TASK_TYPES) {
+    scores[type] = 0;
+    COUNCIL_TASK_TYPES[type].keywords.forEach(function(kw) {
+      if (lower.indexOf(kw) > -1) scores[type]++;
+    });
+  }
+  var best = 'strategy';
+  var bestScore = 0;
+  for (var t in scores) {
+    if (scores[t] > bestScore) { bestScore = scores[t]; best = t; }
+  }
+  return { type: best, config: COUNCIL_TASK_TYPES[best] };
+}
+
+function openCouncil() {
+  var existing = document.getElementById('councilOverlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'councilOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:800;background:#04060e;display:flex;flex-direction:column;font-family:"DM Sans",sans-serif';
+
+  overlay.innerHTML =
+    '<div style="background:#04060e;border-bottom:1px solid rgba(255,255,255,0.06);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2756C5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">&#9670;</div>' +
+        '<div>' +
+          '<div style="font-family:\'Playfair Display\',serif;font-size:17px;font-style:italic;color:#f0f4ff">The Council</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:2px;color:#475569;text-transform:uppercase">Three advisors &middot; One answer</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<div id="councilHistBtn" onclick="toggleCouncilHistory()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">History</div>' +
+        '<div onclick="closeCouncil()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="councilFeed" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px">' +
+      '<div style="text-align:center;padding:40px 20px">' +
+        '<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-style:italic;color:#f0f4ff;margin-bottom:8px">The Council</div>' +
+        '<div style="font-size:13px;color:#94a3b8;line-height:1.6">Ask anything. The Council researches, deliberates, and delivers a position.<br>Investment &middot; Strategy &middot; Legal &middot; Health &middot; Creative &middot; Technical</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="padding:14px 18px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0">' +
+      '<div id="councilDetect" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;letter-spacing:1px;margin-bottom:8px;min-height:14px"></div>' +
+      '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;margin-bottom:8px">' +
+        '<textarea id="councilInput" placeholder="Ask The Council anything..." style="width:100%;background:none;border:none;outline:none;font-size:13px;color:#f0f4ff;font-family:\'DM Sans\',sans-serif;resize:none;min-height:48px;line-height:1.5" oninput="detectTaskLive(this.value)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();submitToCouncil()}"></textarea>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">' +
+          '<div style="display:flex;gap:6px">' +
+            '<label style="font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="file" multiple style="display:none" onchange="handleCouncilFiles(this)">&#128206; File</label>' +
+            '<label style="font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="file" accept="image/*" style="display:none" onchange="handleCouncilFiles(this)">&#128247; Image</label>' +
+          '</div>' +
+          '<div onclick="submitToCouncil()" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:1px;color:white;background:linear-gradient(135deg,#2756C5,#7c3aed);border-radius:8px;padding:7px 14px;cursor:pointer;box-shadow:0 0 16px rgba(39,86,197,0.4)">CONSULT &rarr;</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:#1e293b;text-align:center;letter-spacing:0.5px">AI analysis only &mdash; not regulated financial or legal advice</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+}
+
+function closeCouncil() {
+  var el = document.getElementById('councilOverlay');
+  if (el) el.remove();
+}
+
+var councilAttachments = [];
+
+function handleCouncilFiles(input) {
+  var files = Array.from(input.files);
+  files.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      councilAttachments.push({ name: file.name, type: file.type, data: e.target.result.split(',')[1] });
+      var detect = document.getElementById('councilDetect');
+      if (detect) detect.textContent = file.name + ' attached';
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function detectTaskLive(val) {
+  if (!val || val.length < 10) {
+    var d = document.getElementById('councilDetect');
+    if (d) d.innerHTML = '';
+    return;
+  }
+  var task = detectCouncilTask(val);
+  var leadMap = { claude: 'Claude', gpt4o: 'GPT-4o', gemini: 'Gemini' };
+  var d = document.getElementById('councilDetect');
+  if (d) {
+    d.innerHTML = '<span style="color:#22c55e">&#9679;</span> Task detected: <span style="color:#2756C5">' + task.config.label + '</span> &nbsp;&middot;&nbsp; <span style="color:#2756C5">' + leadMap[task.config.lead] + ' leads</span>';
+  }
+}
+
+async function submitToCouncil() {
+  var input = document.getElementById('councilInput');
+  if (!input) return;
+  var prompt = input.value.trim();
+  if (!prompt) return;
+  input.value = '';
+
+  var task = detectCouncilTask(prompt);
+  var feed = document.getElementById('councilFeed');
+  if (!feed) return;
+
+  // User message
+  var userDiv = document.createElement('div');
+  userDiv.style.cssText = 'display:flex;justify-content:flex-end';
+  userDiv.innerHTML = '<div style="max-width:85%;background:rgba(39,86,197,0.15);border:1px solid rgba(39,86,197,0.2);border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:13px;color:#e2e8f0;line-height:1.5">' + prompt + '</div>';
+  feed.appendChild(userDiv);
+
+  // Thinking indicator
+  var thinkDiv = document.createElement('div');
+  thinkDiv.id = 'councilThink';
+  thinkDiv.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:8px 0';
+  thinkDiv.innerHTML =
+    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#475569;text-transform:uppercase;display:flex;align-items:center;gap:6px">' +
+      '<div style="width:5px;height:5px;border-radius:50%;background:#2756C5;animation:cpulse 1.2s ease-in-out infinite"></div>' +
+      '<span id="councilStatus">Searching live data...</span>' +
+    '</div>';
+  feed.appendChild(thinkDiv);
+  feed.scrollTop = feed.scrollHeight;
+
+  if (!document.getElementById('councilStyle')) {
+    var s = document.createElement('style');
+    s.id = 'councilStyle';
+    s.textContent = '@keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.2}}';
+    document.head.appendChild(s);
+  }
+
+  try {
+    // Step 1: Tavily search
+    updateCouncilStatus('Searching live data...');
+    var searchQuery = prompt + ' ' + (task.config.label === 'Investment' ? 'Dubai UAE market 2026 prices data' : '2026 latest');
+    var searchCtx = '';
+    try {
+      var sr = await fetch(PROXY + '?service=tavily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery })
+      });
+      var sd = await sr.json();
+      if (sd.answer) searchCtx += sd.answer + ' ';
+      if (sd.results) {
+        searchCtx += sd.results.slice(0, 5).map(function(r) {
+          return r.title + ': ' + r.content.substring(0, 150);
+        }).join(' | ');
+      }
+    } catch(e) { console.log('search error', e); }
+
+    // Build base context
+    var baseContext = 'You are part of The Council - an elite AI advisory panel for AJ, a senior GCC executive based in Abu Dhabi UAE.\n' +
+      'Live data from web search: ' + searchCtx.substring(0, 600) + '\n' +
+      'AJ profile: UHNW executive, Abu Dhabi UAE, family of 5, investment-oriented, demands specific actionable advice.\n' +
+      'RULES: Never give generic advice. Always use specific numbers, named sources, real data. Be direct. Be specific.';
+
+    // Step 2: Lead generates initial draft
+    updateCouncilStatus('Lead advisor drafting...');
+    var leadModel = task.config.lead;
+    var leadPrompt = baseContext + '\n\nYou are the LEAD advisor for this ' + task.config.label + ' question.\n' +
+      'Question: ' + prompt + '\n\n' +
+      'Write a detailed initial analysis. Include specific numbers, data points, and sources from the live data provided. ' +
+      'Be thorough but focused. This will be reviewed by two other advisors before the final answer is delivered to AJ.';
+
+    var leadDraft = await callCouncilModel(leadModel, leadPrompt);
+
+    // Step 3: Reviewers in parallel
+    updateCouncilStatus('Reviewers challenging the draft...');
+    var reviewModels = ['claude', 'gpt4o', 'gemini'].filter(function(m) { return m !== leadModel; });
+
+    var reviewPrompt1 = baseContext + '\n\nYou are REVIEWER 1 for this Council deliberation.\n' +
+      'Original question: ' + prompt + '\n' +
+      'Lead advisor draft: ' + leadDraft + '\n\n' +
+      'Challenge, enhance, or correct the draft. Add anything missing. Flag any errors or gaps. ' +
+      'Be specific - add numbers, alternative perspectives, risks not mentioned, or better data if you have it. Keep your review under 150 words.';
+
+    var reviewPrompt2 = baseContext + '\n\nYou are REVIEWER 2 for this Council deliberation.\n' +
+      'Original question: ' + prompt + '\n' +
+      'Lead advisor draft: ' + leadDraft + '\n\n' +
+      'Challenge, enhance, or correct the draft from a different angle than Reviewer 1 would. ' +
+      'Focus on: practical next actions, alternatives not considered, or risks to flag. Keep your review under 150 words.';
+
+    var review1 = await callCouncilModel(reviewModels[0], reviewPrompt1);
+    var review2 = await callCouncilModel(reviewModels[1], reviewPrompt2);
+
+    // Step 4: Lead refines into final position
+    updateCouncilStatus('Producing final position...');
+    var finalPrompt = baseContext + '\n\nYou are the LEAD advisor. You have received reviews from two colleagues.\n' +
+      'Original question: ' + prompt + '\n' +
+      'Your initial draft: ' + leadDraft + '\n' +
+      'Reviewer 1 feedback: ' + review1 + '\n' +
+      'Reviewer 2 feedback: ' + review2 + '\n\n' +
+      'Now produce the FINAL COUNCIL POSITION. Structure it exactly as follows:\n\n' +
+      'VERDICT: [One sentence - clear position]\n\n' +
+      'ANALYSIS: [Specific findings with numbers, sources, live data. 3-5 key points. Be precise.]\n\n' +
+      'RECOMMENDED ACTIONS:\n1. [Most urgent action]\n2. [Second action]\n3. [Third action]\n[Continue as needed - all specific and immediately actionable]\n\n' +
+      'ALTERNATIVE TO CONSIDER: [At least one alternative with trade-offs clearly stated]\n\n' +
+      'Do not be generic. Every point must be specific to AJ\'s exact question and the live data retrieved.';
+
+    var finalPosition = await callCouncilModel(leadModel, finalPrompt);
+
+    // Remove thinking
+    var think = document.getElementById('councilThink');
+    if (think) think.remove();
+
+    // Render final response
+    renderCouncilResponse(feed, {
+      task: task,
+      leadModel: leadModel,
+      reviewModels: reviewModels,
+      leadDraft: leadDraft,
+      review1: review1,
+      review2: review2,
+      finalPosition: finalPosition,
+      prompt: prompt
+    });
+
+    // Save to history
+    councilHistory.push({ prompt: prompt, task: task.config.label, final: finalPosition, timestamp: new Date() });
+
+  } catch(e) {
+    var think = document.getElementById('councilThink');
+    if (think) think.remove();
+    var errDiv = document.createElement('div');
+    errDiv.style.cssText = 'font-size:12px;color:#ef4444;padding:8px';
+    errDiv.textContent = 'Council error: ' + e.message;
+    feed.appendChild(errDiv);
+  }
+
+  feed.scrollTop = feed.scrollHeight;
+  councilAttachments = [];
+}
+
+async function callCouncilModel(model, prompt) {
+  if (model === 'claude') {
+    var r = await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var d = await r.json();
+    if (d.content && d.content[0]) return d.content[0].text;
+    throw new Error(d.error ? d.error.message : 'Claude error');
+  }
+
+  if (model === 'gpt4o') {
+    var r = await fetch(PROXY + '?service=openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var d = await r.json();
+    if (d.choices && d.choices[0]) return d.choices[0].message.content;
+    throw new Error(d.error ? d.error.message : 'GPT-4o error');
+  }
+
+  if (model === 'gemini') {
+    var r = await fetch(PROXY + '?service=gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.0-flash',
+        maxOutputTokens: 1000,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }]
+      })
+    });
+    var d = await r.json();
+    if (d.candidates && d.candidates[0]) return d.candidates[0].content.parts[0].text;
+    throw new Error('Gemini error');
+  }
+
+  throw new Error('Unknown model: ' + model);
+}
+
+function updateCouncilStatus(msg) {
+  var el = document.getElementById('councilStatus');
+  if (el) el.textContent = msg;
+}
+
+var modelLabels = { claude: 'Claude', gpt4o: 'GPT-4o', gemini: 'Gemini' };
+var modelColors = { claude: '#2756C5', gpt4o: '#0F6E56', gemini: '#854F0B' };
+var modelBgs = { claude: 'rgba(39,86,197,0.1)', gpt4o: 'rgba(15,110,86,0.1)', gemini: 'rgba(133,79,11,0.1)' };
+
+function renderCouncilResponse(feed, data) {
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+
+  // Final position card
+  var finalCard = document.createElement('div');
+  finalCard.style.cssText = 'background:linear-gradient(135deg,rgba(39,86,197,0.1) 0%,rgba(124,58,237,0.06) 100%);border:1px solid rgba(39,86,197,0.25);border-radius:14px;padding:16px';
+
+  var finalHdr = document.createElement('div');
+  finalHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
+  finalHdr.innerHTML =
+    '<div style="display:flex;align-items:center;gap:6px">' +
+      '<div style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#2756C5,#7c3aed);box-shadow:0 0 8px rgba(39,86,197,0.5)"></div>' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#2756C5;text-transform:uppercase">Council position</div>' +
+    '</div>' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#475569">' + modelLabels[data.leadModel] + ' lead &middot; ' + data.task.config.label + '</div>';
+  finalCard.appendChild(finalHdr);
+
+  var finalText = document.createElement('div');
+  finalText.style.cssText = 'font-size:13px;color:#e2e8f0;line-height:1.8;white-space:pre-wrap';
+  finalText.textContent = data.finalPosition;
+  finalCard.appendChild(finalText);
+
+  // Actions row
+  var actionsRow = document.createElement('div');
+  actionsRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:12px';
+
+  var expandBtn = document.createElement('div');
+  expandBtn.style.cssText = 'font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  expandBtn.textContent = 'See deliberation';
+  var deliberationDiv = document.createElement('div');
+  deliberationDiv.style.display = 'none';
+  expandBtn.onclick = function() {
+    if (deliberationDiv.style.display === 'none') {
+      deliberationDiv.style.display = 'block';
+      expandBtn.textContent = 'Hide deliberation';
+    } else {
+      deliberationDiv.style.display = 'none';
+      expandBtn.textContent = 'See deliberation';
+    }
+  };
+
+  var deeperBtn = document.createElement('div');
+  deeperBtn.style.cssText = 'font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  deeperBtn.textContent = 'Go deeper';
+  deeperBtn.onclick = function() {
+    var inp = document.getElementById('councilInput');
+    if (inp) { inp.value = 'Go deeper on: ' + data.prompt; inp.focus(); }
+  };
+
+  var altBtn = document.createElement('div');
+  altBtn.style.cssText = 'font-size:11px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  altBtn.textContent = 'Compare alternatives';
+  altBtn.onclick = function() {
+    var inp = document.getElementById('councilInput');
+    if (inp) { inp.value = 'What are the best alternatives to: ' + data.prompt; inp.focus(); }
+  };
+
+  var saveBtn = document.createElement('div');
+  saveBtn.style.cssText = 'font-size:11px;color:#2756C5;background:rgba(39,86,197,0.1);border:1px solid rgba(39,86,197,0.2);border-radius:20px;padding:5px 12px;cursor:pointer';
+  saveBtn.textContent = 'Save to memory';
+  saveBtn.onclick = function() {
+    saveCouncilToMemory(data.prompt, data.finalPosition);
+    saveBtn.textContent = 'Saved';
+    saveBtn.style.color = '#22c55e';
+  };
+
+  actionsRow.appendChild(expandBtn);
+  actionsRow.appendChild(deeperBtn);
+  actionsRow.appendChild(altBtn);
+  actionsRow.appendChild(saveBtn);
+  finalCard.appendChild(actionsRow);
+  wrap.appendChild(finalCard);
+
+  // Deliberation trail
+  deliberationDiv.style.cssText = 'display:none;flex-direction:column;gap:8px';
+
+  var steps = [
+    { model: data.leadModel, label: 'Lead draft', text: data.leadDraft },
+    { model: data.reviewModels[0], label: 'Reviewer 1', text: data.review1 },
+    { model: data.reviewModels[1], label: 'Reviewer 2', text: data.review2 }
+  ];
+
+  steps.forEach(function(step) {
+    var stepDiv = document.createElement('div');
+    stepDiv.style.cssText = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-left:2px solid ' + modelColors[step.model] + ';border-radius:10px;padding:12px 14px';
+    stepDiv.innerHTML =
+      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:' + modelColors[step.model] + ';margin-bottom:6px">' +
+        modelLabels[step.model] + ' &middot; ' + step.label +
+      '</div>' +
+      '<div style="font-size:12px;color:#64748b;line-height:1.6">' + step.text + '</div>';
+    deliberationDiv.appendChild(stepDiv);
+  });
+
+  wrap.appendChild(deliberationDiv);
+
+  // Model strip
+  var modelStrip = document.createElement('div');
+  modelStrip.style.cssText = 'display:flex;gap:6px';
+  ['claude', 'gpt4o', 'gemini'].forEach(function(m) {
+    var pill = document.createElement('div');
+    pill.style.cssText = 'flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:7px 10px;text-align:center';
+    var isLead = m === data.leadModel;
+    pill.innerHTML =
+      '<div style="font-size:12px;font-weight:500;color:' + modelColors[m] + ';margin-bottom:2px">' + modelLabels[m] + '</div>' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#334155">' + (isLead ? 'Lead' : 'Reviewer') + '</div>';
+    modelStrip.appendChild(pill);
+  });
+  wrap.appendChild(modelStrip);
+
+  feed.appendChild(wrap);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+async function saveCouncilToMemory(prompt, response) {
+  try {
+    var summary = prompt.substring(0, 60) + ': ' + response.substring(0, 200);
+    await db.from('shadow_memory').insert({
+      user_id: UID,
+      category: 'Council',
+      key: 'Council session - ' + new Date().toLocaleDateString(),
+      value: summary
+    });
+    showToast('Saved to Shadow memory');
+  } catch(e) {
+    showToast('Could not save to memory');
+  }
+}
+
+function toggleCouncilHistory() {
+  var feed = document.getElementById('councilFeed');
+  if (!feed || councilHistory.length === 0) { showToast('No history yet'); return; }
+  var existing = document.getElementById('councilHistPanel');
+  if (existing) { existing.remove(); return; }
+  var panel = document.createElement('div');
+  panel.id = 'councilHistPanel';
+  panel.style.cssText = 'position:absolute;top:56px;right:18px;width:240px;background:#0d1528;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;z-index:900';
+  councilHistory.slice(-5).reverse().forEach(function(h) {
+    var item = document.createElement('div');
+    item.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer';
+    item.innerHTML =
+      '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#475569;margin-bottom:3px">' + h.task + ' &middot; ' + h.timestamp.toLocaleTimeString() + '</div>' +
+      '<div style="font-size:12px;color:#94a3b8">' + h.prompt.substring(0, 50) + '...</div>';
+    panel.appendChild(item);
+  });
+  document.getElementById('councilOverlay').appendChild(panel);
+}
+
+
+</script>
 </body>
 </html>
