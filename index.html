@@ -6056,7 +6056,20 @@ function tdJSON(txt) {
   var t = txt.replace(/```json|```/g, '').trim();
   var s = t.indexOf('{'); var e = t.lastIndexOf('}');
   if (s > -1 && e > s) t = t.substring(s, e + 1);
-  return JSON.parse(t);
+  // Strip citation markers like [1][2] that models inject and break JSON
+  t = t.replace(/\[\d+\]/g, '');
+  // Remove trailing commas before } or ]
+  t = t.replace(/,(\s*[}\]])/g, '$1');
+  try {
+    return JSON.parse(t);
+  } catch (e1) {
+    // Last resort: strip newlines inside the JSON and retry
+    try {
+      return JSON.parse(t.replace(/\n/g, ' ').replace(/\s+/g, ' '));
+    } catch (e2) {
+      throw new Error('Model returned unparseable output. Try a ticker symbol (e.g. GLD, AAPL, MSFT) or a short idea, not a detailed instruction.');
+    }
+  }
 }
 
 async function alpacaCall(path, method, payload) {
@@ -6155,7 +6168,7 @@ async function runTradeDesk() {
     tdStage('1 - Analyst', 'WORKING', 'Building thesis with live market data...');
     var analystPrompt = 'You are the Research Analyst on an institutional trade desk. ' +
       (idea ? 'Build a trade thesis for: ' + idea : 'Identify the single best US-listed trade opportunity right now for this investor profile: ' + profile) +
-      '. Use current prices and recent catalysts. Respond in JSON only: {"ticker":"SYMBOL","side":"buy or sell","current_price":number,"thesis":"3 sentences with specific numbers and catalysts","key_risk":"one sentence"}';
+      '. If the request names a specific asset, map it to its US-listed ticker (e.g. gold to GLD or IAU, oil to USO, S&P 500 to SPY). Use current prices and recent catalysts. Respond with ONLY raw JSON, no commentary, no citation markers, no text before or after. Do not put source numbers like [1] anywhere. Schema: {"ticker":"SYMBOL","side":"buy or sell","current_price":number,"thesis":"3 plain sentences with specific numbers","key_risk":"one sentence"}';
     var analyst = tdJSON(await callCouncilModel('perplexity', analystPrompt));
     tdStage('1 - Analyst', 'DONE', analyst.ticker + ' (' + analyst.side + ') @ ~$' + analyst.current_price + '\n' + analyst.thesis + '\nKey risk: ' + analyst.key_risk);
     await tdLog(runId, 'analyst', 'DONE', JSON.stringify(analyst));
