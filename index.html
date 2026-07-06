@@ -3468,23 +3468,6 @@ function renderConciergeBrief(container, data) {
   // Action buttons
   var actions = document.createElement('div');
   actions.style.cssText = 'margin:4px 16px 16px;display:flex;gap:8px';
-  var upBtn = document.createElement('div');
-  upBtn.style.cssText = 'font-size:13px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
-  upBtn.innerHTML = '&#128077;';
-  upBtn.onclick = function() {
-    saveCouncilFeedback('up', data, '');
-    upBtn.style.color = '#22c55e'; upBtn.style.borderColor = 'rgba(34,197,94,0.4)';
-  };
-
-  var downBtn = document.createElement('div');
-  downBtn.style.cssText = 'font-size:13px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
-  downBtn.innerHTML = '&#128078;';
-  downBtn.onclick = function() {
-    var why = window.prompt('What was wrong or missing? (optional)') || '';
-    saveCouncilFeedback('down', data, why);
-    downBtn.style.color = '#ef4444'; downBtn.style.borderColor = 'rgba(239,68,68,0.4)';
-  };
-
   var saveBtn = document.createElement('div');
   saveBtn.style.cssText = 'flex:1;padding:13px;border-radius:12px;background:var(--blue);color:white;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-align:center;cursor:pointer;box-shadow:0 0 16px rgba(59,130,246,0.3)';
   saveBtn.textContent = 'SAVE BRIEF';
@@ -5752,6 +5735,21 @@ function renderCouncilResponse(feed, data) {
   actionsRow.appendChild(deeperBtn);
   actionsRow.appendChild(altBtn);
   actionsRow.appendChild(saveBtn);
+  var upBtn = document.createElement('div');
+  upBtn.style.cssText = 'font-size:13px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  upBtn.innerHTML = '&#128077;';
+  upBtn.onclick = function() {
+    saveCouncilFeedback('up', data, '');
+    upBtn.style.color = '#22c55e'; upBtn.style.borderColor = 'rgba(34,197,94,0.4)';
+  };
+  var downBtn = document.createElement('div');
+  downBtn.style.cssText = 'font-size:13px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  downBtn.innerHTML = '&#128078;';
+  downBtn.onclick = function() {
+    var why = window.prompt('What was wrong or missing? (optional)') || '';
+    saveCouncilFeedback('down', data, why);
+    downBtn.style.color = '#ef4444'; downBtn.style.borderColor = 'rgba(239,68,68,0.4)';
+  };
   actionsRow.appendChild(upBtn);
   actionsRow.appendChild(downBtn);
   finalCard.appendChild(actionsRow);
@@ -6098,6 +6096,19 @@ async function tdLog(runId, stage, status, detail) {
   } catch(e) { console.log('trade log', e); }
 }
 
+function tdOutcome(executed, reason) {
+  var feed = document.getElementById('tdFeed');
+  if (!feed) return;
+  var banner = document.createElement('div');
+  var ok = executed;
+  banner.style.cssText = 'margin-top:10px;border-radius:12px;padding:16px;text-align:center;border:2px solid ' + (ok ? '#22c55e' : '#ef4444') + ';background:' + (ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)');
+  banner.innerHTML = '<div style="font-family:\'DM Mono\',monospace;font-size:13px;letter-spacing:1px;color:' + (ok ? '#22c55e' : '#ef4444') + ';font-weight:600">' +
+    (ok ? '&#9989; ORDER PLACED - PAPER ACCOUNT' : '&#128721; TRADE KILLED - NO ORDER PLACED') + '</div>' +
+    '<div style="font-size:12px;color:#94a3b8;margin-top:6px;line-height:1.5">' + reason + '</div>';
+  feed.appendChild(banner);
+  feed.scrollTop = feed.scrollHeight;
+}
+
 function openTradeDesk() {
   var inv = document.getElementById('investOverlay');
   if (inv) inv.remove();
@@ -6159,6 +6170,7 @@ async function runTradeDesk() {
     if (!pm.proceed) {
       tdStage('2 - Portfolio Manager', 'VETO', 'PM rejected: ' + pm.reason);
       await tdLog(runId, 'pm', 'VETO', pm.reason);
+      tdOutcome(false, 'The Portfolio Manager rejected this trade before it reached risk or execution. Reason: ' + pm.reason);
       return;
     }
     tdStage('2 - Portfolio Manager', 'DONE', pm.qty + ' shares (~$' + pm.notional_usd + ')  |  Entry limit $' + pm.entry_limit + '  |  Target $' + pm.target + '  |  Stop $' + pm.stop + '\n' + pm.reason);
@@ -6177,6 +6189,7 @@ async function runTradeDesk() {
       if (riskVerdict.verdict === 'VETO' || loops === 1) {
         tdStage('3 - Risk Manager', 'VETO', riskVerdict.reasons.join('\n'));
         await tdLog(runId, 'risk', 'VETO', JSON.stringify(riskVerdict));
+        tdOutcome(false, 'The independent Risk Manager vetoed this trade. This is the safety system working as designed - nothing was executed. Reasons: ' + riskVerdict.reasons.join('; '));
         return;
       }
       tdStage('3 - Risk Manager', 'REVISE', riskVerdict.reasons.join('\n') + '\nRequired: ' + riskVerdict.required_changes);
@@ -6212,7 +6225,7 @@ async function runTradeDesk() {
     } catch(e) { checks.push('WARN: account check skipped - ' + e.message); }
     tdStage('4 - Compliance', blocked ? 'BLOCKED' : 'DONE', checks.join('\n'));
     await tdLog(runId, 'compliance', blocked ? 'BLOCKED' : 'PASS', checks.join(' | '));
-    if (blocked) return;
+    if (blocked) { tdOutcome(false, 'Compliance hard-rules blocked this trade (code, not AI). Nothing was executed. See the failed checks above.'); return; }
 
     // STAGE 5 - TRADER (GPT-4o, order construction)
     tdStage('5 - Trader', 'WORKING', 'Constructing order...');
@@ -6228,6 +6241,7 @@ async function runTradeDesk() {
     tdStage('6 - Execution', 'DONE', 'Order ' + placed.id.substring(0, 8) + ' ' + placed.status.toUpperCase() + '\n' + placed.side + ' ' + placed.qty + ' ' + placed.symbol + ' @ limit $' + placed.limit_price);
     await tdLog(runId, 'execution', placed.status, JSON.stringify({ id: placed.id, symbol: placed.symbol, qty: placed.qty, limit: placed.limit_price }));
 
+    tdOutcome(true, 'A real order was placed on your Alpaca PAPER account (simulated money). Check it in the Alpaca dashboard under Orders. No real capital involved.');
     tdStage('Desk Complete', 'DONE', 'Full audit trail saved. Six desks, independent risk veto, hard-coded compliance - the way real money is managed.');
 
   } catch(e) {
