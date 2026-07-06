@@ -6170,7 +6170,31 @@ async function runTradeDesk() {
       (idea ? 'Build a trade thesis for: ' + idea : 'Identify the single best US-listed trade opportunity right now for this investor profile: ' + profile) +
       '. If the request names a specific asset, map it to its US-listed ticker (e.g. gold to GLD or IAU, oil to USO, S&P 500 to SPY). Use current prices and recent catalysts. Respond with ONLY raw JSON, no commentary, no citation markers, no text before or after. Do not put source numbers like [1] anywhere. Schema: {"ticker":"SYMBOL","side":"buy or sell","current_price":number,"thesis":"3 plain sentences with specific numbers","key_risk":"one sentence"}';
     var analyst = tdJSON(await callCouncilModel('perplexity', analystPrompt));
-    tdStage('1 - Analyst', 'DONE', analyst.ticker + ' (' + analyst.side + ') @ ~$' + analyst.current_price + '\n' + analyst.thesis + '\nKey risk: ' + analyst.key_risk);
+    if (!analyst.ticker || !/^[A-Z]{1,5}$/.test(analyst.ticker)) {
+      tdStage('1 - Analyst', 'ERROR', 'Could not resolve a valid US ticker. Try a ticker like GLD, AAPL, XLE.');
+      tdOutcome(false, 'No valid ticker was produced. Nothing executed. Enter a ticker symbol directly.');
+      return;
+    }
+    // Never trust the model's price - fetch the REAL live price from Alpaca market data
+    var livePrice = 0;
+    try {
+      var quote = await alpacaCall('/v2/stocks/' + analyst.ticker + '/trades/latest?feed=iex', 'GET');
+      livePrice = quote && quote.trade ? Number(quote.trade.p) : 0;
+    } catch(e) { livePrice = 0; }
+    if (!livePrice || livePrice <= 0) {
+      // fallback to snapshot endpoint
+      try {
+        var snap = await alpacaCall('/v2/stocks/' + analyst.ticker + '/snapshot?feed=iex', 'GET');
+        if (snap && snap.latestTrade) livePrice = Number(snap.latestTrade.p);
+      } catch(e2) {}
+    }
+    if (!livePrice || livePrice <= 0) {
+      tdStage('1 - Analyst', 'ERROR', analyst.ticker + ': could not fetch a live market price. Market may be closed or ticker unavailable on IEX feed.');
+      tdOutcome(false, 'No live price available for ' + analyst.ticker + '. Nothing executed. Try during US market hours or a more liquid ticker.');
+      return;
+    }
+    analyst.current_price = livePrice;
+    tdStage('1 - Analyst', 'DONE', analyst.ticker + ' (' + analyst.side + ') @ $' + livePrice.toFixed(2) + ' (live Alpaca price)\n' + analyst.thesis + '\nKey risk: ' + analyst.key_risk);
     await tdLog(runId, 'analyst', 'DONE', JSON.stringify(analyst));
 
     // STAGE 2 - PORTFOLIO MANAGER (GPT-4o)
@@ -6220,6 +6244,10 @@ async function runTradeDesk() {
     tdStage('4 - Compliance', 'WORKING', 'Hard rule checks (code, not AI)...');
     var checks = [];
     var blocked = false;
+    if (!analyst.current_price || analyst.current_price <= 0) { checks.push('FAIL: invalid price $' + analyst.current_price); blocked = true; }
+    else checks.push('PASS: valid live price $' + analyst.current_price.toFixed(2));
+    if (!pm.qty || pm.qty <= 0) { checks.push('FAIL: invalid quantity ' + pm.qty); blocked = true; }
+    else checks.push('PASS: quantity ' + pm.qty + ' shares');
     if (pm.notional_usd > TRADE_LIMITS.maxTradeUSD) { checks.push('FAIL: trade $' + pm.notional_usd + ' exceeds max $' + TRADE_LIMITS.maxTradeUSD); blocked = true; }
     else checks.push('PASS: trade size within $' + TRADE_LIMITS.maxTradeUSD + ' limit');
     var noGo = '';
