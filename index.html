@@ -1605,6 +1605,18 @@ html,body{height:100%;overflow:hidden;background:#04060e}
       <div class="screen-sub">Markets, Portfolio & Budget</div>
     </div>
   </div>
+  <div style="margin:0 16px 12px;background:var(--bg1);border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="openInvest()">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="width:12px;height:12px;background:linear-gradient(135deg,var(--blue),var(--purple));transform:rotate(45deg);border-radius:2px"></div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:16px;font-style:italic;color:var(--t1)">Shadow Invest</div>
+        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;margin-top:2px">Council-powered advisory</div>
+      </div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--blue)">&#8594;</div>
+  </div>
   <div class="intel-tabs" id="intelTabs">
     <div class="intel-tab active" onclick="switchIntelTab('markets',this)">Markets</div>
     <div class="intel-tab" onclick="switchIntelTab('portfolio',this)">Portfolio</div>
@@ -3456,6 +3468,23 @@ function renderConciergeBrief(container, data) {
   // Action buttons
   var actions = document.createElement('div');
   actions.style.cssText = 'margin:4px 16px 16px;display:flex;gap:8px';
+  var upBtn = document.createElement('div');
+  upBtn.style.cssText = 'font-size:13px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  upBtn.innerHTML = '&#128077;';
+  upBtn.onclick = function() {
+    saveCouncilFeedback('up', data, '');
+    upBtn.style.color = '#22c55e'; upBtn.style.borderColor = 'rgba(34,197,94,0.4)';
+  };
+
+  var downBtn = document.createElement('div');
+  downBtn.style.cssText = 'font-size:13px;color:#475569;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;cursor:pointer';
+  downBtn.innerHTML = '&#128078;';
+  downBtn.onclick = function() {
+    var why = window.prompt('What was wrong or missing? (optional)') || '';
+    saveCouncilFeedback('down', data, why);
+    downBtn.style.color = '#ef4444'; downBtn.style.borderColor = 'rgba(239,68,68,0.4)';
+  };
+
   var saveBtn = document.createElement('div');
   saveBtn.style.cssText = 'flex:1;padding:13px;border-radius:12px;background:var(--blue);color:white;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-align:center;cursor:pointer;box-shadow:0 0 16px rgba(59,130,246,0.3)';
   saveBtn.textContent = 'SAVE BRIEF';
@@ -4573,17 +4602,51 @@ function renderBriefCard(){
   const date=new Date(todayBriefData.created_at);
   const timeStr=date.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
   const dateStr=date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  const verdict=todayBriefData.verdict||'No verdict available';
-  const sections=todayBriefData.sections_count||0;
-  const preview=verdict.replace(/<[^>]*>/g,'').replace(/[*][*]/g,'').substring(0,140)+'...';
   const card=document.createElement('div');
   card.className='hero-card';
   card.onclick=openBrief;
-  card.innerHTML='<div class="hero-card-top"><div class="hero-card-label">Daily Intelligence Brief</div><div class="hero-card-time">'+timeStr+'</div></div>'
-    +'<div class="hero-card-verdict">'+preview+'</div>'
-    +'<div class="hero-card-footer"><div class="hero-card-stats"><div class="hero-stat"><span>'+sections+'/10</span> sections</div><div class="hero-stat"><span>'+dateStr+'</span></div></div><div class="hero-card-cta">Read full brief &#x203A;</div></div>';
+  card.innerHTML='<div class="hero-card-top"><div class="hero-card-label">Shadow&#39;s Read</div><div class="hero-card-time">'+timeStr+' &middot; '+dateStr+'</div></div>'
+    +'<div id="briefSynth" style="min-height:60px"><div style="font-family:var(--font-mono);font-size:10px;color:var(--t3);letter-spacing:1px">Reading today&#39;s brief...</div></div>'
+    +'<div class="hero-card-footer"><div></div><div class="hero-card-cta">Read full brief &#x203A;</div></div>';
   el.innerHTML='';
   el.appendChild(card);
+  renderBriefSynthesis();
+}
+
+async function renderBriefSynthesis(){
+  const target=document.getElementById('briefSynth');
+  if(!target)return;
+  const briefDate=new Date(todayBriefData.created_at).toDateString();
+  const cacheKey='briefSynth_'+briefDate;
+  let synth=null;
+  try{ synth=JSON.parse(localStorage.getItem(cacheKey)); }catch(e){}
+  if(!synth){
+    try{
+      const raw=(todayBriefData.content||todayBriefData.verdict||'').replace(/<[^>]*>/g,' ').substring(0,6000);
+      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        model:'claude-opus-4-6',max_tokens:400,
+        messages:[{role:'user',content:'You are Shadow, AJ\'s chief of staff. Below is his full morning brief. Synthesize it into JSON only, no markdown: {"verdict":"one sharp sentence - the single most important thing today","points":["what this means for AJ and what to do - max 3 items, each under 18 words, each an implication or action, never raw data"]}\n\nBRIEF:\n'+raw}]
+      })});
+      const d=await r.json();
+      if(d.content&&d.content[0]){
+        const txt=d.content[0].text.replace(/```json|```/g,'').trim();
+        synth=JSON.parse(txt);
+        localStorage.setItem(cacheKey,JSON.stringify(synth));
+      }
+    }catch(e){ console.log('synth error',e); }
+  }
+  if(!synth){
+    const verdict=(todayBriefData.verdict||'').replace(/<[^>]*>/g,'').replace(/[*][*]/g,'').substring(0,140);
+    target.innerHTML='<div class="hero-card-verdict">'+verdict+'...</div>';
+    return;
+  }
+  let html='<div style="font-family:var(--font-display);font-size:17px;font-style:italic;color:var(--t1);line-height:1.45;margin-bottom:10px">'+synth.verdict+'</div>';
+  (synth.points||[]).slice(0,3).forEach(function(p){
+    html+='<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">'
+      +'<div style="width:4px;height:4px;border-radius:50%;background:var(--blue);margin-top:7px;flex-shrink:0"></div>'
+      +'<div style="font-size:12px;color:var(--t2);line-height:1.5">'+p+'</div></div>';
+  });
+  target.innerHTML=html;
 }
 
 function renderBriefCardEmpty(){
@@ -5321,6 +5384,7 @@ function openCouncil() {
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:8px;align-items:center">' +
+        '<div onclick="openFeedbackAgent()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Insights</div>' +
         '<div id="councilHistBtn" onclick="toggleCouncilHistory()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">History</div>' +
         '<div onclick="closeCouncil()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:4px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
       '</div>' +
@@ -5422,7 +5486,7 @@ async function submitToCouncil() {
   try {
     // Step 1: Tavily search
     updateCouncilStatus('Searching live data...');
-    var searchQuery = prompt + ' ' + (task.config.label === 'Investment' ? 'Dubai UAE market 2026 prices data' : '2026 latest');
+    var searchQuery = (prompt + ' ' + (task.config.label === 'Investment' ? 'Dubai UAE market prices data' : 'latest')).substring(0, 380);
     var searchCtx = '';
     try {
       var sr = await fetch(PROXY + '?service=tavily', {
@@ -5440,18 +5504,36 @@ async function submitToCouncil() {
     } catch(e) { console.log('search error', e); }
 
     // Build base context
-    var baseContext = 'You are part of The Council - an elite AI advisory panel for AJ, a senior GCC executive based in Abu Dhabi UAE.\n' +
-      'Live data from web search: ' + searchCtx.substring(0, 600) + '\n' +
-      'AJ profile: UHNW executive, Abu Dhabi UAE, family of 5, investment-oriented, demands specific actionable advice.\n' +
-      'RULES: Never give generic advice. Always use specific numbers, named sources, real data. Be direct. Be specific.';
+    var today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    var historyCtx = '';
+    if (councilHistory.length > 0) {
+      var last = councilHistory[councilHistory.length - 1];
+      historyCtx = 'PREVIOUS COUNCIL EXCHANGE (for continuity - AJ may be following up):\nQ: ' + last.prompt.substring(0, 300) + '\nFinal position given: ' + last.final.substring(0, 900) + '\n\n';
+    }
+    var profileCtx = window._shadowProfile ? ('AJ INVESTMENT PROFILE (self-declared, current): ' + window._shadowProfile + '\n') : '';
+    var baseContext = historyCtx + profileCtx + 'You are part of The Council - an elite private advisory panel serving AJ, a senior UHNW executive in Abu Dhabi, UAE.\n' +
+      'TODAY IS ' + today + '. Treat any data older than 3 months as stale: state its date and flag it as needing verification.\n' +
+      'CURRENCY: All amounts AJ mentions are AED unless he explicitly says otherwise. Quote figures in AED, with USD equivalent in brackets where useful.\n' +
+      'LIVE SEARCH CONTEXT (from the last few minutes): ' + searchCtx.substring(0, 900) + '\n' +
+      'AJ PROFILE: UHNW executive, Abu Dhabi UAE, family of 5 (three school-age children), long-term wealth builder, time-poor, expects the standard of a top-tier family office.\n' +
+      'NON-NEGOTIABLE RULES:\n' +
+      '1. Never give generic advice. Every claim carries a specific number, named source, or named asset.\n' +
+      '2. Do the work yourself - never tell AJ to go research something The Council can state or estimate now.\n' +
+      '3. If a critical fact is unknown, state the assumption you are making and proceed - do not stall.\n' +
+      '4. UAE context always: regulations, fees (DLD 4%, agency 2%), visa rules, GCC market dynamics.\n' +
+      '5. Investment and legal outputs are analysis, not regulated advice - one short line at most, never a paragraph of disclaimers.';
 
     // Step 2: Lead generates initial draft
     updateCouncilStatus('Lead advisor drafting...');
     var leadModel = task.config.lead;
-    var leadPrompt = baseContext + '\n\nYou are the LEAD advisor for this ' + task.config.label + ' question.\n' +
-      'Question: ' + prompt + '\n\n' +
-      'Write a detailed initial analysis. Include specific numbers, data points, and sources from the live data provided. ' +
-      'Be thorough but focused. This will be reviewed by two other advisors before the final answer is delivered to AJ.';
+    var leadPrompt = baseContext + '\n\nROLE: You are the LEAD advisor for this ' + task.config.label + ' matter.\n' +
+      'AJ asks: ' + prompt + '\n\n' +
+      'Produce your initial working draft:\n' +
+      '- Open with your provisional position in one sentence.\n' +
+      '- Support it with specific figures, named assets/entities, and dates. Use the live search context first; clearly date anything from memory.\n' +
+      '- Include the 2-3 decision-critical numbers (yields, prices, fees, timelines) even if estimated - label estimates.\n' +
+      '- Note the single biggest risk to your position.\n' +
+      'Two specialist reviewers will challenge this draft, so commit to a view rather than hedging. Under 300 words.';
 
     var leadDraft = await callCouncilModel(leadModel, leadPrompt);
 
@@ -5459,34 +5541,40 @@ async function submitToCouncil() {
     updateCouncilStatus('Reviewers challenging the draft...');
     var reviewModels = ['claude', 'gpt4o', 'perplexity'].filter(function(m) { return m !== leadModel; });
 
-    var reviewPrompt1 = baseContext + '\n\nYou are REVIEWER 1 for this Council deliberation.\n' +
-      'Original question: ' + prompt + '\n' +
-      'Lead advisor draft: ' + leadDraft + '\n\n' +
-      'Challenge, enhance, or correct the draft. Add anything missing. Flag any errors or gaps. ' +
-      'Be specific - add numbers, alternative perspectives, risks not mentioned, or better data if you have it. Keep your review under 150 words.';
+    var reviewPrompt1 = baseContext + '\n\nROLE: You are the CHALLENGER in this Council deliberation. Your job is adversarial review.\n' +
+      'AJ asked: ' + prompt + '\n' +
+      'Lead draft: ' + leadDraft + '\n\n' +
+      'Attack the draft on substance:\n' +
+      '- Which number, assumption, or source is weakest? Correct it with a better one if you have it.\n' +
+      '- What material risk or downside has the lead ignored or understated?\n' +
+      '- Is the position too aggressive or too timid for AJ profile? Say which and why.\n' +
+      'Do NOT restate what the lead got right. Under 130 words, bullet style.';
 
-    var reviewPrompt2 = baseContext + '\n\nYou are REVIEWER 2 for this Council deliberation.\n' +
-      'Original question: ' + prompt + '\n' +
-      'Lead advisor draft: ' + leadDraft + '\n\n' +
-      'Challenge, enhance, or correct the draft from a different angle than Reviewer 1 would. ' +
-      'Focus on: practical next actions, alternatives not considered, or risks to flag. Keep your review under 150 words.';
+    var reviewPrompt2 = baseContext + '\n\nROLE: You are the EXPANDER in this Council deliberation. Your job is what the lead missed.\n' +
+      'AJ asked: ' + prompt + '\n' +
+      'Lead draft: ' + leadDraft + '\n\n' +
+      'Add what is absent:\n' +
+      '- One genuinely different alternative to the lead position, with its key trade-off in numbers.\n' +
+      '- Any UAE-specific angle missed: fees, promotions, visa/regulatory implications, timing (Ramadan, summer, fiscal year).\n' +
+      '- The most useful immediate action AJ could take within 48 hours.\n' +
+      'Fresh material only - do not critique style. Under 130 words, bullet style.';
 
     var review1 = await callCouncilModel(reviewModels[0], reviewPrompt1);
     var review2 = await callCouncilModel(reviewModels[1], reviewPrompt2);
 
     // Step 4: Lead refines into final position
     updateCouncilStatus('Producing final position...');
-    var finalPrompt = baseContext + '\n\nYou are the LEAD advisor. You have received reviews from two colleagues.\n' +
-      'Original question: ' + prompt + '\n' +
-      'Your initial draft: ' + leadDraft + '\n' +
-      'Reviewer 1 feedback: ' + review1 + '\n' +
-      'Reviewer 2 feedback: ' + review2 + '\n\n' +
-      'Now produce the FINAL COUNCIL POSITION. Structure it exactly as follows:\n\n' +
-      'VERDICT: [One sentence - clear position]\n\n' +
-      'ANALYSIS: [Specific findings with numbers, sources, live data. 3-5 key points. Be precise.]\n\n' +
-      'RECOMMENDED ACTIONS:\n1. [Most urgent action]\n2. [Second action]\n3. [Third action]\n[Continue as needed - all specific and immediately actionable]\n\n' +
-      'ALTERNATIVE TO CONSIDER: [At least one alternative with trade-offs clearly stated]\n\n' +
-      'Do not be generic. Every point must be specific to AJ\'s exact question and the live data retrieved.';
+    var finalPrompt = baseContext + '\n\nROLE: You are the LEAD advisor closing this Council deliberation.\n' +
+      'AJ asked: ' + prompt + '\n' +
+      'Your draft: ' + leadDraft.substring(0, 2500) + '\n' +
+      'Challenger review: ' + review1.substring(0, 1200) + '\n' +
+      'Expander review: ' + review2.substring(0, 1200) + '\n\n' +
+      'Integrate the reviews honestly: adopt corrections that improve accuracy, absorb the strongest additions, and silently drop what you reject. Then deliver the FINAL COUNCIL POSITION in exactly this structure:\n\n' +
+      'VERDICT: One decisive sentence. Take a position - proceed, avoid, or proceed with named conditions. Never both-sides.\n\n' +
+      'ANALYSIS: 3-5 points. Each carries a number, source, or named asset. Figures in AED. Anything estimated or older than 3 months is labelled as such.\n\n' +
+      'RECOMMENDED ACTIONS: Numbered, in priority order. Each starts with a verb, names who/where (broker, platform, entity), and has a timeframe. The Council has done the research - actions are decisions and executions for AJ, never homework.\n\n' +
+      'ALTERNATIVE TO CONSIDER: One genuine alternative with its trade-off quantified.\n\n' +
+      'Tone: senior partner to client - warm, direct, zero filler. No markdown headers beyond the four labels above.';
 
     var finalPosition = await callCouncilModel(leadModel, finalPrompt);
 
@@ -5523,6 +5611,19 @@ async function submitToCouncil() {
 }
 
 async function callCouncilModel(model, prompt) {
+  try {
+    return await callCouncilModelOnce(model, prompt);
+  } catch(e1) {
+    await new Promise(function(res){ setTimeout(res, 1200); });
+    try {
+      return await callCouncilModelOnce(model, prompt);
+    } catch(e2) {
+      throw new Error('[' + model + '] failed after retry: ' + e2.message);
+    }
+  }
+}
+
+async function callCouncilModelOnce(model, prompt) {
   if (model === 'claude') {
     var r = await fetch(PROXY, {
       method: 'POST',
@@ -5558,7 +5659,7 @@ async function callCouncilModel(model, prompt) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'sonar',
+        model: 'sonar-pro',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -5651,6 +5752,8 @@ function renderCouncilResponse(feed, data) {
   actionsRow.appendChild(deeperBtn);
   actionsRow.appendChild(altBtn);
   actionsRow.appendChild(saveBtn);
+  actionsRow.appendChild(upBtn);
+  actionsRow.appendChild(downBtn);
   finalCard.appendChild(actionsRow);
   wrap.appendChild(finalCard);
 
@@ -5728,6 +5831,410 @@ function toggleCouncilHistory() {
   document.getElementById('councilOverlay').appendChild(panel);
 }
 
+
+
+// -- SHADOW INVEST -- Profile Lite + Invest Workspace --
+
+window._shadowProfile = null;
+
+async function loadShadowProfile() {
+  try {
+    var res = await db.from('shadow_profile').select('*').order('updated_at', { ascending: false }).limit(1);
+    if (res.data && res.data.length > 0) {
+      var d = res.data[0].data;
+      window._shadowProfile = typeof d === 'string' ? d : JSON.stringify(d);
+    }
+  } catch(e) { console.log('profile load', e); }
+}
+setTimeout(loadShadowProfile, 1500);
+
+function profileFieldHTML(id, label, placeholder, type) {
+  var inputEl;
+  if (type === 'textarea') {
+    inputEl = '<textarea id="' + id + '" placeholder="' + placeholder + '" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;font-size:13px;color:#f0f4ff;font-family:inherit;resize:vertical;min-height:70px;outline:none"></textarea>';
+  } else if (type === 'select-risk') {
+    inputEl = '<select id="' + id + '" style="width:100%;background:#0c1220;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;font-size:13px;color:#f0f4ff;outline:none"><option value="">Select...</option><option>Conservative</option><option>Balanced</option><option>Aggressive</option></select>';
+  } else if (type === 'select-horizon') {
+    inputEl = '<select id="' + id + '" style="width:100%;background:#0c1220;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;font-size:13px;color:#f0f4ff;outline:none"><option value="">Select...</option><option>Short (under 2 years)</option><option>Medium (2-5 years)</option><option>Long (5+ years)</option></select>';
+  } else {
+    inputEl = '<input id="' + id + '" placeholder="' + placeholder + '" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;font-size:13px;color:#f0f4ff;outline:none">';
+  }
+  return '<div style="margin-bottom:14px"><div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:1.5px;color:#475569;text-transform:uppercase;margin-bottom:6px">' + label + '</div>' + inputEl + '</div>';
+}
+
+function openProfileLite() {
+  var existing = document.getElementById('profileLiteOverlay');
+  if (existing) existing.remove();
+  var o = document.createElement('div');
+  o.id = 'profileLiteOverlay';
+  o.style.cssText = 'position:fixed;inset:0;z-index:850;background:#04060e;display:flex;flex-direction:column;font-family:"DM Sans",sans-serif';
+  o.innerHTML =
+    '<div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div>' +
+        '<div style="font-family:\'Playfair Display\',serif;font-size:18px;font-style:italic;color:#f0f4ff">Investment Profile</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:2px;color:#475569;text-transform:uppercase;margin-top:2px">Powers every Invest answer</div>' +
+      '</div>' +
+      '<div onclick="document.getElementById(\'profileLiteOverlay\').remove()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:5px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:18px">' +
+      profileFieldHTML('pfCash', 'Cash available to invest (AED)', 'e.g. 500000', 'input') +
+      profileFieldHTML('pfHoldings', 'Current holdings', 'e.g. NVDA 50 shares, Emaar apartment Marina 2BR, 200g gold...', 'textarea') +
+      profileFieldHTML('pfRisk', 'Risk appetite', '', 'select-risk') +
+      profileFieldHTML('pfHorizon', 'Investment horizon', '', 'select-horizon') +
+      profileFieldHTML('pfSurplus', 'Monthly investable surplus (AED)', 'e.g. 30000', 'input') +
+      profileFieldHTML('pfGoals', 'Goals and target allocation', 'e.g. second property by 2028, 20% gold, dividend income...', 'textarea') +
+      profileFieldHTML('pfNogo', 'No-go zones', 'e.g. no crypto, no off-plan outside Abu Dhabi...', 'textarea') +
+      '<div onclick="saveProfileLite()" id="pfSaveBtn" style="margin-top:6px;background:linear-gradient(135deg,#2756C5,#7c3aed);border-radius:10px;padding:13px;text-align:center;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:2px;color:white;cursor:pointer">SAVE PROFILE</div>' +
+    '</div>';
+  document.body.appendChild(o);
+  if (window._shadowProfile) {
+    try {
+      var p = JSON.parse(window._shadowProfile);
+      var map = { pfCash:'cash_aed', pfHoldings:'holdings', pfRisk:'risk', pfHorizon:'horizon', pfSurplus:'monthly_surplus_aed', pfGoals:'goals', pfNogo:'no_go' };
+      for (var id in map) { var el = document.getElementById(id); if (el && p[map[id]]) el.value = p[map[id]]; }
+    } catch(e) {}
+  }
+}
+
+async function saveProfileLite() {
+  var data = {
+    cash_aed: (document.getElementById('pfCash') || {}).value || '',
+    holdings: (document.getElementById('pfHoldings') || {}).value || '',
+    risk: (document.getElementById('pfRisk') || {}).value || '',
+    horizon: (document.getElementById('pfHorizon') || {}).value || '',
+    monthly_surplus_aed: (document.getElementById('pfSurplus') || {}).value || '',
+    goals: (document.getElementById('pfGoals') || {}).value || '',
+    no_go: (document.getElementById('pfNogo') || {}).value || ''
+  };
+  var btn = document.getElementById('pfSaveBtn');
+  if (btn) btn.textContent = 'SAVING...';
+  try {
+    await db.from('shadow_profile').delete().neq('id', 0);
+    await db.from('shadow_profile').insert({ user_id: UID, data: data });
+    window._shadowProfile = JSON.stringify(data);
+    if (btn) { btn.textContent = 'SAVED'; }
+    setTimeout(function(){ var o = document.getElementById('profileLiteOverlay'); if (o) o.remove(); }, 700);
+  } catch(e) {
+    if (btn) btn.textContent = 'ERROR - CHECK TABLE EXISTS';
+  }
+}
+
+function councilAsk(q) {
+  var inv = document.getElementById('investOverlay');
+  if (inv) inv.remove();
+  openCouncil();
+  setTimeout(function(){
+    var input = document.getElementById('councilInput');
+    if (input) { input.value = q; submitToCouncil(); }
+  }, 350);
+}
+
+function investActionHTML(title, sub, q) {
+  return '<div onclick="councilAsk(\'' + q + '\')" style="background:#080c18;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+    '<div>' +
+      '<div style="font-size:14px;font-weight:500;color:#f0f4ff;margin-bottom:3px">' + title + '</div>' +
+      '<div style="font-size:11px;color:#475569">' + sub + '</div>' +
+    '</div>' +
+    '<div style="color:#3b82f6;font-size:14px">&#8594;</div>' +
+  '</div>';
+}
+
+function openInvest() {
+  var existing = document.getElementById('investOverlay');
+  if (existing) existing.remove();
+  var hasProfile = !!window._shadowProfile;
+  var o = document.createElement('div');
+  o.id = 'investOverlay';
+  o.style.cssText = 'position:fixed;inset:0;z-index:840;background:#04060e;display:flex;flex-direction:column;font-family:"DM Sans",sans-serif';
+  o.innerHTML =
+    '<div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div>' +
+        '<div style="font-family:\'Playfair Display\',serif;font-size:18px;font-style:italic;color:#f0f4ff">Shadow Invest</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:2px;color:#475569;text-transform:uppercase;margin-top:2px">Council-powered advisory</div>' +
+      '</div>' +
+      '<div onclick="document.getElementById(\'investOverlay\').remove()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:5px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:18px">' +
+      '<div onclick="openProfileLite()" style="background:' + (hasProfile ? 'rgba(34,197,94,0.06)' : 'rgba(245,158,11,0.08)') + ';border:1px solid ' + (hasProfile ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.3)') + ';border-radius:12px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:500;color:#f0f4ff">' + (hasProfile ? 'Investment profile active' : 'Set up your investment profile') + '</div>' +
+          '<div style="font-size:11px;color:#475569;margin-top:2px">' + (hasProfile ? 'Tap to review or update' : '15 minutes - makes every answer personal') + '</div>' +
+        '</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:' + (hasProfile ? '#22c55e' : '#f59e0b') + '">' + (hasProfile ? 'ACTIVE' : 'SETUP') + '</div>' +
+      '</div>' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#334155;text-transform:uppercase;margin-bottom:10px">Ask The Council</div>' +
+      '<div onclick="openTradeDesk()" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+        '<div>' +
+          '<div style="font-size:14px;font-weight:500;color:#f0f4ff;margin-bottom:3px">Trade Desk</div>' +
+          '<div style="font-size:11px;color:#475569">Six-agent pipeline: Analyst, PM, Risk veto, Compliance, Trader, Execution - paper money</div>' +
+        '</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#f59e0b;letter-spacing:1px">PAPER</div>' +
+      '</div>' +
+      investActionHTML('Portfolio review', 'Full review of current holdings with buy, hold, sell views', 'Review my current portfolio holding by holding. For each: buy more, hold, or sell, with reasoning and target numbers.') +
+      investActionHTML('Where to invest now', 'Best deployment of available cash given live market conditions', 'Given my profile and live market conditions, where exactly should I deploy my available cash right now? Specific assets, amounts, and entry points.') +
+      investActionHTML('Real estate scan', 'Current UAE launches and secondary deals worth a look', 'Scan the current UAE property market: which specific launches or secondary listings offer the best ROI for my profile right now? Name projects, prices, and expected yields.') +
+      investActionHTML('Risk check', 'Concentration, exposure, and downside stress test', 'Stress test my portfolio: concentration risks, correlated exposures, and what happens in a 20 percent market correction. What should I rebalance?') +
+    '</div>';
+  document.body.appendChild(o);
+}
+
+
+// -- FEEDBACK LOOP --
+
+async function saveCouncilFeedback(rating, data, comment) {
+  try {
+    await db.from('shadow_feedback').insert({
+      user_id: UID,
+      context: (data.task.config.label + ' | Q: ' + data.prompt.substring(0, 200) + ' | A: ' + data.finalPosition.substring(0, 400)),
+      rating: rating,
+      comment: comment || ''
+    });
+    showToast(rating === 'up' ? 'Noted - glad it landed' : 'Noted - Shadow will learn from this');
+  } catch(e) { showToast('Feedback table missing - run SQL setup'); }
+}
+
+async function openFeedbackAgent() {
+  var existing = document.getElementById('fbAgentOverlay');
+  if (existing) existing.remove();
+  var o = document.createElement('div');
+  o.id = 'fbAgentOverlay';
+  o.style.cssText = 'position:fixed;inset:0;z-index:860;background:#04060e;display:flex;flex-direction:column;font-family:"DM Sans",sans-serif';
+  o.innerHTML =
+    '<div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div>' +
+        '<div style="font-family:\'Playfair Display\',serif;font-size:18px;font-style:italic;color:#f0f4ff">Feedback Insights</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:2px;color:#475569;text-transform:uppercase;margin-top:2px">What Shadow should improve</div>' +
+      '</div>' +
+      '<div onclick="document.getElementById(\'fbAgentOverlay\').remove()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:5px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
+    '</div>' +
+    '<div id="fbAgentBody" style="flex:1;overflow-y:auto;padding:18px">' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:#475569;letter-spacing:1px">Analyzing feedback...</div>' +
+    '</div>';
+  document.body.appendChild(o);
+
+  var body = document.getElementById('fbAgentBody');
+  try {
+    var res = await db.from('shadow_feedback').select('*').order('created_at', { ascending: false }).limit(50);
+    var rows = res.data || [];
+    if (rows.length === 0) {
+      body.innerHTML = '<div style="font-size:13px;color:#94a3b8;line-height:1.6">No feedback yet. Use the thumbs on Council answers - once a few land here, this agent will find the patterns and tell us exactly what to fix.</div>';
+      return;
+    }
+    var ups = rows.filter(function(r){ return r.rating === 'up'; }).length;
+    var downs = rows.length - ups;
+    var corpus = rows.map(function(r){
+      return '[' + r.rating.toUpperCase() + '] ' + r.context + (r.comment ? ' | User note: ' + r.comment : '');
+    }).join('\n').substring(0, 5000);
+
+    var r = await fetch(PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6', max_tokens: 700,
+        messages: [{ role: 'user', content: 'You are Shadow\'s quality analyst. Below are ' + rows.length + ' feedback entries on Council answers (' + ups + ' up, ' + downs + ' down). Analyze the patterns and respond in JSON only: {"health":"one sentence on overall quality","patterns":["2-4 recurring issues or strengths, specific"],"fixes":["2-4 concrete prompt or product changes, most impactful first"]}\n\nFEEDBACK LOG:\n' + corpus }]
+      })});
+    var d = await r.json();
+    var txt = d.content[0].text.replace(/```json|```/g, '').trim();
+    var a = JSON.parse(txt);
+
+    var html = '<div style="display:flex;gap:8px;margin-bottom:18px">' +
+      '<div style="flex:1;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;color:#22c55e;font-weight:500">' + ups + '</div><div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#475569;letter-spacing:1px">POSITIVE</div></div>' +
+      '<div style="flex:1;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;color:#ef4444;font-weight:500">' + downs + '</div><div style="font-family:\'DM Mono\',monospace;font-size:8px;color:#475569;letter-spacing:1px">NEGATIVE</div></div></div>';
+    html += '<div style="font-family:\'Playfair Display\',serif;font-size:16px;font-style:italic;color:#f0f4ff;line-height:1.5;margin-bottom:16px">' + a.health + '</div>';
+    html += '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#334155;text-transform:uppercase;margin-bottom:8px">Patterns</div>';
+    (a.patterns || []).forEach(function(p){ html += '<div style="font-size:12px;color:#94a3b8;line-height:1.5;margin-bottom:6px;padding-left:12px;border-left:2px solid #3b82f6">' + p + '</div>'; });
+    html += '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:2px;color:#334155;text-transform:uppercase;margin:16px 0 8px">Recommended fixes</div>';
+    (a.fixes || []).forEach(function(f, i){ html += '<div style="font-size:12px;color:#e2e8f0;line-height:1.5;margin-bottom:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 12px">' + (i+1) + '. ' + f + '</div>'; });
+    body.innerHTML = html;
+  } catch(e) {
+    body.innerHTML = '<div style="font-size:12px;color:#ef4444">Insights error: ' + e.message + '</div>';
+  }
+}
+
+
+// -- SHADOW TRADE DESK -- Multi-agent pipeline: Analyst > PM > Risk > Compliance > Trader > Execution --
+
+var TRADE_LIMITS = { maxTradeUSD: 13500, maxPositionPct: 10, cashFloorPct: 20 };
+
+function tdJSON(txt) {
+  var t = txt.replace(/```json|```/g, '').trim();
+  var s = t.indexOf('{'); var e = t.lastIndexOf('}');
+  if (s > -1 && e > s) t = t.substring(s, e + 1);
+  return JSON.parse(t);
+}
+
+async function alpacaCall(path, method, payload) {
+  var r = await fetch(PROXY + '?service=alpaca', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: path, method: method || 'GET', payload: payload || null })
+  });
+  var d = await r.json();
+  if (d.error || d.message) throw new Error(d.error || d.message);
+  return d;
+}
+
+function tdStage(name, status, detail) {
+  var feed = document.getElementById('tdFeed');
+  if (!feed) return;
+  var id = 'td_' + name.replace(/\s+/g, '');
+  var el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.style.cssText = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-left:2px solid #3b82f6;border-radius:10px;padding:12px 14px;margin-bottom:8px';
+    feed.appendChild(el);
+  }
+  var color = status === 'DONE' ? '#22c55e' : (status === 'VETO' || status === 'BLOCKED' || status === 'ERROR') ? '#ef4444' : '#3b82f6';
+  el.style.borderLeftColor = color;
+  el.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:1.5px;color:' + color + ';text-transform:uppercase">' + name + '</div>' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:' + color + '">' + status + '</div></div>' +
+    '<div style="font-size:12px;color:#94a3b8;line-height:1.5;white-space:pre-wrap">' + (detail || '') + '</div>';
+  feed.scrollTop = feed.scrollHeight;
+}
+
+async function tdLog(runId, stage, status, detail) {
+  try {
+    await db.from('shadow_trades').insert({ user_id: UID, run_id: runId, stage: stage, status: status, detail: (detail || '').substring(0, 2000) });
+  } catch(e) { console.log('trade log', e); }
+}
+
+function openTradeDesk() {
+  var inv = document.getElementById('investOverlay');
+  if (inv) inv.remove();
+  var existing = document.getElementById('tradeDeskOverlay');
+  if (existing) existing.remove();
+  var o = document.createElement('div');
+  o.id = 'tradeDeskOverlay';
+  o.style.cssText = 'position:fixed;inset:0;z-index:870;background:#04060e;display:flex;flex-direction:column;font-family:"DM Sans",sans-serif';
+  o.innerHTML =
+    '<div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div>' +
+        '<div style="font-family:\'Playfair Display\',serif;font-size:18px;font-style:italic;color:#f0f4ff">Trade Desk</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:2px;color:#f59e0b;text-transform:uppercase;margin-top:2px">Paper trading &middot; No real money</div>' +
+      '</div>' +
+      '<div onclick="document.getElementById(\'tradeDeskOverlay\').remove()" style="font-family:\'DM Mono\',monospace;font-size:9px;color:#475569;cursor:pointer;padding:5px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px">Close</div>' +
+    '</div>' +
+    '<div id="tdFeed" style="flex:1;overflow-y:auto;padding:16px 18px"></div>' +
+    '<div style="padding:14px 18px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0">' +
+      '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center">' +
+        '<input id="tdIdea" placeholder="Ticker or idea - or leave empty and the desk finds one" style="flex:1;background:none;border:none;outline:none;font-size:13px;color:#f0f4ff;font-family:inherit">' +
+        '<div onclick="runTradeDesk()" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:1px;color:white;background:linear-gradient(135deg,#2756C5,#7c3aed);border-radius:8px;padding:8px 14px;cursor:pointer;flex-shrink:0">RUN DESK &rarr;</div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(o);
+  loadDeskAccount();
+}
+
+async function loadDeskAccount() {
+  try {
+    var acct = await alpacaCall('/v2/account', 'GET');
+    tdStage('Paper Account', 'DONE', 'Equity: $' + Number(acct.equity).toLocaleString() + '  |  Cash: $' + Number(acct.cash).toLocaleString() + '  |  Buying power: $' + Number(acct.buying_power).toLocaleString());
+  } catch(e) {
+    tdStage('Paper Account', 'ERROR', 'Alpaca not connected: ' + e.message + '\nAdd ALPACA_KEY and ALPACA_SECRET to Cloudflare, deploy worker v3.');
+  }
+}
+
+async function runTradeDesk() {
+  var idea = (document.getElementById('tdIdea') || {}).value || '';
+  var runId = 'run_' + Date.now();
+  var profile = window._shadowProfile || 'No profile - assume balanced risk, long horizon.';
+
+  try {
+    // STAGE 1 - ANALYST (Perplexity, live data)
+    tdStage('1 - Analyst', 'WORKING', 'Building thesis with live market data...');
+    var analystPrompt = 'You are the Research Analyst on an institutional trade desk. ' +
+      (idea ? 'Build a trade thesis for: ' + idea : 'Identify the single best US-listed trade opportunity right now for this investor profile: ' + profile) +
+      '. Use current prices and recent catalysts. Respond in JSON only: {"ticker":"SYMBOL","side":"buy or sell","current_price":number,"thesis":"3 sentences with specific numbers and catalysts","key_risk":"one sentence"}';
+    var analyst = tdJSON(await callCouncilModel('perplexity', analystPrompt));
+    tdStage('1 - Analyst', 'DONE', analyst.ticker + ' (' + analyst.side + ') @ ~$' + analyst.current_price + '\n' + analyst.thesis + '\nKey risk: ' + analyst.key_risk);
+    await tdLog(runId, 'analyst', 'DONE', JSON.stringify(analyst));
+
+    // STAGE 2 - PORTFOLIO MANAGER (GPT-4o)
+    tdStage('2 - Portfolio Manager', 'WORKING', 'Sizing against profile and mandate...');
+    var pmPrompt = 'You are the Portfolio Manager. Investor profile: ' + profile +
+      '. Analyst thesis: ' + JSON.stringify(analyst) +
+      '. Hard limits: max trade $' + TRADE_LIMITS.maxTradeUSD + ', max position ' + TRADE_LIMITS.maxPositionPct + '% of portfolio. ' +
+      'Decide fit and size the trade. JSON only: {"proceed":true or false,"reason":"one sentence","qty":whole number of shares,"notional_usd":number,"entry_limit":number,"target":number,"stop":number}';
+    var pm = tdJSON(await callCouncilModel('gpt4o', pmPrompt));
+    if (!pm.proceed) {
+      tdStage('2 - Portfolio Manager', 'VETO', 'PM rejected: ' + pm.reason);
+      await tdLog(runId, 'pm', 'VETO', pm.reason);
+      return;
+    }
+    tdStage('2 - Portfolio Manager', 'DONE', pm.qty + ' shares (~$' + pm.notional_usd + ')  |  Entry limit $' + pm.entry_limit + '  |  Target $' + pm.target + '  |  Stop $' + pm.stop + '\n' + pm.reason);
+    await tdLog(runId, 'pm', 'DONE', JSON.stringify(pm));
+
+    // STAGE 3 - RISK MANAGER (Claude, independent veto, one revision loop)
+    var riskVerdict = null; var loops = 0;
+    while (loops < 2) {
+      tdStage('3 - Risk Manager', 'WORKING', loops === 0 ? 'Independent challenge...' : 'Reviewing revised proposal...');
+      var riskPrompt = 'You are the independent Risk Manager with veto power on an institutional desk. You report outside the PM chain - be adversarial. ' +
+        'Investor profile: ' + profile + '. Thesis: ' + JSON.stringify(analyst) + '. Proposal: ' + JSON.stringify(pm) +
+        '. Assess: concentration, correlation with existing holdings, liquidity, downside in a 20% market correction, thesis fragility. ' +
+        'JSON only: {"verdict":"APPROVE or REVISE or VETO","reasons":["max 3, specific"],"required_changes":"only if REVISE - what must change"}';
+      riskVerdict = tdJSON(await callCouncilModel('claude', riskPrompt));
+      if (riskVerdict.verdict === 'APPROVE') break;
+      if (riskVerdict.verdict === 'VETO' || loops === 1) {
+        tdStage('3 - Risk Manager', 'VETO', riskVerdict.reasons.join('\n'));
+        await tdLog(runId, 'risk', 'VETO', JSON.stringify(riskVerdict));
+        return;
+      }
+      tdStage('3 - Risk Manager', 'REVISE', riskVerdict.reasons.join('\n') + '\nRequired: ' + riskVerdict.required_changes);
+      await tdLog(runId, 'risk', 'REVISE', JSON.stringify(riskVerdict));
+      var revisePrompt = 'You are the Portfolio Manager. Risk requires changes: ' + riskVerdict.required_changes +
+        '. Original proposal: ' + JSON.stringify(pm) + '. Revise to satisfy risk. Same JSON schema as before.';
+      pm = tdJSON(await callCouncilModel('gpt4o', revisePrompt));
+      tdStage('2 - Portfolio Manager', 'DONE', 'REVISED: ' + pm.qty + ' shares (~$' + pm.notional_usd + ')  |  Entry $' + pm.entry_limit + '  |  Stop $' + pm.stop);
+      loops++;
+    }
+    tdStage('3 - Risk Manager', 'DONE', 'APPROVED\n' + riskVerdict.reasons.join('\n'));
+    await tdLog(runId, 'risk', 'APPROVE', JSON.stringify(riskVerdict));
+
+    // STAGE 4 - COMPLIANCE (deterministic code - no AI)
+    tdStage('4 - Compliance', 'WORKING', 'Hard rule checks (code, not AI)...');
+    var checks = [];
+    var blocked = false;
+    if (pm.notional_usd > TRADE_LIMITS.maxTradeUSD) { checks.push('FAIL: trade $' + pm.notional_usd + ' exceeds max $' + TRADE_LIMITS.maxTradeUSD); blocked = true; }
+    else checks.push('PASS: trade size within $' + TRADE_LIMITS.maxTradeUSD + ' limit');
+    var noGo = '';
+    try { noGo = (JSON.parse(window._shadowProfile || '{}').no_go || '').toLowerCase(); } catch(e) {}
+    if (noGo && noGo.indexOf(analyst.ticker.toLowerCase()) > -1) { checks.push('FAIL: ' + analyst.ticker + ' is on the no-go list'); blocked = true; }
+    else checks.push('PASS: not on no-go list');
+    try {
+      var acct = await alpacaCall('/v2/account', 'GET');
+      var equity = Number(acct.equity); var cash = Number(acct.cash);
+      var posPct = (pm.notional_usd / equity) * 100;
+      if (posPct > TRADE_LIMITS.maxPositionPct) { checks.push('FAIL: position ' + posPct.toFixed(1) + '% exceeds ' + TRADE_LIMITS.maxPositionPct + '% cap'); blocked = true; }
+      else checks.push('PASS: position ' + posPct.toFixed(1) + '% of equity');
+      var cashAfterPct = ((cash - pm.notional_usd) / equity) * 100;
+      if (cashAfterPct < TRADE_LIMITS.cashFloorPct) { checks.push('FAIL: cash after trade ' + cashAfterPct.toFixed(1) + '% below ' + TRADE_LIMITS.cashFloorPct + '% floor'); blocked = true; }
+      else checks.push('PASS: cash floor holds at ' + cashAfterPct.toFixed(1) + '%');
+    } catch(e) { checks.push('WARN: account check skipped - ' + e.message); }
+    tdStage('4 - Compliance', blocked ? 'BLOCKED' : 'DONE', checks.join('\n'));
+    await tdLog(runId, 'compliance', blocked ? 'BLOCKED' : 'PASS', checks.join(' | '));
+    if (blocked) return;
+
+    // STAGE 5 - TRADER (GPT-4o, order construction)
+    tdStage('5 - Trader', 'WORKING', 'Constructing order...');
+    var traderPrompt = 'You are the Execution Trader. Approved proposal: ' + JSON.stringify(pm) + ' for ' + analyst.ticker +
+      '. Construct the Alpaca order. JSON only: {"symbol":"' + analyst.ticker + '","qty":' + pm.qty + ',"side":"' + analyst.side + '","type":"limit","limit_price":number,"time_in_force":"day"}';
+    var order = tdJSON(await callCouncilModel('gpt4o', traderPrompt));
+    tdStage('5 - Trader', 'DONE', order.side.toUpperCase() + ' ' + order.qty + ' ' + order.symbol + ' LIMIT $' + order.limit_price + ' (day)');
+    await tdLog(runId, 'trader', 'DONE', JSON.stringify(order));
+
+    // STAGE 6 - EXECUTION (Alpaca paper)
+    tdStage('6 - Execution', 'WORKING', 'Placing paper order...');
+    var placed = await alpacaCall('/v2/orders', 'POST', order);
+    tdStage('6 - Execution', 'DONE', 'Order ' + placed.id.substring(0, 8) + ' ' + placed.status.toUpperCase() + '\n' + placed.side + ' ' + placed.qty + ' ' + placed.symbol + ' @ limit $' + placed.limit_price);
+    await tdLog(runId, 'execution', placed.status, JSON.stringify({ id: placed.id, symbol: placed.symbol, qty: placed.qty, limit: placed.limit_price }));
+
+    tdStage('Desk Complete', 'DONE', 'Full audit trail saved. Six desks, independent risk veto, hard-coded compliance - the way real money is managed.');
+
+  } catch(e) {
+    tdStage('Desk Error', 'ERROR', e.message);
+    await tdLog(runId, 'error', 'ERROR', e.message);
+  }
+}
 
 </script>
 </body>
