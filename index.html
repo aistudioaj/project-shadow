@@ -1535,7 +1535,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
     <div id="pinLockErr" style="display:none;color:#ff6b6b;font-size:12.5px;margin-bottom:14px"></div>
     <button id="pinLockBtn" onclick="doUnlock()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Unlock</button>
     <div id="pinLockFallback" style="display:none;margin-top:18px">
-      <div onclick="fullSignOut()" style="font-family:var(--font-body);font-size:13px;color:var(--t3);cursor:pointer;text-decoration:underline">Sign in with password instead</div>
+      <div onclick="forgotPin()" style="font-family:var(--font-body);font-size:13px;color:var(--t3);cursor:pointer;text-decoration:underline">Forgot PIN? Sign in with password</div>
     </div>
   </div>
 </div>
@@ -5356,11 +5356,15 @@ async function init(){
 }
 
 async function boot(){
+  try{ if(localStorage.getItem('shadow_lock')){ localStorage.removeItem('shadow_lock'); } }catch(e){}
   try{
-    if(isPinSet()){ showLockScreen(); return; }
     var r=await db.auth.getSession();
     var session=(r&&r.data)?r.data.session:null;
-    if(session){ showPinSetup(); } else { showLoginScreen(); }
+    if(session){
+      if(isPinSet()){ showLockScreen(); } else { showPinSetup(); }
+    } else {
+      showLoginScreen();
+    }
   }catch(e){ showLoginScreen(); }
 }
 function hideAllGates(){
@@ -5384,37 +5388,46 @@ async function doLogin(){
     var res=await db.auth.signInWithPassword({ email:em, password:pw });
     if(res.error){ throw res.error; }
     document.getElementById('loginScreen').style.display='none';
-    if(!isPinSet()){ showPinSetup(); return; }
-    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
-    startIdleWatch(); init();
+    var wantReset=false;
+    try{ wantReset=(localStorage.getItem('shadow_reset_pin')==='1'); }catch(e){}
+    if(!isPinSet() || wantReset){
+      try{ localStorage.removeItem('shadow_reset_pin'); }catch(e){}
+      showPinSetup(); return;
+    }
+    _startApp();
   }catch(e){
     err.textContent=(e&&e.message)?e.message:'Sign-in failed. Check your details.';
     err.style.display='block'; btn.disabled=false; btn.textContent='Sign In';
   }
 }
 
-/* ===== App-lock (PIN) ===== */
-var LOCK_KEY='shadow_lock';
+/* ===== App-lock: gate model (PIN hash + biometric assertion) ===== */
+var PIN_KEY='shadow_pin';
+var BIO_KEY='shadow_bio';
 var IDLE_MS=5*60*1000;
-var _lockKey=null;
 var _idleTimer=null;
+var _appStarted=false;
 var _idleEvents=['click','keydown','touchstart','mousemove','scroll'];
 
-function isPinSet(){ try{ return !!localStorage.getItem(LOCK_KEY); }catch(e){ return false; } }
+function isPinSet(){ try{ return !!localStorage.getItem(PIN_KEY); }catch(e){ return false; } }
+function isBioSet(){ try{ return !!localStorage.getItem(BIO_KEY); }catch(e){ return false; } }
 function _b64(buf){ return btoa(String.fromCharCode.apply(null,new Uint8Array(buf))); }
 function _unb64(s){ return Uint8Array.from(atob(s),function(c){ return c.charCodeAt(0); }); }
-async function _deriveKey(pin,salt){
-  var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),{name:'PBKDF2'},false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+function _rpId(){ return location.hostname; }
+async function _pinHash(pin,salt){
+  var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),{name:'PBKDF2'},false,['deriveBits']);
+  var bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},base,256);
+  return _b64(bits);
 }
-async function _encryptSession(key){
-  var r=await db.auth.getSession();
-  var s=(r&&r.data)?r.data.session:null;
-  if(!s) return null;
-  var iv=crypto.getRandomValues(new Uint8Array(12));
-  var data=new TextEncoder().encode(JSON.stringify({access_token:s.access_token,refresh_token:s.refresh_token}));
-  var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,data);
-  return { iv:_b64(iv), ct:_b64(ct) };
+function _startApp(){
+  hideAllGates();
+  if(!_appStarted){
+    _appStarted=true;
+    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
+    startIdleWatch(); init();
+  }else{
+    startIdleWatch();
+  }
 }
 function showPinSetup(){
   hideAllGates();
@@ -5431,20 +5444,16 @@ async function doPinSetup(){
   err.style.display='none';
   try{
     var salt=crypto.getRandomValues(new Uint8Array(16));
-    var key=await _deriveKey(a,salt);
-    var blob=await _encryptSession(key);
-    if(!blob){ err.textContent='No active session. Please sign in again.'; err.style.display='block'; return; }
-    localStorage.setItem(LOCK_KEY,JSON.stringify({salt:_b64(salt),iv:blob.iv,ct:blob.ct}));
-    _lockKey=key;
-    document.getElementById('pinSetupScreen').style.display='none';
-    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
-    startIdleWatch(); init();
+    var hash=await _pinHash(a,salt);
+    localStorage.setItem(PIN_KEY,JSON.stringify({salt:_b64(salt),hash:hash}));
+    _startApp();
   }catch(e){ err.textContent='Could not set PIN. Please try again.'; err.style.display='block'; }
 }
 function showLockScreen(){
   hideAllGates();
   var el=document.getElementById('pinLockScreen'); if(el) el.style.display='flex';
   var i=document.getElementById('pinLockInput'); if(i){ i.value=''; }
+  var err=document.getElementById('pinLockErr'); if(err) err.style.display='none';
   var fb=document.getElementById('pinLockFallback'); if(fb) fb.style.display='none';
   var bb=document.getElementById('bioUnlockBtn');
   if(isBioSet()){
@@ -5460,51 +5469,32 @@ async function doUnlock(){
   var err=document.getElementById('pinLockErr');
   var fb=document.getElementById('pinLockFallback');
   if(!/^[0-9]{6}$/.test(pin)){ err.textContent='Enter your 6-digit PIN.'; err.style.display='block'; return; }
-  var raw=localStorage.getItem(LOCK_KEY);
-  if(!raw){ fullSignOut(); return; }
+  var raw=localStorage.getItem(PIN_KEY);
+  if(!raw){ showLoginScreen(); return; }
   var stored=JSON.parse(raw);
-  var toks=null,key=null;
   try{
-    key=await _deriveKey(pin,_unb64(stored.salt));
-    var dec=await crypto.subtle.decrypt({name:'AES-GCM',iv:_unb64(stored.iv)},key,_unb64(stored.ct));
-    toks=JSON.parse(new TextDecoder().decode(dec));
-  }catch(e){
-    err.textContent='Incorrect PIN. Please try again.'; err.style.display='block';
-    document.getElementById('pinLockInput').value='';
-    if(fb) fb.style.display='block';
-    return;
-  }
-  try{
-    var res=await db.auth.setSession({ access_token:toks.access_token, refresh_token:toks.refresh_token });
-    if(res.error) throw res.error;
-    _lockKey=key;
-    document.getElementById('pinLockScreen').style.display='none';
-    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
-    startIdleWatch(); init();
-  }catch(e){
-    err.textContent='Session expired. Please sign in with your password.'; err.style.display='block';
-    if(fb) fb.style.display='block';
-  }
-}
-async function lockNow(){
-  stopIdleWatch();
-  try{
-    if(_lockKey){
-      var blob=await _encryptSession(_lockKey);
-      if(blob){
-        var stored=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');
-        stored.iv=blob.iv; stored.ct=blob.ct;
-        localStorage.setItem(LOCK_KEY,JSON.stringify(stored));
-      }
+    var hash=await _pinHash(pin,_unb64(stored.salt));
+    if(hash!==stored.hash){
+      err.textContent='Incorrect PIN. Please try again.'; err.style.display='block';
+      document.getElementById('pinLockInput').value='';
+      if(fb) fb.style.display='block';
+      return;
     }
-  }catch(e){}
-  _lockKey=null;
-  try{ await db.auth.signOut({ scope:'local' }); }catch(e){}
+    _startApp();
+  }catch(e){ err.textContent='Could not verify PIN. Please try again.'; err.style.display='block'; }
+}
+async function forgotPin(){
+  try{ localStorage.setItem('shadow_reset_pin','1'); }catch(e){}
+  stopIdleWatch();
+  try{ await db.auth.signOut(); }catch(e){}
   location.reload();
 }
+function lockNow(){
+  stopIdleWatch();
+  showLockScreen();
+}
 async function fullSignOut(){
-  stopIdleWatch(); _lockKey=null;
-  try{ localStorage.removeItem(LOCK_KEY); }catch(e){}
+  stopIdleWatch();
   try{ await db.auth.signOut(); }catch(e){}
   location.reload();
 }
@@ -5523,61 +5513,29 @@ function stopIdleWatch(){
   _idleEvents.forEach(function(ev){ document.removeEventListener(ev,_resetIdle); });
 }
 
-/* ===== Biometric unlock (WebAuthn PRF) - Phase 2 ===== */
-var BIO_KEY='shadow_bio';
-function isBioSet(){ try{ return !!localStorage.getItem(BIO_KEY); }catch(e){ return false; } }
-function _rpId(){ return location.hostname; }
+/* ===== Biometric unlock (gate) ===== */
 async function bioSupported(){
   try{
     if(!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) return false;
     return !!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
   }catch(e){ return false; }
 }
-async function _bioPrf(credId, salt){
-  var challenge=crypto.getRandomValues(new Uint8Array(32));
-  var assertion=await navigator.credentials.get({publicKey:{
-    challenge:challenge,
-    rpId:_rpId(),
-    allowCredentials:[{type:'public-key', id:_unb64(credId)}],
-    userVerification:'required',
-    timeout:60000,
-    extensions:{prf:{eval:{first:salt}}}
-  }});
-  var ext=assertion.getClientExtensionResults();
-  if(ext && ext.prf && ext.prf.results && ext.prf.results.first){ return ext.prf.results.first; }
-  return null;
-}
 async function enableBiometric(){
   if(!(await bioSupported())){ alert('Biometric unlock is not available on this device or browser.'); return; }
   try{
     var userId=crypto.getRandomValues(new Uint8Array(16));
     var challenge=crypto.getRandomValues(new Uint8Array(32));
-    var salt=crypto.getRandomValues(new Uint8Array(32));
     var cred=await navigator.credentials.create({publicKey:{
       challenge:challenge,
       rp:{id:_rpId(), name:'Shadow'},
       user:{id:userId, name:'shadow', displayName:'Shadow'},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred'},
-      timeout:60000,
-      extensions:{prf:{eval:{first:salt}}}
+      timeout:60000
     }});
-    var ext=cred.getClientExtensionResults();
-    if(!(ext && ext.prf && ext.prf.enabled)){
-      alert('This device can use Face ID/fingerprint but not the secure key feature Shadow needs. Keeping PIN only.');
-      return;
-    }
-    var credId=_b64(cred.rawId);
-    var secret=(ext.prf.results && ext.prf.results.first) ? ext.prf.results.first : await _bioPrf(credId, salt);
-    if(!secret){ alert('Could not finish biometric setup. Keeping PIN only.'); return; }
-    var key=await crypto.subtle.importKey('raw', secret, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
-    var blob=await _encryptSession(key);
-    if(!blob){ alert('No active session to protect. Please try again while signed in.'); return; }
-    localStorage.setItem(BIO_KEY, JSON.stringify({credId:credId, salt:_b64(salt), iv:blob.iv, ct:blob.ct}));
+    localStorage.setItem(BIO_KEY, JSON.stringify({credId:_b64(cred.rawId)}));
     alert('Biometric unlock enabled.');
-  }catch(e){
-    alert('Biometric setup was cancelled or failed. Keeping PIN only.');
-  }
+  }catch(e){ alert('Biometric setup was cancelled or failed. Keeping PIN only.'); }
 }
 async function toggleBiometric(){
   if(isBioSet()){
@@ -5594,16 +5552,15 @@ async function unlockWithBiometric(){
   if(!raw) return;
   var stored=JSON.parse(raw);
   try{
-    var secret=await _bioPrf(stored.credId, _unb64(stored.salt));
-    if(!secret) throw new Error('no-prf');
-    var key=await crypto.subtle.importKey('raw', secret, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
-    var dec=await crypto.subtle.decrypt({name:'AES-GCM', iv:_unb64(stored.iv)}, key, _unb64(stored.ct));
-    var toks=JSON.parse(new TextDecoder().decode(dec));
-    var res=await db.auth.setSession({access_token:toks.access_token, refresh_token:toks.refresh_token});
-    if(res.error) throw res.error;
-    document.getElementById('pinLockScreen').style.display='none';
-    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
-    startIdleWatch(); init();
+    var challenge=crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({publicKey:{
+      challenge:challenge,
+      rpId:_rpId(),
+      allowCredentials:[{type:'public-key', id:_unb64(stored.credId)}],
+      userVerification:'required',
+      timeout:60000
+    }});
+    _startApp();
   }catch(e){ /* cancelled or failed - fall back to PIN silently */ }
 }
 
