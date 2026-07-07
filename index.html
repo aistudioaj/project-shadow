@@ -1530,6 +1530,7 @@ html,body{height:100%;overflow:hidden;background:#04060e}
     <div style="font-family:var(--font-display);font-size:34px;font-weight:700;letter-spacing:8px;color:var(--blue)">SHADOW</div>
     <div style="width:26px;height:1px;background:var(--brass);margin:16px auto"></div>
     <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-bottom:26px">Locked</div>
+    <button id="bioUnlockBtn" onclick="unlockWithBiometric()" style="display:none;width:100%;background:transparent;color:var(--blue);border:1px solid var(--blue);border-radius:12px;padding:13px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:14px">Use Face ID / Fingerprint</button>
     <input id="pinLockInput" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')doUnlock()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-mono);letter-spacing:6px;text-align:center;font-size:18px;margin-bottom:16px;outline:none">
     <div id="pinLockErr" style="display:none;color:#ff6b6b;font-size:12.5px;margin-bottom:14px"></div>
     <button id="pinLockBtn" onclick="doUnlock()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Unlock</button>
@@ -2073,6 +2074,14 @@ html,body{height:100%;overflow:hidden;background:#04060e}
         <div class="me-row-info">
           <div class="me-row-title">Lock Shadow</div>
           <div class="me-row-sub">Require PIN to reopen</div>
+        </div>
+        <div class="me-row-arrow">&#8250;</div>
+      </div>
+      <div class="me-row" onclick="toggleBiometric()">
+        <div class="me-row-icon">&#128273;</div>
+        <div class="me-row-info">
+          <div class="me-row-title">Face ID / Fingerprint</div>
+          <div class="me-row-sub">Quick unlock (PIN stays as backup)</div>
         </div>
         <div class="me-row-arrow">&#8250;</div>
       </div>
@@ -5435,8 +5444,16 @@ async function doPinSetup(){
 function showLockScreen(){
   hideAllGates();
   var el=document.getElementById('pinLockScreen'); if(el) el.style.display='flex';
-  var i=document.getElementById('pinLockInput'); if(i){ i.value=''; i.focus(); }
+  var i=document.getElementById('pinLockInput'); if(i){ i.value=''; }
   var fb=document.getElementById('pinLockFallback'); if(fb) fb.style.display='none';
+  var bb=document.getElementById('bioUnlockBtn');
+  if(isBioSet()){
+    if(bb) bb.style.display='block';
+    setTimeout(function(){ unlockWithBiometric(); }, 400);
+  }else{
+    if(bb) bb.style.display='none';
+    if(i) i.focus();
+  }
 }
 async function doUnlock(){
   var pin=document.getElementById('pinLockInput').value||'';
@@ -5504,6 +5521,90 @@ function startIdleWatch(){
 function stopIdleWatch(){
   if(_idleTimer){ clearTimeout(_idleTimer); _idleTimer=null; }
   _idleEvents.forEach(function(ev){ document.removeEventListener(ev,_resetIdle); });
+}
+
+/* ===== Biometric unlock (WebAuthn PRF) - Phase 2 ===== */
+var BIO_KEY='shadow_bio';
+function isBioSet(){ try{ return !!localStorage.getItem(BIO_KEY); }catch(e){ return false; } }
+function _rpId(){ return location.hostname; }
+async function bioSupported(){
+  try{
+    if(!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) return false;
+    return !!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+  }catch(e){ return false; }
+}
+async function _bioPrf(credId, salt){
+  var challenge=crypto.getRandomValues(new Uint8Array(32));
+  var assertion=await navigator.credentials.get({publicKey:{
+    challenge:challenge,
+    rpId:_rpId(),
+    allowCredentials:[{type:'public-key', id:_unb64(credId)}],
+    userVerification:'required',
+    timeout:60000,
+    extensions:{prf:{eval:{first:salt}}}
+  }});
+  var ext=assertion.getClientExtensionResults();
+  if(ext && ext.prf && ext.prf.results && ext.prf.results.first){ return ext.prf.results.first; }
+  return null;
+}
+async function enableBiometric(){
+  if(!(await bioSupported())){ alert('Biometric unlock is not available on this device or browser.'); return; }
+  try{
+    var userId=crypto.getRandomValues(new Uint8Array(16));
+    var challenge=crypto.getRandomValues(new Uint8Array(32));
+    var salt=crypto.getRandomValues(new Uint8Array(32));
+    var cred=await navigator.credentials.create({publicKey:{
+      challenge:challenge,
+      rp:{id:_rpId(), name:'Shadow'},
+      user:{id:userId, name:'shadow', displayName:'Shadow'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred'},
+      timeout:60000,
+      extensions:{prf:{eval:{first:salt}}}
+    }});
+    var ext=cred.getClientExtensionResults();
+    if(!(ext && ext.prf && ext.prf.enabled)){
+      alert('This device can use Face ID/fingerprint but not the secure key feature Shadow needs. Keeping PIN only.');
+      return;
+    }
+    var credId=_b64(cred.rawId);
+    var secret=(ext.prf.results && ext.prf.results.first) ? ext.prf.results.first : await _bioPrf(credId, salt);
+    if(!secret){ alert('Could not finish biometric setup. Keeping PIN only.'); return; }
+    var key=await crypto.subtle.importKey('raw', secret, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+    var blob=await _encryptSession(key);
+    if(!blob){ alert('No active session to protect. Please try again while signed in.'); return; }
+    localStorage.setItem(BIO_KEY, JSON.stringify({credId:credId, salt:_b64(salt), iv:blob.iv, ct:blob.ct}));
+    alert('Biometric unlock enabled.');
+  }catch(e){
+    alert('Biometric setup was cancelled or failed. Keeping PIN only.');
+  }
+}
+async function toggleBiometric(){
+  if(isBioSet()){
+    if(confirm('Turn off biometric unlock? You will unlock with your PIN.')){
+      try{ localStorage.removeItem(BIO_KEY); }catch(e){}
+      alert('Biometric unlock turned off.');
+    }
+    return;
+  }
+  await enableBiometric();
+}
+async function unlockWithBiometric(){
+  var raw=localStorage.getItem(BIO_KEY);
+  if(!raw) return;
+  var stored=JSON.parse(raw);
+  try{
+    var secret=await _bioPrf(stored.credId, _unb64(stored.salt));
+    if(!secret) throw new Error('no-prf');
+    var key=await crypto.subtle.importKey('raw', secret, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+    var dec=await crypto.subtle.decrypt({name:'AES-GCM', iv:_unb64(stored.iv)}, key, _unb64(stored.ct));
+    var toks=JSON.parse(new TextDecoder().decode(dec));
+    var res=await db.auth.setSession({access_token:toks.access_token, refresh_token:toks.refresh_token});
+    if(res.error) throw res.error;
+    document.getElementById('pinLockScreen').style.display='none';
+    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
+    startIdleWatch(); init();
+  }catch(e){ /* cancelled or failed - fall back to PIN silently */ }
 }
 
 boot();
