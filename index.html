@@ -1496,6 +1496,21 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   <div class="splash-bar-wrap"><div class="splash-bar" id="splashBar"></div></div>
 </div>
 
+<!-- LOGIN GATE -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:1100;background:var(--bg0);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px">
+  <div style="width:100%;max-width:340px">
+    <div style="text-align:center;margin-bottom:38px">
+      <div style="font-family:var(--font-display);font-size:40px;font-weight:700;letter-spacing:10px;color:var(--blue)">SHADOW</div>
+      <div style="width:26px;height:1px;background:var(--brass);margin:16px auto 0"></div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-top:14px">Private Access</div>
+    </div>
+    <input id="loginEmail" type="email" autocomplete="username" placeholder="Email" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-body);font-size:15px;margin-bottom:12px;outline:none">
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-body);font-size:15px;margin-bottom:16px;outline:none">
+    <div id="loginErr" style="display:none;color:#ff6b6b;font-size:12.5px;margin-bottom:14px;text-align:center"></div>
+    <button id="loginBtn" onclick="doLogin()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Sign In</button>
+  </div>
+</div>
+
 <!-- TODAY SCREEN -->
 <div class="screen" id="homeScreen">
   <div class="home-hdr">
@@ -5284,7 +5299,40 @@ async function init(){
   },2500);
 }
 
-init();
+async function boot(){
+  let session=null;
+  try{ var r=await db.auth.getSession(); session=(r&&r.data)?r.data.session:null; }catch(e){ session=null; }
+  if(session){ init(); } else { showLoginScreen(); }
+}
+function showLoginScreen(){
+  var sp=document.getElementById('splash'); if(sp){ sp.style.display='none'; }
+  var ls=document.getElementById('loginScreen'); if(ls){ ls.style.display='flex'; }
+  var em=document.getElementById('loginEmail'); if(em){ em.focus(); }
+}
+async function doLogin(){
+  var em=(document.getElementById('loginEmail').value||'').trim();
+  var pw=document.getElementById('loginPass').value||'';
+  var err=document.getElementById('loginErr');
+  var btn=document.getElementById('loginBtn');
+  if(!em||!pw){ err.textContent='Enter your email and password.'; err.style.display='block'; return; }
+  err.style.display='none'; btn.disabled=true; btn.textContent='Signing in...';
+  try{
+    var res=await db.auth.signInWithPassword({ email:em, password:pw });
+    if(res.error){ throw res.error; }
+    document.getElementById('loginScreen').style.display='none';
+    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
+    init();
+  }catch(e){
+    err.textContent=(e&&e.message)?e.message:'Sign-in failed. Check your details.';
+    err.style.display='block'; btn.disabled=false; btn.textContent='Sign In';
+  }
+}
+async function signOut(){
+  try{ await db.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
+boot();
 </script>
 
 <!-- CONCIERGE SMART FORM OVERLAY -->
