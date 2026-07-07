@@ -1511,6 +1511,34 @@ html,body{height:100%;overflow:hidden;background:#04060e}
   </div>
 </div>
 
+<!-- PIN SETUP GATE -->
+<div id="pinSetupScreen" style="position:fixed;inset:0;z-index:1100;background:var(--bg0);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px">
+  <div style="width:100%;max-width:320px;text-align:center">
+    <div style="font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--t1)">Create a PIN</div>
+    <div style="width:26px;height:1px;background:var(--brass);margin:14px auto"></div>
+    <div style="font-family:var(--font-body);font-size:13px;color:var(--t3);margin-bottom:26px">Six digits. You'll use this to unlock Shadow.</div>
+    <input id="pinSetA" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Enter 6-digit PIN" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-mono);letter-spacing:6px;text-align:center;font-size:18px;margin-bottom:12px;outline:none">
+    <input id="pinSetB" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Confirm PIN" onkeydown="if(event.key==='Enter')doPinSetup()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-mono);letter-spacing:6px;text-align:center;font-size:18px;margin-bottom:16px;outline:none">
+    <div id="pinSetErr" style="display:none;color:#ff6b6b;font-size:12.5px;margin-bottom:14px"></div>
+    <button id="pinSetBtn" onclick="doPinSetup()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Set PIN</button>
+  </div>
+</div>
+
+<!-- PIN LOCK GATE -->
+<div id="pinLockScreen" style="position:fixed;inset:0;z-index:1100;background:var(--bg0);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px">
+  <div style="width:100%;max-width:320px;text-align:center">
+    <div style="font-family:var(--font-display);font-size:34px;font-weight:700;letter-spacing:8px;color:var(--blue)">SHADOW</div>
+    <div style="width:26px;height:1px;background:var(--brass);margin:16px auto"></div>
+    <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-bottom:26px">Locked</div>
+    <input id="pinLockInput" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')doUnlock()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-mono);letter-spacing:6px;text-align:center;font-size:18px;margin-bottom:16px;outline:none">
+    <div id="pinLockErr" style="display:none;color:#ff6b6b;font-size:12.5px;margin-bottom:14px"></div>
+    <button id="pinLockBtn" onclick="doUnlock()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Unlock</button>
+    <div id="pinLockFallback" style="display:none;margin-top:18px">
+      <div onclick="fullSignOut()" style="font-family:var(--font-body);font-size:13px;color:var(--t3);cursor:pointer;text-decoration:underline">Sign in with password instead</div>
+    </div>
+  </div>
+</div>
+
 <!-- TODAY SCREEN -->
 <div class="screen" id="homeScreen">
   <div class="home-hdr">
@@ -2037,6 +2065,25 @@ html,body{height:100%;overflow:hidden;background:#04060e}
         <div onclick="openAddMemory()" style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);cursor:pointer;padding:4px 0;opacity:0.9">+ ADD</div>
       </div>
       <div id="meMemoriesList"><div class="loading-row">Loading memories...</div></div>
+    </div>
+    <div class="me-section">
+      <div class="me-section-title">Security</div>
+      <div class="me-row" onclick="lockNow()">
+        <div class="me-row-icon">&#128274;</div>
+        <div class="me-row-info">
+          <div class="me-row-title">Lock Shadow</div>
+          <div class="me-row-sub">Require PIN to reopen</div>
+        </div>
+        <div class="me-row-arrow">&#8250;</div>
+      </div>
+      <div class="me-row" onclick="fullSignOut()">
+        <div class="me-row-icon">&#128682;</div>
+        <div class="me-row-info">
+          <div class="me-row-title">Sign Out</div>
+          <div class="me-row-sub">Log out completely</div>
+        </div>
+        <div class="me-row-arrow">&#8250;</div>
+      </div>
     </div>
     <div class="section-gap"></div>
   </div>
@@ -5300,12 +5347,20 @@ async function init(){
 }
 
 async function boot(){
-  let session=null;
-  try{ var r=await db.auth.getSession(); session=(r&&r.data)?r.data.session:null; }catch(e){ session=null; }
-  if(session){ init(); } else { showLoginScreen(); }
+  try{
+    if(isPinSet()){ showLockScreen(); return; }
+    var r=await db.auth.getSession();
+    var session=(r&&r.data)?r.data.session:null;
+    if(session){ showPinSetup(); } else { showLoginScreen(); }
+  }catch(e){ showLoginScreen(); }
+}
+function hideAllGates(){
+  ['splash','loginScreen','pinSetupScreen','pinLockScreen'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
 }
 function showLoginScreen(){
-  var sp=document.getElementById('splash'); if(sp){ sp.style.display='none'; }
+  hideAllGates();
   var ls=document.getElementById('loginScreen'); if(ls){ ls.style.display='flex'; }
   var em=document.getElementById('loginEmail'); if(em){ em.focus(); }
 }
@@ -5320,16 +5375,135 @@ async function doLogin(){
     var res=await db.auth.signInWithPassword({ email:em, password:pw });
     if(res.error){ throw res.error; }
     document.getElementById('loginScreen').style.display='none';
+    if(!isPinSet()){ showPinSetup(); return; }
     var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
-    init();
+    startIdleWatch(); init();
   }catch(e){
     err.textContent=(e&&e.message)?e.message:'Sign-in failed. Check your details.';
     err.style.display='block'; btn.disabled=false; btn.textContent='Sign In';
   }
 }
-async function signOut(){
+
+/* ===== App-lock (PIN) ===== */
+var LOCK_KEY='shadow_lock';
+var IDLE_MS=5*60*1000;
+var _lockKey=null;
+var _idleTimer=null;
+var _idleEvents=['click','keydown','touchstart','mousemove','scroll'];
+
+function isPinSet(){ try{ return !!localStorage.getItem(LOCK_KEY); }catch(e){ return false; } }
+function _b64(buf){ return btoa(String.fromCharCode.apply(null,new Uint8Array(buf))); }
+function _unb64(s){ return Uint8Array.from(atob(s),function(c){ return c.charCodeAt(0); }); }
+async function _deriveKey(pin,salt){
+  var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),{name:'PBKDF2'},false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function _encryptSession(key){
+  var r=await db.auth.getSession();
+  var s=(r&&r.data)?r.data.session:null;
+  if(!s) return null;
+  var iv=crypto.getRandomValues(new Uint8Array(12));
+  var data=new TextEncoder().encode(JSON.stringify({access_token:s.access_token,refresh_token:s.refresh_token}));
+  var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,data);
+  return { iv:_b64(iv), ct:_b64(ct) };
+}
+function showPinSetup(){
+  hideAllGates();
+  var el=document.getElementById('pinSetupScreen'); if(el) el.style.display='flex';
+  var a=document.getElementById('pinSetA'); var b=document.getElementById('pinSetB');
+  if(a){ a.value=''; } if(b){ b.value=''; } if(a){ a.focus(); }
+}
+async function doPinSetup(){
+  var a=document.getElementById('pinSetA').value||'';
+  var b=document.getElementById('pinSetB').value||'';
+  var err=document.getElementById('pinSetErr');
+  if(!/^[0-9]{6}$/.test(a)){ err.textContent='PIN must be exactly 6 digits.'; err.style.display='block'; return; }
+  if(a!==b){ err.textContent='PINs do not match.'; err.style.display='block'; return; }
+  err.style.display='none';
+  try{
+    var salt=crypto.getRandomValues(new Uint8Array(16));
+    var key=await _deriveKey(a,salt);
+    var blob=await _encryptSession(key);
+    if(!blob){ err.textContent='No active session. Please sign in again.'; err.style.display='block'; return; }
+    localStorage.setItem(LOCK_KEY,JSON.stringify({salt:_b64(salt),iv:blob.iv,ct:blob.ct}));
+    _lockKey=key;
+    document.getElementById('pinSetupScreen').style.display='none';
+    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
+    startIdleWatch(); init();
+  }catch(e){ err.textContent='Could not set PIN. Please try again.'; err.style.display='block'; }
+}
+function showLockScreen(){
+  hideAllGates();
+  var el=document.getElementById('pinLockScreen'); if(el) el.style.display='flex';
+  var i=document.getElementById('pinLockInput'); if(i){ i.value=''; i.focus(); }
+  var fb=document.getElementById('pinLockFallback'); if(fb) fb.style.display='none';
+}
+async function doUnlock(){
+  var pin=document.getElementById('pinLockInput').value||'';
+  var err=document.getElementById('pinLockErr');
+  var fb=document.getElementById('pinLockFallback');
+  if(!/^[0-9]{6}$/.test(pin)){ err.textContent='Enter your 6-digit PIN.'; err.style.display='block'; return; }
+  var raw=localStorage.getItem(LOCK_KEY);
+  if(!raw){ fullSignOut(); return; }
+  var stored=JSON.parse(raw);
+  var toks=null,key=null;
+  try{
+    key=await _deriveKey(pin,_unb64(stored.salt));
+    var dec=await crypto.subtle.decrypt({name:'AES-GCM',iv:_unb64(stored.iv)},key,_unb64(stored.ct));
+    toks=JSON.parse(new TextDecoder().decode(dec));
+  }catch(e){
+    err.textContent='Incorrect PIN. Please try again.'; err.style.display='block';
+    document.getElementById('pinLockInput').value='';
+    if(fb) fb.style.display='block';
+    return;
+  }
+  try{
+    var res=await db.auth.setSession({ access_token:toks.access_token, refresh_token:toks.refresh_token });
+    if(res.error) throw res.error;
+    _lockKey=key;
+    document.getElementById('pinLockScreen').style.display='none';
+    var sp=document.getElementById('splash'); if(sp){ sp.style.display='flex'; sp.classList.remove('out'); }
+    startIdleWatch(); init();
+  }catch(e){
+    err.textContent='Session expired. Please sign in with your password.'; err.style.display='block';
+    if(fb) fb.style.display='block';
+  }
+}
+async function lockNow(){
+  stopIdleWatch();
+  try{
+    if(_lockKey){
+      var blob=await _encryptSession(_lockKey);
+      if(blob){
+        var stored=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');
+        stored.iv=blob.iv; stored.ct=blob.ct;
+        localStorage.setItem(LOCK_KEY,JSON.stringify(stored));
+      }
+    }
+  }catch(e){}
+  _lockKey=null;
+  try{ await db.auth.signOut({ scope:'local' }); }catch(e){}
+  location.reload();
+}
+async function fullSignOut(){
+  stopIdleWatch(); _lockKey=null;
+  try{ localStorage.removeItem(LOCK_KEY); }catch(e){}
   try{ await db.auth.signOut(); }catch(e){}
   location.reload();
+}
+function signOut(){ return fullSignOut(); }
+function _resetIdle(){
+  if(_idleTimer) clearTimeout(_idleTimer);
+  _idleTimer=setTimeout(function(){ lockNow(); }, IDLE_MS);
+}
+function startIdleWatch(){
+  stopIdleWatch();
+  _idleEvents.forEach(function(ev){ document.addEventListener(ev,_resetIdle,{passive:true}); });
+  _resetIdle();
+}
+function stopIdleWatch(){
+  if(_idleTimer){ clearTimeout(_idleTimer); _idleTimer=null; }
+  _idleEvents.forEach(function(ev){ document.removeEventListener(ev,_resetIdle); });
 }
 
 boot();
