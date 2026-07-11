@@ -1787,7 +1787,7 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
       <div class="screen-sub">Portfolio, markets, budget &amp; briefs</div>
     </div>
   </div>
-  <div style="max-width:840px;margin:0 auto;padding:0 16px 4px">
+  <div style="max-width:840px;margin:0 auto;padding:16px 16px 4px">
     <div onclick="openInvest()" style="background:var(--bg1);border:1px solid rgba(56,189,248,.3);border-radius:14px;padding:16px;cursor:pointer;margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)">Trade Desk &middot; paper</div>
@@ -2220,10 +2220,12 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
     </div>
     <div class="me-section">
       <div class="me-section-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>Memory</span>
+        <span onclick="toggleMemory()" style="cursor:pointer;display:inline-flex;align-items:center;gap:8px"><span id="memChevron" style="display:inline-block;color:var(--blue);transition:transform .15s">&#8250;</span>Memory<span style="font-family:var(--font-mono);font-size:9px;color:var(--t3);letter-spacing:1px;text-transform:none">&middot; tap to view</span></span>
         <div onclick="openAddMemory()" style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);cursor:pointer;padding:4px 0;opacity:0.9">+ ADD</div>
       </div>
-      <div id="meMemoriesList"><div class="loading-row">Loading memories...</div></div>
+      <div id="meMemoriesWrap" style="display:none">
+        <div id="meMemoriesList"><div class="loading-row">Loading memories...</div></div>
+      </div>
     </div>
     <div class="me-section">
       <div class="me-section-title">Security</div>
@@ -6744,6 +6746,7 @@ async function runTradeDesk() {
 
 <script>
 function suToggleRaw(){var r=document.getElementById('suRawlist');if(r)r.classList.toggle('open');}
+function toggleMemory(){var w=document.getElementById('meMemoriesWrap');var c=document.getElementById('memChevron');if(!w)return;var open=w.style.display!=='none';w.style.display=open?'none':'block';if(c)c.style.transform=open?'rotate(0deg)':'rotate(90deg)';}
 (function(){function L(a,b){var A=document.getElementById(a),B=document.getElementById(b);if(!A||!B)return;A.addEventListener('mouseenter',function(){B.classList.add('hl');A.classList.add('hl');});A.addEventListener('mouseleave',function(){B.classList.remove('hl');A.classList.remove('hl');});}[['susb1','susc1'],['susb2','susc2'],['susb3','susc3']].forEach(function(x){L(x[0],x[1]);L(x[1],x[0]);});})();
 </script>
 </body>
