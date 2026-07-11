@@ -72,11 +72,11 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
   transition:opacity 0.6s ease;
 }
 #splash.out{opacity:0;pointer-events:none}
+.splash-mark{filter:drop-shadow(0 0 12px rgba(56,189,248,0.6));margin-bottom:2px}
 .splash-logo{
-  font-family:var(--font-display);
-  font-size:52px;font-weight:700;
-  letter-spacing:12px;color:var(--blue);
-  text-shadow:0 0 40px var(--blue-glow);
+  font-family:var(--font-mono);
+  font-size:30px;font-weight:500;
+  letter-spacing:9px;color:var(--t1);
 }
 .splash-sub{
   font-family:var(--font-mono);
@@ -1599,8 +1599,9 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
 
 <!-- SPLASH -->
 <div id="splash">
+  <div class="splash-mark"><svg width="60" height="48" viewBox="0 0 20 16"><path d="M2 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><path d="M12 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg></div>
   <div class="splash-logo">SHADOW</div>
-  <div class="splash-sub">Personal Intelligence</div>
+  <div class="splash-sub">One source &middot; total clarity</div>
   <div class="splash-bar-wrap"><div class="splash-bar" id="splashBar"></div></div>
 </div>
 
@@ -1608,14 +1609,14 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
 <div id="loginScreen" style="position:fixed;inset:0;z-index:1100;background:var(--bg0);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px">
   <div style="width:100%;max-width:340px">
     <div style="text-align:center;margin-bottom:38px">
-      <div style="font-family:var(--font-display);font-size:40px;font-weight:700;letter-spacing:10px;color:var(--blue)">SHADOW</div>
-      <div style="width:26px;height:1px;background:var(--brass);margin:16px auto 0"></div>
-      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-top:14px">Private Access</div>
+      <div style="display:flex;justify-content:center;margin-bottom:16px;filter:drop-shadow(0 0 12px rgba(56,189,248,0.55))"><svg width="54" height="43" viewBox="0 0 20 16"><path d="M2 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><path d="M12 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg></div>
+      <div style="font-family:var(--font-mono);font-size:22px;font-weight:500;letter-spacing:6px;color:var(--t1)">SHADOW</div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-top:14px">One source &middot; total clarity</div>
     </div>
     <input id="loginEmail" type="email" autocomplete="username" placeholder="Email" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-body);font-size:15px;margin-bottom:12px;outline:none">
     <input id="loginPass" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--t1);font-family:var(--font-body);font-size:15px;margin-bottom:16px;outline:none">
     <div id="loginErr" style="display:none;color:#ff6b6b;font-size:12.5px;margin-bottom:14px;text-align:center"></div>
-    <button id="loginBtn" onclick="doLogin()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Sign In</button>
+    <button id="loginBtn" onclick="doLogin()" style="width:100%;background:var(--blue);color:#06283a;border:none;border-radius:12px;padding:15px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer">Sign In</button>
   </div>
 </div>
 
