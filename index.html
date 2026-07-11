@@ -146,33 +146,35 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
 }
 .nav-btn.active::after{transform:scaleX(1)}
 
-/* DESKTOP PORTAL (>=900px) */
+/* DESKTOP PORTAL (>=800px) */
 .rail-logo{display:none;align-items:center;gap:9px;padding:4px 10px 22px}
 .rail-logo .rl-wm{font-family:var(--font-mono);font-size:13px;font-weight:500;letter-spacing:2px;color:var(--t1)}
-@media (min-width:900px){
-  #app{flex-direction:row}
+@media (min-width:800px){
+  #app{flex-direction:row !important}
   #nav{
-    position:static;transform:none;order:-1;
-    width:216px;max-width:216px;height:100vh;
-    flex-direction:column;align-items:stretch;justify-content:flex-start;
-    padding:20px 12px;gap:4px;
-    border-top:none;border-right:1px solid var(--border);
-    background:var(--bg1);backdrop-filter:none;-webkit-backdrop-filter:none;
+    position:static !important;order:-1 !important;
+    left:auto !important;right:auto !important;top:auto !important;bottom:auto !important;
+    transform:none !important;
+    width:220px !important;max-width:220px !important;min-width:220px !important;height:100vh !important;
+    flex-direction:column !important;align-items:stretch !important;justify-content:flex-start !important;
+    padding:22px 12px !important;gap:4px !important;
+    border-top:none !important;border-right:1px solid var(--border) !important;
+    background:var(--bg1) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
   }
-  .rail-logo{display:flex}
+  .rail-logo{display:flex !important}
   .nav-btn{
-    flex:none;flex-direction:row;justify-content:flex-start;align-items:center;
-    gap:12px;padding:11px 12px;border-radius:10px;
+    flex:0 0 auto !important;flex-direction:row !important;justify-content:flex-start !important;align-items:center !important;
+    gap:12px !important;padding:11px 12px !important;border-radius:10px !important;
   }
-  .nav-btn .nav-icon{font-size:17px}
+  .nav-btn .nav-icon{font-size:17px;line-height:0}
   .nav-btn .nav-lbl{font-size:11px}
   .nav-btn.active{background:var(--blue-dim)}
-  .nav-btn::after{display:none}
+  .nav-btn::after{display:none !important}
   .nav-badge{top:10px;right:14px}
-  .home-hdr,.screen-hdr{max-width:820px;margin-left:auto;margin-right:auto;width:100%}
+  .home-hdr,.screen-hdr{max-width:840px;margin-left:auto;margin-right:auto;width:100%}
   .scroll-body{
-    max-width:820px;margin-left:auto;margin-right:auto;width:100%;
-    padding-left:20px;padding-right:20px;padding-bottom:32px;
+    max-width:840px !important;margin-left:auto !important;margin-right:auto !important;width:100% !important;
+    padding-left:24px !important;padding-right:24px !important;padding-bottom:32px !important;
   }
 }
 .nav-badge{
@@ -1514,6 +1516,62 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
 .csf-shadow-note{display:flex;align-items:center;gap:8px;background:var(--blue-dim);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
 .csf-note-txt{font-size:12px;color:var(--t2)}
 
+
+/* ===== SUHAIL SCREEN (Rebirth) ===== */
+#suhailScreen .agentbar{display:flex;align-items:center;gap:13px;background:var(--bg1);border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:4px}
+#suhailScreen .abadge{width:36px;height:36px;border-radius:10px;background:var(--blue-dim);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#suhailScreen .aname{font-family:var(--font-mono);font-size:14px;letter-spacing:1.5px;color:var(--t1)}
+#suhailScreen .arole{font-family:var(--font-body);font-size:12px;color:var(--t3);margin-top:1px}
+#suhailScreen .astat{margin-left:auto;text-align:right}
+#suhailScreen .astat .s1{font-family:var(--font-mono);font-size:10px;color:var(--blue);display:flex;align-items:center;gap:6px;justify-content:flex-end}
+#suhailScreen .astat .live{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:suBlink 1.6s ease-in-out infinite}
+#suhailScreen .astat .s2{font-family:var(--font-mono);font-size:9px;color:var(--t3);margin-top:3px}
+@keyframes suBlink{0%,100%{opacity:1}50%{opacity:.25}}
+#suhailScreen .zonelbl{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin:24px 0 6px;display:flex;align-items:center;gap:10px}
+#suhailScreen .zonelbl b{color:var(--blue);font-weight:500}
+#suhailScreen .zonelbl::after{content:'';flex:1;height:1px;background:var(--border)}
+#suhailScreen .radarwrap{display:flex;justify-content:center;padding:14px 0 4px}
+#suhailScreen .radar{position:relative;width:340px;height:340px;max-width:82vw}
+#suhailScreen .rface{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,0.06),transparent 70%)}
+#suhailScreen .rr{position:absolute;border:1px solid rgba(56,189,248,0.14);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+#suhailScreen .rr1{width:100%;height:100%}#suhailScreen .rr2{width:73%;height:73%}#suhailScreen .rr3{width:47%;height:47%}#suhailScreen .rr4{width:22%;height:22%}
+#suhailScreen .sweep{position:absolute;top:50%;left:50%;width:50%;height:50%;transform-origin:top left;background:conic-gradient(from 0deg,rgba(56,189,248,0.30),rgba(56,189,248,0.02) 44deg,transparent 64deg);border-radius:0 100% 0 0;animation:suSpin 5s linear infinite}
+@keyframes suSpin{to{transform:rotate(360deg)}}
+#suhailScreen .cc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 9px rgba(56,189,248,0.75))}
+#suhailScreen .sector{position:absolute;font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--t3);text-transform:uppercase}
+#suhailScreen .blip{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:suPulse 3s ease-in-out infinite;cursor:pointer;transition:transform .15s}
+#suhailScreen .blip.am{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+#suhailScreen .blip.amb{width:7px;height:7px;opacity:.5}
+#suhailScreen .blip.hl{transform:scale(1.7);animation:none}
+@keyframes suPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+#suhailScreen .blip .bl{position:absolute;bottom:160%;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:9px;color:var(--t1);white-space:nowrap;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 7px;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:0 4px 12px rgba(0,0,0,.45);z-index:3}
+#suhailScreen .blip:hover .bl,#suhailScreen .blip.hl .bl{opacity:1}
+#suhailScreen .rawbtn{display:flex;justify-content:center;margin:12px 0 4px}
+#suhailScreen .rawbtn span{font-family:var(--font-mono);font-size:11px;color:var(--blue);border:1px solid var(--border);border-radius:20px;padding:8px 16px;cursor:pointer}
+#suhailScreen .rawlist{display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:6px 14px}
+#suhailScreen .rawlist.open{display:block}
+#suhailScreen .signal{display:flex;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);text-decoration:none;cursor:pointer}
+#suhailScreen .signal:last-child{border:none}
+#suhailScreen .signal .dom{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;width:66px;flex-shrink:0}
+#suhailScreen .signal .stx{font-family:var(--font-body);font-size:12px;color:var(--t2);flex:1}
+#suhailScreen .signal .stx b{color:var(--t1);font-weight:500}
+#suhailScreen .signal .src{font-family:var(--font-mono);font-size:9px;color:var(--t3);margin-left:6px}
+#suhailScreen .signal .go2{font-family:var(--font-mono);font-size:13px;color:var(--blue)}
+#suhailScreen .synsub{font-size:12px;color:var(--t3);margin-bottom:14px}
+#suhailScreen .syn{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+#suhailScreen .scard{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;border-top:2px solid var(--blue);display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s,transform .15s}
+#suhailScreen .scard.warn{border-top-color:var(--amber)}
+#suhailScreen .scard.hl{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),0 8px 24px rgba(56,189,248,0.15);transform:translateY(-2px)}
+#suhailScreen .vfd{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:8px}
+#suhailScreen .frm{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+#suhailScreen .mean{font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--t1);line-height:1.45;margin-bottom:10px}
+#suhailScreen .subt{font-family:var(--font-body);font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:14px}
+#suhailScreen .fb{margin-top:auto;border-top:1px solid var(--border);padding-top:12px;display:flex;align-items:center;gap:8px}
+#suhailScreen .fb .q{font-family:var(--font-mono);font-size:9px;color:var(--t3);margin-right:auto}
+#suhailScreen .fbtn{font-family:var(--font-body);font-size:12px;font-weight:500;width:30px;height:26px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer}
+#suhailScreen .fbtn.up{color:var(--blue)}
+#suhailScreen .fbtn.dn{color:var(--t3)}
+@media(max-width:640px){#suhailScreen .syn{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1656,6 +1714,50 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
   </div>
 </div>
 
+
+
+<!-- SUHAIL SCREEN (Rebirth) -->
+<div class="screen" id="suhailScreen">
+  <div class="scroll-body" style="padding:20px 18px 80px">
+    <div class="agentbar">
+      <div class="abadge"><svg width="20" height="16" viewBox="0 0 20 16"><path d="M2 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><path d="M12 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg></div>
+      <div><div class="aname">SUHAIL</div><div class="arole">Watches the horizon, owns the read</div></div>
+      <div class="astat"><div class="s1"><span class="live"></span>SCANNING &middot; 6 DOMAINS</div><div class="s2">tuned by 47 signals you've rated</div></div>
+    </div>
+    <div class="zonelbl">The horizon &mdash; <b>what Suhail is scanning</b></div>
+    <div class="radarwrap"><div class="radar">
+      <div class="rface"></div>
+      <div class="rr rr1"></div><div class="rr rr2"></div><div class="rr rr3"></div><div class="rr rr4"></div>
+      <div class="sweep"></div>
+      <div class="sector" style="top:-4px;left:50%;transform:translateX(-50%)">Markets</div>
+      <div class="sector" style="top:33%;right:-6px">Economy</div>
+      <div class="sector" style="bottom:12%;right:-2px">Geopolitics</div>
+      <div class="sector" style="bottom:-4px;left:50%;transform:translateX(-50%)">Energy</div>
+      <div class="sector" style="bottom:12%;left:-2px">Weather</div>
+      <div class="sector" style="top:33%;left:-8px">AI / Tech</div>
+      <div class="blip am" id="susb1" style="top:52%;left:57%"><span class="bl">Oil +3%</span></div>
+      <div class="blip am" id="susb2" style="top:44%;left:40%"><span class="bl">Chip rules</span></div>
+      <div class="blip" id="susb3" style="top:58%;left:44%"><span class="bl">44&deg;C</span></div>
+      <div class="blip amb" style="top:22%;left:66%"><span class="bl">Fed holds</span></div>
+      <div class="blip amb" style="top:74%;left:24%"><span class="bl">USD up</span></div>
+      <div class="cc"><svg width="30" height="24" viewBox="0 0 20 16"><path d="M2 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><path d="M12 2 l5 6 l-5 6" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg></div>
+    </div></div>
+    <div class="rawbtn"><span onclick="suToggleRaw()">Raw signals &middot; tap to open &rsaquo;</span></div>
+    <div class="rawlist" id="suRawlist">
+      <a class="signal" href="#"><div class="dom">Markets</div><div class="stx"><b>Fed holds rates.</b> Dollar firms.<span class="src">Reuters</span></div><span class="go2">&rsaquo;</span></a>
+      <a class="signal" href="#"><div class="dom">Energy</div><div class="stx"><b>Brent +3%</b> on OPEC+ cut.<span class="src">Bloomberg</span></div><span class="go2">&rsaquo;</span></a>
+      <a class="signal" href="#"><div class="dom">Geo/AI</div><div class="stx"><b>US chip export rules</b> proposed.<span class="src">FT</span></div><span class="go2">&rsaquo;</span></a>
+      <a class="signal" href="#"><div class="dom">Weather</div><div class="stx">Gulf heat &mdash; 44&deg;C this week.<span class="src">AccuWeather</span></div><span class="go2">&rsaquo;</span></a>
+    </div>
+    <div class="zonelbl">What this means for <b>you</b></div>
+    <div class="synsub">Suhail's read, deliberated by the Council and verified. Rate each &mdash; it sharpens the next.</div>
+    <div class="syn">
+      <div class="scard warn" id="susc1"><div class="vfd">&#10003; Council-verified</div><div class="frm">Energy &middot; Markets &rarr; You</div><div class="mean">Oil's run helps your book but squeezes your costs.</div><div class="subt">XLE up on the OPEC cut &mdash; net positive. But it lifts UAE inflation and your travel spend. Hold; watch the budget.</div><div class="fb"><span class="q">Useful?</span><button class="fbtn up">&#10003;</button><button class="fbtn dn">&#10007;</button></div></div>
+      <div class="scard warn" id="susc2"><div class="vfd">&#10003; Council-verified</div><div class="frm">AI / Geopolitics &rarr; You</div><div class="mean">Hold off on the AI names you've been eyeing.</div><div class="subt">The chip rules barely touch your holdings but add volatility to your watchlist. Let it settle before adding.</div><div class="fb"><span class="q">Useful?</span><button class="fbtn up">&#10003;</button><button class="fbtn dn">&#10007;</button></div></div>
+      <div class="scard" id="susc3"><div class="vfd">&#10003; Council-verified</div><div class="frm">Weather &middot; Health &rarr; You</div><div class="mean">The heat will wreck your outdoor training this week.</div><div class="subt">44&deg;C midday hits Body Battery. I've moved workouts to early morning and flagged hydration.</div><div class="fb"><span class="q">Useful?</span><button class="fbtn up">&#10003;</button><button class="fbtn dn">&#10007;</button></div></div>
+    </div>
+  </div>
+</div>
 
 <!-- INTELLIGENCE SCREEN -->
 <div class="screen" id="financialScreen">
@@ -2231,20 +2333,28 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
 <div id="nav">
   <div class="rail-logo"><svg width="20" height="16" viewBox="0 0 20 16"><path d="M2 2 l5 6 l-5 6" fill="none" stroke="var(--t1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2 l5 6 l-5 6" fill="none" stroke="var(--t1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><path d="M12 2 l5 6 l-5 6" fill="none" stroke="var(--t1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg><span class="rl-wm">SHADOW</span></div>
   <div class="nav-btn active" data-tab="home" onclick="switchNav('home',this)">
-    <div class="nav-icon">🏠</div>
+    <div class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 L12 4 L20 11"/><path d="M6 10 V20 H18 V10"/></svg></div>
     <div class="nav-lbl">Home</div>
     <div class="nav-badge" id="alertBadge"></div>
   </div>
+  <div class="nav-btn" data-tab="suhail" onclick="switchNav('suhail',this)">
+    <div class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><path d="M12 4 V6 M12 18 V20 M4 12 H6 M18 12 H20"/></svg></div>
+    <div class="nav-lbl">Suhail</div>
+  </div>
+  <div class="nav-btn" onclick="openCouncil()">
+    <div class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11" r="3"/><circle cx="5.5" cy="7" r="1.6"/><circle cx="18.5" cy="7" r="1.6"/><path d="M5 18 A7 5 0 0 1 19 18"/></svg></div>
+    <div class="nav-lbl">Council</div>
+  </div>
   <div class="nav-btn" data-tab="financial" onclick="switchNav('financial',this)">
-    <div class="nav-icon">💰</div>
+    <div class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16 L10 10 L13 13 L20 6"/><path d="M15 6 H20 V11"/></svg></div>
     <div class="nav-lbl">Treasury</div>
   </div>
   <div class="nav-btn" data-tab="life" onclick="switchNav('life',this)">
-    <div class="nav-icon">🌿</div>
+    <div class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13 h4 l2 4 l3 -9 l2 5 h5"/></svg></div>
     <div class="nav-lbl">Life</div>
   </div>
   <div class="nav-btn" data-tab="me" onclick="switchNav('me',this)">
-    <div class="nav-icon">👤</div>
+    <div class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19 A6.5 6.5 0 0 1 18.5 19"/></svg></div>
     <div class="nav-lbl">Me</div>
   </div>
 </div>
@@ -2326,7 +2436,7 @@ function updateClock(){
 
 // ── NAV ──
 function switchNav(tab,el){
-  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','suhailScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);
     if(s)s.classList.remove('active');
   });
@@ -2427,7 +2537,7 @@ function selectBudgetCat(el){
 
 function openAddBudget(){
   prevScreen='financial';
-  ['homeScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
+  ['homeScreen','suhailScreen','financialScreen','lifeScreen','meScreen','briefScreen','travelScreen','addHoldingScreen','addMemoryScreen','addBudgetScreen','tasksScreen'].forEach(id=>{
     const s=document.getElementById(id);if(s)s.classList.remove('active');
   });
   document.getElementById('addBudgetScreen').classList.add('active');
@@ -6588,6 +6698,11 @@ async function runTradeDesk() {
   }
 }
 
+</script>
+
+<script>
+function suToggleRaw(){var r=document.getElementById('suRawlist');if(r)r.classList.toggle('open');}
+(function(){function L(a,b){var A=document.getElementById(a),B=document.getElementById(b);if(!A||!B)return;A.addEventListener('mouseenter',function(){B.classList.add('hl');A.classList.add('hl');});A.addEventListener('mouseleave',function(){B.classList.remove('hl');A.classList.remove('hl');});}[['susb1','susc1'],['susb2','susc2'],['susb3','susc3']].forEach(function(x){L(x[0],x[1]);L(x[1],x[0]);});})();
 </script>
 </body>
 </html>
