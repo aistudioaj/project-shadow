@@ -5970,7 +5970,9 @@ async function submitToCouncil() {
       '- Note the single biggest risk to your position.\n' +
       'Two specialist reviewers will challenge this draft, so commit to a view rather than hedging. Under 300 words.';
 
-    var leadDraft = await callCouncilModel(leadModel, leadPrompt);
+    var leadRes = await councilTry(leadModel, leadPrompt);
+    leadModel = leadRes.model;
+    var leadDraft = leadRes.text;
 
     // Step 3: Reviewers in parallel
     updateCouncilStatus('Reviewers challenging the draft...');
@@ -5994,8 +5996,8 @@ async function submitToCouncil() {
       '- The most useful immediate action AJ could take within 48 hours.\n' +
       'Fresh material only - do not critique style. Under 130 words, bullet style.';
 
-    var review1 = await callCouncilModel(reviewModels[0], reviewPrompt1);
-    var review2 = await callCouncilModel(reviewModels[1], reviewPrompt2);
+    var review1 = (await councilTrySafe(reviewModels[0], reviewPrompt1)).text;
+    var review2 = (await councilTrySafe(reviewModels[1], reviewPrompt2)).text;
 
     // Step 4: Lead refines into final position
     updateCouncilStatus('Producing final position...');
@@ -6011,7 +6013,7 @@ async function submitToCouncil() {
       'ALTERNATIVE TO CONSIDER: One genuine alternative with its trade-off quantified.\n\n' +
       'Tone: senior partner to client - warm, direct, zero filler. No markdown headers beyond the four labels above.';
 
-    var finalPosition = await callCouncilModel(leadModel, finalPrompt);
+    var finalPosition = (await councilTry(leadModel, finalPrompt)).text;
 
     // Remove thinking
     var think = document.getElementById('councilThink');
@@ -6045,6 +6047,19 @@ async function submitToCouncil() {
   councilAttachments = [];
 }
 
+async function councilTry(model, prompt) {
+  var order = [model].concat(['claude','perplexity','gpt4o'].filter(function(m){ return m !== model; }));
+  var lastErr;
+  for (var i=0;i<order.length;i++) {
+    try { return { model: order[i], text: await callCouncilModel(order[i], prompt) }; }
+    catch(e) { lastErr = e; }
+  }
+  throw new Error('All Council models unavailable: ' + (lastErr && lastErr.message ? lastErr.message : 'unknown'));
+}
+async function councilTrySafe(model, prompt) {
+  try { return await councilTry(model, prompt); }
+  catch(e) { return { model: null, text: '' }; }
+}
 async function callCouncilModel(model, prompt) {
   try {
     return await callCouncilModelOnce(model, prompt);
