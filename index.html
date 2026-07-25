@@ -3596,12 +3596,12 @@ async function triggerConciergeQuestions(id, item) {
 
   var briefCtx = (item.notes || '').replace(/[#*|]/g, '').replace(/[\r\n]+/g, ' ').trim().substring(0, 400);
 
-  var sysPmt = 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE.' +
-    ' Review the trip details provided. If you have everything needed, say: "Perfect, I have all the details. Tap BUILD MY BRIEF when ready." and nothing else.' +
-    ' Only ask questions if something critical is genuinely missing (e.g. destination unknown, no dates at all).' +
-    ' Maximum 2 questions. Keep each under 12 words.';
+  var isTrip = (item.category === 'travel');
+  var sysPmt = isTrip
+    ? 'You are Shadow, a personal chief of staff for AJ based in Abu Dhabi UAE. Review the trip details provided. If you have everything needed, say: "Perfect, I have all the details. Tap BUILD MY BRIEF when ready." and nothing else. Only ask questions if something critical is genuinely missing (e.g. destination unknown, no dates at all). Maximum 2 questions. Keep each under 12 words.'
+    : 'You are Shadow, a personal chief of staff for AJ in Abu Dhabi UAE. The request category is "' + (item.category || 'other') + '". If you understand the task well enough to act, reply exactly: "Got it - tap BUILD MY BRIEF when ready." and nothing else. Only ask a question if something critical is genuinely missing. Maximum 2 questions, each under 12 words. NEVER ask about travel, destination, or dates unless it is a trip.';
 
-  var userMsg = 'Trip details provided by AJ: ' + (briefCtx || item.title || 'No details');
+  var userMsg = (isTrip ? 'Trip details provided by AJ: ' : 'Request from AJ: ') + (briefCtx || item.title || 'No details');
 
   try {
     var r = await fetch(PROXY, {
@@ -3812,6 +3812,37 @@ async function triggerConciergeBrief(id, item) {
     return (m.role === 'user' ? 'AJ: ' : 'Shadow: ') + m.content;
   }).join('\n');
 
+  // NON-TRAVEL requests: a real concierge response, not a forced trip brief
+  if (item.category !== 'travel') {
+    var gSys = 'You are Shadow Concierge for AJ in Abu Dhabi, UAE. The request category is "' + (item.category || 'other') + '". ' +
+      'Reply concisely and usefully: one line showing you understand the task, then 2-4 concrete options or next steps, then anything you need from AJ to proceed. ' +
+      'Warm but economical. PLAIN TEXT ONLY - absolutely no JSON, no flights/hotels/itinerary. This is NOT a trip.';
+    var gUser = 'Request: ' + (item.title || originalBrief || 'No details') + (fullConvo ? ('\n\nConversation so far:\n' + fullConvo.substring(0, 600)) : '');
+    try {
+      var gr = await fetch(PROXY, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: MODEL, max_tokens: 800, system: gSys, messages: [{role: 'user', content: gUser}]})
+      });
+      var gd = await gr.json();
+      var gThink = document.getElementById('conThink_' + id);
+      if (gThink) gThink.remove();
+      var gText = (gd.content && gd.content[0] && gd.content[0].text) ? gd.content[0].text.trim()
+        : (gd.error ? ('I hit a snag reaching my tools (' + (gd.error.message || gd.error.type) + '). Try again in a moment.') : 'Let me try that again.');
+      appendConMessage(id, 'assistant', gText);
+      conTaskChats[id] = conTaskChats[id] || [];
+      conTaskChats[id].push({role: 'assistant', content: gText});
+      saveConMessage(id, 'assistant', gText);
+      try { await db.from('shadow_concierge').update({notes: gText, status: 'handling'}).eq('id', id); await loadConcierge(); } catch(e) { console.log('con save error', e); }
+    } catch(e) {
+      var gThink2 = document.getElementById('conThink_' + id);
+      if (gThink2) gThink2.remove();
+      appendConMessage(id, 'assistant', 'Connection error: ' + e.message);
+    }
+    return;
+  }
+
+  // TRAVEL: full trip brief (flights/hotels/itinerary)
   // Run Tavily search at confirmation time for fresh data
   var searchCtx = '';
   try {
