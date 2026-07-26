@@ -2411,6 +2411,7 @@ html,body{height:100%;overflow:hidden;background:#0a0b0e}
 <script>
 // ── CONFIG ──
 const PROXY='https://shadow-proxy.aistudio-aj.workers.dev/';
+const SHADOW_CORE='https://shadow-core-production.up.railway.app/';
 const FINNHUB_KEY='d803371r01qj3ct8s9ugd803371r01qj3ct8s9v0';
 const FINNHUB='https://finnhub.io/api/v1';
 const SB_URL='https://xqdnohqbimfrtalvdmyp.supabase.co';
@@ -5977,7 +5978,32 @@ async function submitToCouncil() {
       historyCtx = 'PREVIOUS COUNCIL EXCHANGE (for continuity - AJ may be following up):\nQ: ' + last.prompt.substring(0, 300) + '\nFinal position given: ' + last.final.substring(0, 900) + '\n\n';
     }
     var profileCtx = window._shadowProfile ? ('AJ INVESTMENT PROFILE (self-declared, current): ' + window._shadowProfile + '\n') : '';
-    var baseContext = historyCtx + profileCtx + 'You are part of The Council - an elite private advisory panel serving AJ, a senior UHNW executive in Abu Dhabi, UAE.\n' +
+    // --- Decision ledger retrieval (B-3): pull semantically relevant past decisions ---
+    var ledgerCtx = '';
+    try {
+      var _sess = await db.auth.getSession();
+      var _token = (_sess && _sess.data && _sess.data.session) ? _sess.data.session.access_token : null;
+      if (_token && SHADOW_CORE.indexOf('REPLACE-WITH') === -1) {
+        var _rr = await fetch(SHADOW_CORE + 'retrieve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token },
+          body: JSON.stringify({ query: prompt, match_count: 3 })
+        });
+        if (_rr.ok) {
+          var _rd = await _rr.json();
+          var _matches = (_rd && _rd.matches) || [];
+          if (_matches.length > 0) {
+            ledgerCtx = 'RELEVANT PAST DECISIONS (from AJ own decision ledger - his real track record; reference where relevant and note if a past view still holds or has since changed):\n' +
+              _matches.map(function(m){
+                var _when = m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB') : '';
+                return '- [' + _when + '] Q: ' + (m.question||'').substring(0,160) + ' -> VERDICT: ' + (m.verdict||'').substring(0,240);
+              }).join('\n') + '\n\n';
+          }
+        }
+      }
+    } catch(e) { console.log('ledger retrieval skipped: ' + e.message); }
+
+    var baseContext = historyCtx + ledgerCtx + profileCtx + 'You are part of The Council - an elite private advisory panel serving AJ, a senior UHNW executive in Abu Dhabi, UAE.\n' +
       'TODAY IS ' + today + '. Treat any data older than 3 months as stale: state its date and flag it as needing verification.\n' +
       'CURRENCY: All amounts AJ mentions are AED unless he explicitly says otherwise. Quote figures in AED, with USD equivalent in brackets where useful.\n' +
       'LIVE SEARCH CONTEXT (from the last few minutes): ' + searchCtx.substring(0, 900) + '\n' +
@@ -6064,6 +6090,26 @@ async function submitToCouncil() {
 
     // Save to history
     councilHistory.push({ prompt: prompt, task: task.config.label, final: finalPosition, timestamp: new Date() });
+
+    // --- Decision ledger (v54): persist this Council verdict. Fire-and-forget; never blocks UI. ---
+    (function(){
+      try {
+        var vMatch = finalPosition.match(/VERDICT:\s*([\s\S]*?)(?:\n\s*\n|ANALYSIS:|$)/i);
+        var verdictLine = vMatch ? vMatch[1].trim() : '';
+        db.from('shadow_ledger').insert({
+          entry_type: 'council_verdict',
+          question: prompt,
+          verdict: verdictLine,
+          full_position: finalPosition,
+          category: (task && task.config && task.config.label) ? task.config.label : null,
+          models: { lead: leadModel, reviewers: reviewModels },
+          raw: { leadDraft: leadDraft, review1: review1, review2: review2 }
+        }).then(function(res){
+          if (res && res.error) { console.log('[ledger] write failed: ' + res.error.message); }
+          else { console.log('[ledger] council verdict saved'); }
+        });
+      } catch(e) { console.log('[ledger] write exception: ' + e.message); }
+    })();
 
   } catch(e) {
     var think = document.getElementById('councilThink');
